@@ -1,6 +1,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
+console.log("DB URL:", process.env.DATABASE_URL?.substring(0, 50));
 
 const prisma = new PrismaClient();
 
