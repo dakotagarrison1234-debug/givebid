@@ -1,8 +1,11 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export default function NewItemPage() {
+  const router = useRouter();
+  const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -15,12 +18,46 @@ export default function NewItemPage() {
     taxDeductible: false,
     storageLocation: "",
     notes: "",
+    auctionId: "",
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const target = e.target as HTMLInputElement;
     const value = target.type === "checkbox" ? target.checked : target.value;
     setFormData({ ...formData, [e.target.name]: value });
+  };
+
+  const handleSave = async () => {
+    if (!formData.title) {
+      alert("Please enter an item title");
+      return;
+    }
+
+    setSaving(true);
+
+    try {
+      const response = await fetch("/api/items", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...formData,
+          organizationId: "cmq5ozlfd0000jpzmrienwolj",
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        alert("Item saved successfully!");
+        router.push("/admin/items");
+      } else {
+        alert("Error saving item: " + data.error);
+      }
+    } catch (error) {
+      alert("Something went wrong. Please try again.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -59,16 +96,18 @@ export default function NewItemPage() {
             <span className="text-gray-600">/</span>
             <h1 className="text-xl font-semibold">Add New Item</h1>
           </div>
-          <button className="bg-emerald-500 hover:bg-emerald-400 text-white text-sm px-6 py-2 rounded-lg font-semibold">
-            Save Item
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-white text-sm px-6 py-2 rounded-lg font-semibold"
+          >
+            {saving ? "Saving..." : "Save Item"}
           </button>
         </header>
 
         <div className="flex-1 px-8 py-6 grid grid-cols-3 gap-8">
-          {/* Left Column - Main Details */}
+          {/* Left Column */}
           <div className="col-span-2 space-y-6">
-
-            {/* Basic Info */}
             <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
               <h2 className="font-semibold mb-4">Item Details</h2>
               <div className="space-y-4">
@@ -89,7 +128,7 @@ export default function NewItemPage() {
                     value={formData.description}
                     onChange={handleChange}
                     rows={3}
-                    placeholder="Describe the item, include any relevant details..."
+                    placeholder="Describe the item..."
                     className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-emerald-500 resize-none"
                   />
                 </div>
@@ -133,56 +172,32 @@ export default function NewItemPage() {
               </div>
             </div>
 
-            {/* Pricing */}
             <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
               <h2 className="font-semibold mb-4">Pricing</h2>
               <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <label className="text-sm text-gray-400 mb-1 block">Retail / Est. Value</label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-3 text-gray-500">$</span>
-                    <input
-                      name="retailValue"
-                      value={formData.retailValue}
-                      onChange={handleChange}
-                      type="number"
-                      placeholder="0.00"
-                      className="w-full bg-gray-800 border border-gray-700 rounded-lg pl-7 pr-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-emerald-500"
-                    />
+                {[
+                  { label: "Retail / Est. Value", name: "retailValue", placeholder: "0.00" },
+                  { label: "Starting Bid *", name: "startingBid", placeholder: "0.00" },
+                  { label: "Reserve Price", name: "reservePrice", placeholder: "Optional" },
+                ].map((field) => (
+                  <div key={field.name}>
+                    <label className="text-sm text-gray-400 mb-1 block">{field.label}</label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-3 text-gray-500">$</span>
+                      <input
+                        name={field.name}
+                        value={formData[field.name as keyof typeof formData] as string}
+                        onChange={handleChange}
+                        type="number"
+                        placeholder={field.placeholder}
+                        className="w-full bg-gray-800 border border-gray-700 rounded-lg pl-7 pr-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-emerald-500"
+                      />
+                    </div>
                   </div>
-                </div>
-                <div>
-                  <label className="text-sm text-gray-400 mb-1 block">Starting Bid *</label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-3 text-gray-500">$</span>
-                    <input
-                      name="startingBid"
-                      value={formData.startingBid}
-                      onChange={handleChange}
-                      type="number"
-                      placeholder="0.00"
-                      className="w-full bg-gray-800 border border-gray-700 rounded-lg pl-7 pr-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-emerald-500"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="text-sm text-gray-400 mb-1 block">Reserve Price</label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-3 text-gray-500">$</span>
-                    <input
-                      name="reservePrice"
-                      value={formData.reservePrice}
-                      onChange={handleChange}
-                      type="number"
-                      placeholder="Optional"
-                      className="w-full bg-gray-800 border border-gray-700 rounded-lg pl-7 pr-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-emerald-500"
-                    />
-                  </div>
-                </div>
+                ))}
               </div>
             </div>
 
-            {/* Photos */}
             <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
               <h2 className="font-semibold mb-4">Photos <span className="text-gray-500 text-sm font-normal">(up to 10)</span></h2>
               <div className="border-2 border-dashed border-gray-700 rounded-xl p-10 text-center hover:border-emerald-500 transition-colors cursor-pointer">
@@ -191,13 +206,10 @@ export default function NewItemPage() {
                 <div className="text-gray-600 text-xs mt-1">PNG, JPG up to 10MB each</div>
               </div>
             </div>
-
           </div>
 
           {/* Right Column */}
           <div className="space-y-6">
-
-            {/* Donor Info */}
             <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
               <h2 className="font-semibold mb-4">Donor Info</h2>
               <div className="space-y-4">
@@ -227,7 +239,6 @@ export default function NewItemPage() {
               </div>
             </div>
 
-            {/* Storage */}
             <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
               <h2 className="font-semibold mb-4">Storage Location</h2>
               <input
@@ -240,17 +251,18 @@ export default function NewItemPage() {
               <p className="text-gray-600 text-xs mt-2">Used by staff to locate item during pickup</p>
             </div>
 
-            {/* Auction Assignment */}
             <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
               <h2 className="font-semibold mb-4">Assign to Auction</h2>
-              <select className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-emerald-500">
+              <select
+                name="auctionId"
+                value={formData.auctionId}
+                onChange={handleChange}
+                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-emerald-500"
+              >
                 <option value="">Save as draft</option>
-                <option value="1">Spring Gala 2025</option>
-                <option value="2">Tech Drive</option>
               </select>
             </div>
 
-            {/* Staff Notes */}
             <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
               <h2 className="font-semibold mb-4">Staff Notes</h2>
               <textarea
@@ -262,7 +274,6 @@ export default function NewItemPage() {
                 className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-emerald-500 resize-none"
               />
             </div>
-
           </div>
         </div>
       </div>
