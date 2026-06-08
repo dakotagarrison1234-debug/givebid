@@ -1,11 +1,12 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 export default function NewItemPage() {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
+  const [auctions, setAuctions] = useState<{id: string, title: string}[]>([]);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -21,6 +22,14 @@ export default function NewItemPage() {
     auctionId: "",
   });
 
+  useEffect(() => {
+    fetch("/api/auctions")
+      .then(res => res.json())
+      .then(data => {
+        if (data.auctions) setAuctions(data.auctions);
+      });
+  }, []);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const target = e.target as HTMLInputElement;
     const value = target.type === "checkbox" ? target.checked : target.value;
@@ -32,9 +41,7 @@ export default function NewItemPage() {
       alert("Please enter an item title");
       return;
     }
-
     setSaving(true);
-
     try {
       const response = await fetch("/api/items", {
         method: "POST",
@@ -44,16 +51,14 @@ export default function NewItemPage() {
           organizationId: "cmq5ozlfd0000jpzmrienwolj",
         }),
       });
-
       const data = await response.json();
-
       if (data.success) {
         alert("Item saved successfully!");
         router.push("/admin/items");
       } else {
         alert("Error saving item: " + data.error);
       }
-    } catch (error) {
+    } catch {
       alert("Something went wrong. Please try again.");
     } finally {
       setSaving(false);
@@ -62,7 +67,6 @@ export default function NewItemPage() {
 
   return (
     <div className="min-h-screen bg-gray-950 text-white flex">
-      {/* Sidebar */}
       <aside className="w-64 bg-gray-900 border-r border-gray-800 flex flex-col">
         <div className="px-6 py-5 border-b border-gray-800">
           <span className="text-emerald-400 font-bold text-xl">GiveBid</span>
@@ -88,7 +92,6 @@ export default function NewItemPage() {
         </nav>
       </aside>
 
-      {/* Main Content */}
       <div className="flex-1 flex flex-col">
         <header className="border-b border-gray-800 px-8 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -106,7 +109,6 @@ export default function NewItemPage() {
         </header>
 
         <div className="flex-1 px-8 py-6 grid grid-cols-3 gap-8">
-          {/* Left Column */}
           <div className="col-span-2 space-y-6">
             <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
               <h2 className="font-semibold mb-4">Item Details</h2>
@@ -208,7 +210,6 @@ export default function NewItemPage() {
             </div>
           </div>
 
-          {/* Right Column */}
           <div className="space-y-6">
             <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
               <h2 className="font-semibold mb-4">Donor Info</h2>
@@ -260,6 +261,11 @@ export default function NewItemPage() {
                 className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-emerald-500"
               >
                 <option value="">Save as draft</option>
+                {auctions.map((auction) => (
+                  <option key={auction.id} value={auction.id}>
+                    {auction.title}
+                  </option>
+                ))}
               </select>
             </div>
 
