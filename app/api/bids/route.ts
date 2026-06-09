@@ -46,6 +46,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "This auction is not currently open" }, { status: 400 });
     }
 
+    // Require a completed bidder profile before bidding
+    const profile = await prisma.bidderProfile.findUnique({ where: { clerkUserId: userId } });
+    if (!profile?.phone || !profile?.email) {
+      return NextResponse.json({ error: "You must complete registration before bidding", requiresRegistration: true }, { status: 403 });
+    }
+
     const minBid = item.currentBid > 0 ? item.currentBid + 5 : item.startingBid;
 
     if (amount < minBid) {

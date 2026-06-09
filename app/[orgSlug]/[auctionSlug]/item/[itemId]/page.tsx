@@ -98,6 +98,8 @@ export default function ItemPage() {
       if (data.success) {
         setBidAmount("");
         setMessage({ text: `Bid of $${amount} placed!`, type: "success" });
+      } else if (data.requiresRegistration) {
+        router.push("/register");
       } else {
         setMessage({ text: data.error, type: "error" });
       }
