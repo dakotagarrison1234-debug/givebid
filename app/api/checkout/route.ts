@@ -44,6 +44,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "No unpaid winning bids found" }, { status: 400 });
     }
 
+    // Store itemIds/bidIds in the DB — avoids Stripe's 500-char metadata limit
+    const batch = await prisma.paymentBatch.create({
+      data: {
+        clerkUserId: userId,
+        itemIds: JSON.stringify(payableItems.map((i) => i.id)),
+        bidIds: JSON.stringify(payableItems.map((i) => i.bids[0].id)),
+      },
+    });
+
     // Build Stripe line items
     const lineItems = payableItems.map((item) => ({
       price_data: {
@@ -57,10 +66,6 @@ export async function POST(request: NextRequest) {
       quantity: 1,
     }));
 
-    // Store itemIds + bidIds in metadata (comma-separated, up to ~20 items)
-    const metaItemIds = payableItems.map((i) => i.id).join(",");
-    const metaBidIds = payableItems.map((i) => i.bids[0].id).join(",");
-
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       line_items: lineItems,
@@ -68,8 +73,7 @@ export async function POST(request: NextRequest) {
       success_url: `${process.env.NEXT_PUBLIC_APP_URL}/payment/success`,
       cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/my-bids`,
       metadata: {
-        itemIds: metaItemIds,
-        bidIds: metaBidIds,
+        batchId: batch.id,
         clerkUserId: userId,
       },
     });

@@ -38,6 +38,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Item not found" }, { status: 404 });
     }
 
+    // Validate item and auction are accepting bids
+    if (item.status !== "ACTIVE") {
+      return NextResponse.json({ error: "This item is not currently accepting bids" }, { status: 400 });
+    }
+    if (!item.auction || item.auction.status !== "OPEN") {
+      return NextResponse.json({ error: "This auction is not currently open" }, { status: 400 });
+    }
+
     const minBid = item.currentBid > 0 ? item.currentBid + 5 : item.startingBid;
 
     if (amount < minBid) {

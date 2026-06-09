@@ -22,20 +22,38 @@ export async function POST(request: NextRequest) {
 
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
-    const { itemIds, clerkUserId } = session.metadata || {};
+    const { batchId, clerkUserId } = session.metadata || {};
 
-    if (!itemIds || !clerkUserId) {
+    if (!batchId || !clerkUserId) {
       return NextResponse.json({ error: "Missing metadata" }, { status: 400 });
     }
 
-    const itemIdList = itemIds.split(",").filter(Boolean);
+    // Look up the batch record for item IDs (avoids 500-char Stripe metadata limit)
+    const batch = await prisma.paymentBatch.findUnique({ where: { id: batchId } });
+    if (!batch) {
+      console.error("PaymentBatch not found:", batchId);
+      return NextResponse.json({ error: "Batch not found" }, { status: 400 });
+    }
+
+    const itemIdList: string[] = JSON.parse(batch.itemIds);
     const paymentIntentId = session.payment_intent as string;
-    const amountPerItem = (session.amount_total || 0) / 100 / itemIdList.length;
+
+    // Fetch items with their winning bid amounts for accurate per-item payment records
+    const items = await prisma.item.findMany({
+      where: { id: { in: itemIdList } },
+      include: {
+        auction: true,
+        organization: true,
+        bids: { where: { clerkUserId, status: "WON" }, orderBy: { amount: "desc" }, take: 1 },
+      },
+    });
 
     try {
-      for (const itemId of itemIdList) {
+      for (const item of items) {
+        const winningBidAmount = item.bids[0]?.amount ?? item.currentBid;
+
         // Upsert payment record
-        const existing = await prisma.payment.findFirst({ where: { itemId, clerkUserId } });
+        const existing = await prisma.payment.findFirst({ where: { itemId: item.id, clerkUserId } });
         if (existing) {
           await prisma.payment.update({
             where: { id: existing.id },
@@ -45,8 +63,8 @@ export async function POST(request: NextRequest) {
           await prisma.payment.create({
             data: {
               clerkUserId,
-              itemId,
-              amount: amountPerItem,
+              itemId: item.id,
+              amount: winningBidAmount,
               stripePaymentIntentId: paymentIntentId,
               status: "PAID",
             },
@@ -55,17 +73,11 @@ export async function POST(request: NextRequest) {
 
         // Move item to PENDING_PICKUP
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await prisma.item.update({ where: { id: itemId }, data: { status: "PENDING_PICKUP" as any } });
+        await prisma.item.update({ where: { id: item.id }, data: { status: "PENDING_PICKUP" as any } });
       }
 
-      // Get all items + winner profile for receipt notification
-      const items = await prisma.item.findMany({
-        where: { id: { in: itemIdList } },
-        include: { auction: true, organization: true },
-      });
+      // GHL payment receipt — one notification for the whole batch
       const winnerProfile = await prisma.bidderProfile.findUnique({ where: { clerkUserId } });
-
-      // GHL payment receipt webhook — one notification for the whole batch
       if (process.env.GHL_PAYMENT_RECEIPT_WEBHOOK && items.length > 0) {
         const totalPaid = (session.amount_total || 0) / 100;
         const orgName = items[0].organization?.name || "Organization";

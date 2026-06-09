@@ -1,13 +1,14 @@
+import { auth } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { canAccessOrg } from "@/lib/auth";
 
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ itemId: string }> }
 ) {
   try {
     const { itemId } = await params;
-
     const item = await prisma.item.findUnique({
       where: { id: itemId },
       include: {
@@ -16,11 +17,7 @@ export async function GET(
         auction: { select: { title: true, endAt: true, status: true } },
       },
     });
-
-    if (!item) {
-      return NextResponse.json({ error: "Item not found" }, { status: 404 });
-    }
-
+    if (!item) return NextResponse.json({ error: "Item not found" }, { status: 404 });
     return NextResponse.json({ item });
   } catch (error) {
     console.error("Error fetching item:", error);
@@ -33,7 +30,21 @@ export async function PATCH(
   { params }: { params: Promise<{ itemId: string }> }
 ) {
   try {
+    const { userId } = await auth();
+    if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
     const { itemId } = await params;
+
+    const item = await prisma.item.findUnique({
+      where: { id: itemId },
+      select: { organizationId: true },
+    });
+    if (!item) return NextResponse.json({ error: "Item not found" }, { status: 404 });
+
+    if (!(await canAccessOrg(item.organizationId))) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
     const body = await request.json();
 
     await prisma.item.update({
@@ -67,12 +78,11 @@ export async function PATCH(
       }
     }
 
-    const item = await prisma.item.findUnique({
+    const updated = await prisma.item.findUnique({
       where: { id: itemId },
       include: { photos: true },
     });
-
-    return NextResponse.json({ success: true, item });
+    return NextResponse.json({ success: true, item: updated });
   } catch (error) {
     console.error("Error updating item:", error);
     return NextResponse.json({ error: "Failed to update item" }, { status: 500 });

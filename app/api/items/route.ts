@@ -1,6 +1,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { canAccessOrg } from "@/lib/auth";
 
 export async function POST(request: NextRequest) {
   try {
@@ -34,6 +35,10 @@ export async function POST(request: NextRequest) {
         { error: "Title and organization are required" },
         { status: 400 }
       );
+    }
+
+    if (!(await canAccessOrg(organizationId))) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     const item = await prisma.item.create({

@@ -199,3 +199,13 @@ model OrgInvite {
   @@index([email])
   @@index([token])
 }
+
+model PaymentBatch {
+  id          String   @id @default(cuid())
+  clerkUserId String
+  itemIds     String   // JSON array of item IDs
+  bidIds      String   // JSON array of bid IDs
+  createdAt   DateTime @default(now())
+
+  @@index([clerkUserId])
+}
