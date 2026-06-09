@@ -7,7 +7,7 @@ export default async function AdminDashboard() {
   const membership = await requireUserOrg();
   const orgId = membership.organization.id;
 
-  const [items, auctions, recentBids] = await Promise.all([
+  const [items, auctions, allBids] = await Promise.all([
     prisma.item.findMany({ where: { organizationId: orgId }, include: { bids: true } }),
     prisma.auction.findMany({
       where: { organizationId: orgId },
@@ -18,13 +18,13 @@ export default async function AdminDashboard() {
       where: { item: { organizationId: orgId } },
       include: { item: true },
       orderBy: { placedAt: "desc" },
-      take: 6,
     }),
   ]);
 
   const totalRaised = items.reduce((sum, item) => sum + item.currentBid, 0);
   const activeAuction = auctions.find((a) => a.status === "OPEN") || auctions[0];
-  const uniqueBidders = new Set(recentBids.map((b) => b.clerkUserId)).size;
+  const uniqueBidders = new Set(allBids.map((b) => b.clerkUserId)).size;
+  const recentBids = allBids.slice(0, 6);
 
   return (
     <>
@@ -40,7 +40,7 @@ export default async function AdminDashboard() {
           { label: "Total Raised", value: `$${totalRaised.toLocaleString()}` },
           { label: "Items Listed", value: items.length },
           { label: "Active Bidders", value: uniqueBidders },
-          { label: "Bids Placed", value: recentBids.length },
+          { label: "Bids Placed", value: allBids.length },
         ].map((stat) => (
           <div key={stat.label} className="bg-gray-900 border border-gray-800 rounded-xl p-5">
             <div className="text-gray-500 text-sm mb-1">{stat.label}</div>

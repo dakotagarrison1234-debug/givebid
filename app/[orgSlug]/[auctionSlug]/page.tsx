@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@clerk/nextjs/server";
 
 interface Props {
   params: Promise<{ orgSlug: string; auctionSlug: string }>;
@@ -8,6 +9,7 @@ interface Props {
 
 export default async function AuctionPage({ params }: Props) {
   const { orgSlug, auctionSlug } = await params;
+  const { userId } = await auth();
 
   const org = await prisma.organization.findUnique({
     where: { slug: orgSlug },
@@ -47,9 +49,15 @@ export default async function AuctionPage({ params }: Props) {
           <span className="text-gray-600">/</span>
           <span className="text-white capitalize">{auctionSlug.replace(/-/g, " ")}</span>
         </div>
-        <Link href="/sign-in" className="bg-emerald-500 hover:bg-emerald-400 text-white text-sm px-4 py-2 rounded-lg">
-          Sign In to Bid
-        </Link>
+        {userId ? (
+          <Link href="/my-bids" className="bg-gray-800 hover:bg-gray-700 text-white text-sm px-4 py-2 rounded-lg">
+            My Bids
+          </Link>
+        ) : (
+          <Link href="/sign-in" className="bg-emerald-500 hover:bg-emerald-400 text-white text-sm px-4 py-2 rounded-lg">
+            Sign In to Bid
+          </Link>
+        )}
       </header>
 
       <div className="bg-gray-900 border-b border-gray-800 px-6 py-8">

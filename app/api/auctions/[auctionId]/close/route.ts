@@ -82,7 +82,7 @@ export async function POST(_request: NextRequest, { params }: Props) {
                 winningAmount: winningBid.amount,
                 auctionName: auction.title,
                 orgName: auction.organization.name,
-                checkoutUrl: `${process.env.NEXT_PUBLIC_APP_URL}/api/checkout`,
+                paymentUrl: `${process.env.NEXT_PUBLIC_APP_URL}/my-bids`,
               }),
             }).then(() => {}).catch(err => console.error("GHL won webhook failed:", err))
           );

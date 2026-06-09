@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
       where: { id: itemId },
       include: {
         bids: {
-          where: { status: "ACTIVE" },
+          where: { status: "WON" },
           orderBy: { amount: "desc" },
           take: 1,
         },

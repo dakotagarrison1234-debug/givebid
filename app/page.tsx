@@ -8,7 +8,7 @@ export default async function HomePage() {
   const { userId } = await auth();
 
   const auctions = await prisma.auction.findMany({
-    where: { status: { in: ["OPEN", "DRAFT"] } },
+    where: { status: "OPEN" },
     include: {
       organization: true,
       items: true,
