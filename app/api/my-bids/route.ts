@@ -33,10 +33,10 @@ export async function GET() {
     }
   }
 
-  const winning = [];
-  const losing = [];
-  const past = [];
-  const unpaidWins = [];
+  const winning = [];   // Active bids I'm currently leading in an open auction
+  const losing = [];    // Bids I've been outbid on in a still-open auction
+  const past = [];      // Completed items I won (paid) or lost
+  const unpaidWins = []; // Items I won but haven't paid yet
 
   for (const bid of latestBids) {
     const item = bid.item;
@@ -57,25 +57,90 @@ export async function GET() {
       orgSlug: auction.organization.slug,
     };
 
+    const itemActive  = item.status === "ACTIVE";
+    const itemSold    = item.status === "SOLD";
+    const itemPickup  = item.status === "PENDING_PICKUP";
+    const itemDone    = item.status === "PICKED_UP";
+    const itemUnsold  = item.status === "UNSOLD";
     const auctionOpen = auction.status === "OPEN";
-    const auctionClosed = auction.status === "CLOSED" || auction.status === "SETTLED";
 
-    if (auctionOpen) {
+    // ── ACTIVE: item is live and auction is open ──────────────────────────────
+    if (itemActive && auctionOpen) {
       if (bid.status === "ACTIVE") {
-        winning.push({ ...base, myBid: bid.amount, currentBid: item.currentBid, itemEndAt: item.itemEndAt });
+        // Currently the highest bidder
+        winning.push({
+          ...base,
+          myBid: bid.amount,
+          currentBid: item.currentBid,
+          itemEndAt: item.itemEndAt,
+        });
       } else if (bid.status === "OUTBID") {
-        losing.push({ ...base, myBid: bid.amount, currentBid: item.currentBid, itemEndAt: item.itemEndAt });
+        // Still running but someone else is ahead — can still rebid
+        losing.push({
+          ...base,
+          myBid: bid.amount,
+          currentBid: item.currentBid,
+          itemEndAt: item.itemEndAt,
+        });
       }
-    } else if (auctionClosed) {
+      continue;
+    }
+
+    // ── SOLD / WON: item has closed with a winner ─────────────────────────────
+    if (itemSold || itemPickup || itemDone) {
       if (bid.status === "WON") {
-        const paid = item.status === "PENDING_PICKUP" || item.status === "PICKED_UP";
-        if (!paid) {
+        if (itemSold) {
+          // Auction closed, I won, payment not yet made
           unpaidWins.push({ ...base, amountOwed: item.currentBid });
         } else {
-          past.push({ ...base, myBid: bid.amount, finalBid: item.currentBid, outcome: "won", paid: true });
+          // PENDING_PICKUP or PICKED_UP → paid, move to past
+          past.push({
+            ...base,
+            myBid: bid.amount,
+            finalBid: item.currentBid,
+            outcome: "won",
+            paid: true,
+            pickedUp: itemDone,
+          });
         }
       } else {
-        past.push({ ...base, myBid: bid.amount, finalBid: item.currentBid, outcome: "lost", paid: false });
+        // I placed a bid but didn't win this item
+        past.push({
+          ...base,
+          myBid: bid.amount,
+          finalBid: item.currentBid,
+          outcome: "lost",
+          paid: false,
+        });
+      }
+      continue;
+    }
+
+    // ── UNSOLD: item closed with no bids or reserve not met ───────────────────
+    if (itemUnsold) {
+      past.push({
+        ...base,
+        myBid: bid.amount,
+        finalBid: item.currentBid,
+        outcome: "unsold",
+        paid: false,
+      });
+      continue;
+    }
+
+    // ── CATCH-ALL: auction is closed/settled but item status wasn't caught above
+    // (e.g. data inconsistency — surface in past as lost rather than hiding it)
+    if (auction.status === "CLOSED" || auction.status === "SETTLED") {
+      if (bid.status === "WON") {
+        unpaidWins.push({ ...base, amountOwed: item.currentBid });
+      } else {
+        past.push({
+          ...base,
+          myBid: bid.amount,
+          finalBid: item.currentBid,
+          outcome: "lost",
+          paid: false,
+        });
       }
     }
   }

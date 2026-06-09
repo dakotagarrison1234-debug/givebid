@@ -34,8 +34,9 @@ interface LosingBid extends BidBase {
 interface PastBid extends BidBase {
   myBid: number;
   finalBid: number;
-  outcome: "won" | "lost";
+  outcome: "won" | "lost" | "unsold";
   paid: boolean;
+  pickedUp?: boolean;
 }
 
 interface UnpaidWin extends BidBase {
@@ -441,9 +442,17 @@ export default function BidderDashboard() {
                         <div className={`font-bold ${b.outcome === "won" ? "text-emerald-400" : "text-gray-500"}`}>
                           ${b.myBid.toLocaleString()}
                         </div>
-                        <div className={`text-xs mt-0.5 ${b.outcome === "won" ? "text-emerald-600" : "text-gray-600"}`}>
+                        <div className={`text-xs mt-0.5 ${
+                          b.outcome === "won" ? "text-emerald-600"
+                          : b.outcome === "unsold" ? "text-gray-600"
+                          : "text-gray-600"
+                        }`}>
                           {b.outcome === "won"
-                            ? b.paid ? "Won · Paid ✓" : "Won"
+                            ? b.pickedUp ? "Won · Picked up ✓"
+                              : b.paid ? "Won · Paid ✓"
+                              : "Won"
+                            : b.outcome === "unsold"
+                            ? "Item went unsold"
                             : `Lost · Sold for $${b.finalBid.toLocaleString()}`}
                         </div>
                       </div>
