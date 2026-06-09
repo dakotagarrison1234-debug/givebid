@@ -79,19 +79,20 @@ export async function POST(request: NextRequest) {
       newItemEndAt = new Date(Date.now() + POPCORN_EXTENSION_MS);
     }
 
-    // Record the bid
-    await prisma.bid.updateMany({ where: { itemId, status: "ACTIVE" }, data: { status: "OUTBID" } });
-
-    const bid = await prisma.bid.create({
-      data: { itemId, clerkUserId: userId, amount, status: "ACTIVE" },
-    });
-
-    await prisma.item.update({
-      where: { id: itemId },
-      data: {
-        currentBid: amount,
-        ...(newItemEndAt ? { itemEndAt: newItemEndAt } : {}),
-      },
+    // Record the bid atomically — prevents race conditions under concurrent bids
+    const bid = await prisma.$transaction(async (tx) => {
+      await tx.bid.updateMany({ where: { itemId, status: "ACTIVE" }, data: { status: "OUTBID" } });
+      const newBid = await tx.bid.create({
+        data: { itemId, clerkUserId: userId, amount, status: "ACTIVE" },
+      });
+      await tx.item.update({
+        where: { id: itemId },
+        data: {
+          currentBid: amount,
+          ...(newItemEndAt ? { itemEndAt: newItemEndAt } : {}),
+        },
+      });
+      return newBid;
     });
 
     // Broadcast bid + new end time (if extended) to all watchers
@@ -104,8 +105,8 @@ export async function POST(request: NextRequest) {
     });
 
     // GHL outbid alert
-    if (previousActiveBid && previousActiveBid.clerkUserId !== userId) {
-      fetch(process.env.GHL_OUTBID_WEBHOOK!, {
+    if (previousActiveBid && previousActiveBid.clerkUserId !== userId && process.env.GHL_OUTBID_WEBHOOK) {
+      fetch(process.env.GHL_OUTBID_WEBHOOK, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

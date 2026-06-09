@@ -78,27 +78,22 @@ export async function POST(request: NextRequest) {
 export async function GET() {
   try {
     const { userId } = await auth();
+    if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    // Scope to the current user's org (respects super admin act-as cookie)
+    const { getUserOrg } = await import("@/lib/auth");
+    const membership = await getUserOrg();
+    if (!membership) return NextResponse.json({ items: [] });
 
     const items = await prisma.item.findMany({
-      include: {
-        photos: true,
-        bids: true,
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
+      where: { organizationId: membership.organizationId },
+      include: { photos: true, bids: true },
+      orderBy: { createdAt: "desc" },
     });
 
     return NextResponse.json({ items });
   } catch (error) {
     console.error("Error fetching items:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch items" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to fetch items" }, { status: 500 });
   }
 }

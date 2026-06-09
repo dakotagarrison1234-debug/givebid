@@ -18,6 +18,7 @@ interface Invite {
 export default function StaffPage() {
   const [members, setMembers] = useState<Member[]>([]);
   const [invites, setInvites] = useState<Invite[]>([]);
+  const [myRole, setMyRole] = useState<string | null>(null);
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<"STAFF" | "ADMIN">("STAFF");
   const [loading, setLoading] = useState(true);
@@ -26,16 +27,20 @@ export default function StaffPage() {
   const [error, setError] = useState("");
 
   const load = () => {
-    fetch("/api/orgs/invite")
-      .then((r) => r.json())
-      .then((d) => {
-        setMembers(d.members || []);
-        setInvites(d.invites || []);
-        setLoading(false);
-      });
+    Promise.all([
+      fetch("/api/orgs/invite").then((r) => r.json()),
+      fetch("/api/me").then((r) => r.json()),
+    ]).then(([inviteData, meData]) => {
+      setMembers(inviteData.members || []);
+      setInvites(inviteData.invites || []);
+      setMyRole(meData.role || null);
+      setLoading(false);
+    });
   };
 
   useEffect(() => { load(); }, []);
+
+  const canInvite = myRole === "OWNER" || myRole === "ADMIN";
 
   const handleInvite = async () => {
     if (!email.trim()) { setError("Email is required."); return; }
@@ -129,8 +134,8 @@ export default function StaffPage() {
           </section>
         )}
 
-        {/* Invite Form */}
-        <section>
+        {/* Invite Form — OWNER/ADMIN only */}
+        {canInvite && <section>
           <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">
             Invite Someone
           </h2>
@@ -187,7 +192,7 @@ export default function StaffPage() {
               </div>
             )}
           </div>
-        </section>
+        </section>}
       </div>
     </>
   );

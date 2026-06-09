@@ -1,17 +1,9 @@
-import { auth } from "@clerk/nextjs/server";
+export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { getUserOrg } from "@/lib/auth";
 
 export async function GET() {
-  const { userId } = await auth();
-  if (!userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const membership = await prisma.orgMember.findFirst({
-    where: { clerkUserId: userId },
-    include: { organization: true },
-  });
+  const membership = await getUserOrg();
 
   if (!membership) {
     return NextResponse.json({ orgId: null, orgName: null, role: null });

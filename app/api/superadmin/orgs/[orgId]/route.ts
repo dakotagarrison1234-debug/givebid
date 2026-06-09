@@ -57,6 +57,10 @@ export async function DELETE(_req: NextRequest, { params }: Props) {
   await requireSuperAdmin();
   const { orgId } = await params;
 
+  // Get member clerkUserIds before deleting, so we can clean up their applications
+  const members = await prisma.orgMember.findMany({ where: { organizationId: orgId }, select: { clerkUserId: true } });
+  const memberIds = members.map((m) => m.clerkUserId);
+
   // Delete in dependency order
   await prisma.$transaction([
     prisma.orgInvite.deleteMany({ where: { organizationId: orgId } }),
@@ -67,6 +71,8 @@ export async function DELETE(_req: NextRequest, { params }: Props) {
     prisma.item.deleteMany({ where: { organizationId: orgId } }),
     prisma.auction.deleteMany({ where: { organizationId: orgId } }),
     prisma.organization.delete({ where: { id: orgId } }),
+    // Clean up OrgApplications for this org's members to prevent infinite redirect loop
+    prisma.orgApplication.deleteMany({ where: { clerkUserId: { in: memberIds } } }),
   ]);
 
   return NextResponse.json({ success: true });

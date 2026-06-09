@@ -16,7 +16,7 @@ function JoinPageInner() {
   useEffect(() => {
     if (!isLoaded) return;
     if (!isSignedIn) {
-      router.push(`/sign-in?redirect_url=/join?token=${token}`);
+      router.push(`/sign-in?redirect_url=${encodeURIComponent(`/join?token=${token}`)}`);
     }
   }, [isLoaded, isSignedIn, router, token]);
 

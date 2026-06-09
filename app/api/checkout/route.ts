@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "No items specified" }, { status: 400 });
     }
 
-    // Load all items with their winning bids
+    // Load all items with their winning bids and any existing payment records
     const items = await prisma.item.findMany({
       where: { id: { in: itemIds } },
       include: {
@@ -32,12 +32,20 @@ export async function POST(request: NextRequest) {
           orderBy: { amount: "desc" },
           take: 1,
         },
+        payments: {
+          where: { clerkUserId: userId, status: "PAID" },
+          take: 1,
+        },
       },
     });
 
-    // Filter to items that have a winning bid and are not already paid
+    // Filter to items that: have a winning bid, haven't been paid, and aren't already picked up
     const payableItems = items.filter(
-      (item) => item.bids.length > 0 && item.status !== "PENDING_PICKUP" && item.status !== "PICKED_UP"
+      (item) =>
+        item.bids.length > 0 &&
+        item.payments.length === 0 && // Prevent double-charge
+        item.status !== "PENDING_PICKUP" &&
+        item.status !== "PICKED_UP"
     );
 
     if (payableItems.length === 0) {

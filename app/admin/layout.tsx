@@ -41,7 +41,10 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     }
   }
 
-  if (!membership) redirect("/apply");
+  if (!membership) {
+    if (superAdmin) redirect("/superadmin");
+    redirect("/apply");
+  }
 
   const org = membership.organization;
   const isOwnerOrAdmin = membership.role === "OWNER" || membership.role === "ADMIN";

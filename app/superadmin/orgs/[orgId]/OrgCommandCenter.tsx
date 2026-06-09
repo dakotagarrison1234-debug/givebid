@@ -59,7 +59,13 @@ export default function OrgCommandCenter({ org: initial }: { org: Org }) {
 
   const deleteOrg = async () => {
     setDeleting(true);
-    await fetch(base, { method: "DELETE" });
+    const res = await fetch(base, { method: "DELETE" });
+    if (!res.ok) {
+      alert("Failed to delete organization. Please try again.");
+      setDeleting(false);
+      setConfirmDelete(false);
+      return;
+    }
     router.push("/superadmin/orgs");
   };
 
@@ -91,7 +97,8 @@ export default function OrgCommandCenter({ org: initial }: { org: Org }) {
 
   const deleteAuction = async (auctionId: string) => {
     if (!confirm("Delete this auction? Items will be unlinked.")) return;
-    await fetch(`${base}/auctions/${auctionId}`, { method: "DELETE" });
+    const res = await fetch(`${base}/auctions/${auctionId}`, { method: "DELETE" });
+    if (!res.ok) { alert("Failed to delete auction."); return; }
     setOrg((o) => ({ ...o, auctions: o.auctions.filter((a) => a.id !== auctionId) }));
   };
 
@@ -113,7 +120,8 @@ export default function OrgCommandCenter({ org: initial }: { org: Org }) {
 
   const deleteItem = async (itemId: string) => {
     if (!confirm("Permanently delete this item and all its bids?")) return;
-    await fetch(`${base}/items/${itemId}`, { method: "DELETE" });
+    const res = await fetch(`${base}/items/${itemId}`, { method: "DELETE" });
+    if (!res.ok) { alert("Failed to delete item."); return; }
     setOrg((o) => ({ ...o, items: o.items.filter((i) => i.id !== itemId) }));
   };
 

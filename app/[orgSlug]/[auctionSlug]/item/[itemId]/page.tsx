@@ -42,7 +42,7 @@ export default function ItemPage() {
   // Tracks the current effective end time (updated by popcorn bids)
   const [effectiveEndAt, setEffectiveEndAt] = useState<string | null>(null);
   // True once the countdown fires onExpire
-  const [bidingEnded, setBiddingEnded] = useState(false);
+  const [biddingEnded, setBiddingEnded] = useState(false);
 
   useEffect(() => {
     fetch(`/api/items/${itemId}`)
@@ -156,7 +156,7 @@ export default function ItemPage() {
   const minBid = currentBid > 0 ? currentBid + 5 : item.startingBid;
   const auctionClosed = item.auction?.status === "CLOSED" || item.auction?.status === "SETTLED";
   const itemSold = item.status === "SOLD" || item.status === "PENDING_PICKUP" || item.status === "PICKED_UP";
-  const biddingLocked = auctionClosed || itemSold || bidingEnded;
+  const biddingLocked = auctionClosed || itemSold || biddingEnded;
 
   return (
     <main className="min-h-screen bg-gray-950 text-white">
@@ -231,9 +231,9 @@ export default function ItemPage() {
           {effectiveEndAt && !auctionClosed && !itemSold && (
             <div className="bg-gray-900 border border-gray-800 rounded-xl px-4 py-3 mb-6 flex items-center justify-between">
               <span className="text-gray-500 text-sm">
-                {bidingEnded ? "Bidding ended" : "Time remaining"}
+                {biddingEnded ? "Bidding ended" : "Time remaining"}
               </span>
-              {!bidingEnded ? (
+              {!biddingEnded ? (
                 <Countdown endAt={effectiveEndAt} onExpire={handleExpire} />
               ) : (
                 <span className="text-gray-500 font-semibold">—</span>

@@ -21,7 +21,10 @@ export default async function AdminDashboard() {
     }),
   ]);
 
-  const totalRaised = items.reduce((sum, item) => sum + item.currentBid, 0);
+  const soldStatuses = ["SOLD", "PENDING_PICKUP", "PICKED_UP"];
+  const totalRaised = items
+    .filter((item) => soldStatuses.includes(item.status))
+    .reduce((sum, item) => sum + item.currentBid, 0);
   const activeAuction = auctions.find((a) => a.status === "OPEN") || auctions[0];
   const uniqueBidders = new Set(allBids.map((b) => b.clerkUserId)).size;
   const recentBids = allBids.slice(0, 6);

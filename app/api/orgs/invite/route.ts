@@ -18,7 +18,7 @@ export async function GET() {
     where: { id: membership.organizationId },
     include: {
       members: true,
-      invites: { where: { accepted: false } },
+      invites: { where: { accepted: false, expiresAt: { gt: new Date() } } },
     },
   });
   if (!org) return NextResponse.json({ error: "Org not found" }, { status: 404 });

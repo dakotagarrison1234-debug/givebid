@@ -39,7 +39,16 @@ export async function GET() {
   try {
     const { userId } = await auth();
     if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    const auctions = await prisma.auction.findMany({ orderBy: { createdAt: "desc" } });
+
+    // Scope to the current user's org (respects super admin act-as cookie)
+    const { getUserOrg } = await import("@/lib/auth");
+    const membership = await getUserOrg();
+    if (!membership) return NextResponse.json({ auctions: [] });
+
+    const auctions = await prisma.auction.findMany({
+      where: { organizationId: membership.organizationId },
+      orderBy: { createdAt: "desc" },
+    });
     return NextResponse.json({ auctions });
   } catch (error) {
     console.error("Error fetching auctions:", error);

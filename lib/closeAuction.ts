@@ -12,8 +12,10 @@ async function closeItem(item: ItemWithBidsAndOrg) {
   const winningBid = item.bids[0];
 
   if (winningBid) {
-    await prisma.bid.update({ where: { id: winningBid.id }, data: { status: "WON" } });
-    await prisma.item.update({ where: { id: item.id }, data: { status: "SOLD" } });
+    await prisma.$transaction([
+      prisma.bid.update({ where: { id: winningBid.id }, data: { status: "WON" } }),
+      prisma.item.update({ where: { id: item.id }, data: { status: "SOLD" } }),
+    ]);
 
     const winnerProfile = await prisma.bidderProfile.findUnique({
       where: { clerkUserId: winningBid.clerkUserId },
