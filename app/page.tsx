@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
+import HomeHeader from "./components/HomeHeader";
 
 export default async function HomePage() {
   const auctions = await prisma.auction.findMany({
@@ -15,31 +15,8 @@ export default async function HomePage() {
 
   return (
     <main className="min-h-screen bg-gray-950 text-white">
-      {/* Header */}
-      <header className="border-b border-gray-800 px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="text-2xl font-bold text-emerald-400">GiveBid</span>
-          <span className="text-gray-500 text-sm">Nonprofit Auctions</span>
-        </div>
-        <div className="flex items-center gap-4">
-          <SignedOut>
-            <Link href="/sign-in" className="text-gray-300 hover:text-white text-sm">
-              Sign In
-            </Link>
-            <Link href="/sign-up" className="bg-emerald-500 hover:bg-emerald-400 text-white text-sm px-4 py-2 rounded-lg">
-              Start Your Auction
-            </Link>
-          </SignedOut>
-          <SignedIn>
-            <Link href="/admin/dashboard" className="text-gray-300 hover:text-white text-sm">
-              Dashboard
-            </Link>
-            <UserButton afterSignOutUrl="/" />
-          </SignedIn>
-        </div>
-      </header>
+      <HomeHeader />
 
-      {/* Hero */}
       <section className="px-6 py-20 text-center max-w-4xl mx-auto">
         <h1 className="text-5xl font-bold mb-6">
           Auctions that raise more.<br />
@@ -53,7 +30,6 @@ export default async function HomePage() {
         </Link>
       </section>
 
-      {/* Active Auctions */}
       <section className="px-6 py-12 max-w-6xl mx-auto">
         <div className="flex items-center justify-between mb-8">
           <h2 className="text-2xl font-bold">Live Auctions</h2>
