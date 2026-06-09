@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useUser, SignInButton } from "@clerk/nextjs";
@@ -19,6 +19,7 @@ interface Item {
   taxDeductible: boolean;
   storageLocation: string | null;
   status: string;
+  itemEndAt: string | null;
   photos: { url: string; isPrimary: boolean }[];
   bids: { id: string; amount: number; clerkUserId: string; placedAt: string }[];
   auction: { title: string; endAt: string; status: string } | null;
@@ -38,6 +39,10 @@ export default function ItemPage() {
   const [placing, setPlacing] = useState(false);
   const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
   const [liveBids, setLiveBids] = useState<{ user: string; amount: number; time: string }[]>([]);
+  // Tracks the current effective end time (updated by popcorn bids)
+  const [effectiveEndAt, setEffectiveEndAt] = useState<string | null>(null);
+  // True once the countdown fires onExpire
+  const [bidingEnded, setBiddingEnded] = useState(false);
 
   useEffect(() => {
     fetch(`/api/items/${itemId}`)
@@ -45,6 +50,11 @@ export default function ItemPage() {
       .then(d => {
         if (d.item) {
           setItem(d.item);
+          // Use per-item endAt if set, otherwise auction endAt
+          const end = d.item.itemEndAt ?? d.item.auction?.endAt ?? null;
+          setEffectiveEndAt(end);
+          // Already expired?
+          if (end && new Date(end) <= new Date()) setBiddingEnded(true);
           setLiveBids(d.item.bids.map((b: Item["bids"][0]) => ({
             user: b.clerkUserId.substring(0, 6) + "***",
             amount: b.amount,
@@ -61,18 +71,27 @@ export default function ItemPage() {
       cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER!,
     });
     const channel = pusher.subscribe(`item-${itemId}`);
-    channel.bind("new-bid", (data: { amount: number; userId: string }) => {
+    channel.bind("new-bid", (data: { amount: number; userId: string; newEndAt?: string }) => {
       setItem(prev => prev ? { ...prev, currentBid: data.amount } : prev);
       setLiveBids(prev => [
         { user: data.userId + "***", amount: data.amount, time: "just now" },
         ...prev,
       ]);
+      // Popcorn: update effective end time and re-enable bidding if timer was at zero
+      if (data.newEndAt) {
+        setEffectiveEndAt(data.newEndAt);
+        setBiddingEnded(false);
+      }
     });
     return () => {
       channel.unbind_all();
       pusher.unsubscribe(`item-${itemId}`);
     };
   }, [itemId]);
+
+  const handleExpire = useCallback(() => {
+    setBiddingEnded(true);
+  }, []);
 
   const handleBid = async () => {
     if (!isSignedIn) {
@@ -97,7 +116,11 @@ export default function ItemPage() {
       const data = await res.json();
       if (data.success) {
         setBidAmount("");
-        setMessage({ text: `Bid of $${amount} placed!`, type: "success" });
+        setMessage({ text: `Bid of $${amount.toLocaleString()} placed!`, type: "success" });
+        if (data.newEndAt) {
+          setEffectiveEndAt(data.newEndAt);
+          setBiddingEnded(false);
+        }
       } else if (data.requiresRegistration) {
         router.push("/register");
       } else {
@@ -133,6 +156,7 @@ export default function ItemPage() {
   const minBid = currentBid > 0 ? currentBid + 5 : item.startingBid;
   const auctionClosed = item.auction?.status === "CLOSED" || item.auction?.status === "SETTLED";
   const itemSold = item.status === "SOLD" || item.status === "PENDING_PICKUP" || item.status === "PICKED_UP";
+  const biddingLocked = auctionClosed || itemSold || bidingEnded;
 
   return (
     <main className="min-h-screen bg-gray-950 text-white">
@@ -203,11 +227,17 @@ export default function ItemPage() {
           <h1 className="text-3xl font-bold mb-2">{item.title}</h1>
           {item.description && <p className="text-gray-400 mb-6">{item.description}</p>}
 
-          {/* Auction Countdown */}
-          {item.auction && !auctionClosed && (
+          {/* Countdown — uses per-item end time, turns red in last 2:30 */}
+          {effectiveEndAt && !auctionClosed && !itemSold && (
             <div className="bg-gray-900 border border-gray-800 rounded-xl px-4 py-3 mb-6 flex items-center justify-between">
-              <span className="text-gray-500 text-sm">Time remaining</span>
-              <Countdown endAt={item.auction.endAt} />
+              <span className="text-gray-500 text-sm">
+                {bidingEnded ? "Bidding ended" : "Time remaining"}
+              </span>
+              {!bidingEnded ? (
+                <Countdown endAt={effectiveEndAt} onExpire={handleExpire} />
+              ) : (
+                <span className="text-gray-500 font-semibold">—</span>
+              )}
             </div>
           )}
 
@@ -215,7 +245,7 @@ export default function ItemPage() {
             {item.retailValue && (
               <div className="bg-gray-900 rounded-xl p-4">
                 <div className="text-gray-500 text-sm mb-1">Retail Value</div>
-                <div className="text-white font-bold text-xl">${item.retailValue}</div>
+                <div className="text-white font-bold text-xl">${item.retailValue.toLocaleString()}</div>
               </div>
             )}
             {item.donorName && (
@@ -230,7 +260,7 @@ export default function ItemPage() {
             <div className="flex items-center justify-between mb-4">
               <div>
                 <div className="text-gray-500 text-sm">Current Bid</div>
-                <div className="text-emerald-400 font-bold text-4xl">${currentBid}</div>
+                <div className="text-emerald-400 font-bold text-4xl">${currentBid.toLocaleString()}</div>
               </div>
               <div className="text-right">
                 <div className="text-gray-500 text-sm">Bids</div>
@@ -238,9 +268,13 @@ export default function ItemPage() {
               </div>
             </div>
 
-            {auctionClosed || itemSold ? (
+            {biddingLocked ? (
               <div className="bg-gray-800 rounded-xl px-4 py-3 text-center text-gray-400">
-                {itemSold ? "This item has been sold." : "Bidding has closed for this auction."}
+                {itemSold
+                  ? "This item has been sold."
+                  : auctionClosed
+                  ? "Bidding has closed for this auction."
+                  : "Bidding for this item has ended."}
               </div>
             ) : !isLoaded ? null : !isSignedIn ? (
               <div className="text-center">
@@ -253,7 +287,7 @@ export default function ItemPage() {
               </div>
             ) : (
               <>
-                <div className="text-gray-500 text-sm mb-4">Minimum next bid: ${minBid}</div>
+                <div className="text-gray-500 text-sm mb-4">Minimum next bid: ${minBid.toLocaleString()}</div>
                 {message && (
                   <div className={`text-sm mb-3 px-3 py-2 rounded-lg ${
                     message.type === "success" ? "bg-emerald-500/20 text-emerald-400" : "bg-red-500/20 text-red-400"
@@ -288,7 +322,7 @@ export default function ItemPage() {
                 {liveBids.map((bid, i) => (
                   <div key={i} className="flex items-center justify-between bg-gray-900 rounded-lg px-4 py-3">
                     <span className="text-gray-400">{bid.user}</span>
-                    <span className="text-emerald-400 font-semibold">${bid.amount}</span>
+                    <span className="text-emerald-400 font-semibold">${bid.amount.toLocaleString()}</span>
                     <span className="text-gray-600 text-sm">{bid.time}</span>
                   </div>
                 ))}

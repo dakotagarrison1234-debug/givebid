@@ -11,16 +11,17 @@ const pusher = new Pusher({
   useTLS: true,
 });
 
+const POPCORN_WINDOW_MS = 150_000; // 2 min 30 sec
+const POPCORN_EXTENSION_MS = 150_000;
+
 export async function POST(request: NextRequest) {
   try {
     const { userId } = await auth();
-
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { itemId, amount } = await request.json();
-
     if (!itemId || !amount) {
       return NextResponse.json({ error: "Item and amount required" }, { status: 400 });
     }
@@ -38,7 +39,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Item not found" }, { status: 404 });
     }
 
-    // Validate item and auction are accepting bids
+    // Validate item and auction status
     if (item.status !== "ACTIVE") {
       return NextResponse.json({ error: "This item is not currently accepting bids" }, { status: 400 });
     }
@@ -46,50 +47,60 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "This auction is not currently open" }, { status: 400 });
     }
 
-    // Require a completed bidder profile before bidding
+    // Enforce per-item end time (popcorn-aware)
+    const effectiveEndAt = item.itemEndAt ?? item.auction.endAt;
+    if (new Date() > effectiveEndAt) {
+      return NextResponse.json({ error: "Bidding for this item has ended" }, { status: 400 });
+    }
+
+    // Require a completed bidder profile
     const profile = await prisma.bidderProfile.findUnique({ where: { clerkUserId: userId } });
     if (!profile?.phone || !profile?.email) {
-      return NextResponse.json({ error: "You must complete registration before bidding", requiresRegistration: true }, { status: 403 });
+      return NextResponse.json(
+        { error: "You must complete registration before bidding", requiresRegistration: true },
+        { status: 403 }
+      );
     }
 
     const minBid = item.currentBid > 0 ? item.currentBid + 5 : item.startingBid;
-
     if (amount < minBid) {
       return NextResponse.json({ error: `Minimum bid is $${minBid}` }, { status: 400 });
     }
 
     const previousActiveBid = item.bids[0];
-
     const outbidProfile = previousActiveBid
-      ? await prisma.bidderProfile.findUnique({
-          where: { clerkUserId: previousActiveBid.clerkUserId },
-        })
+      ? await prisma.bidderProfile.findUnique({ where: { clerkUserId: previousActiveBid.clerkUserId } })
       : null;
 
-    await prisma.bid.updateMany({
-      where: { itemId, status: "ACTIVE" },
-      data: { status: "OUTBID" },
-    });
+    // Popcorn bidding: extend item end time if bid placed in last 2:30
+    let newItemEndAt: Date | null = null;
+    const timeLeft = effectiveEndAt.getTime() - Date.now();
+    if (timeLeft < POPCORN_WINDOW_MS) {
+      newItemEndAt = new Date(Date.now() + POPCORN_EXTENSION_MS);
+    }
+
+    // Record the bid
+    await prisma.bid.updateMany({ where: { itemId, status: "ACTIVE" }, data: { status: "OUTBID" } });
 
     const bid = await prisma.bid.create({
-      data: {
-        itemId,
-        clerkUserId: userId,
-        amount,
-        status: "ACTIVE",
-      },
+      data: { itemId, clerkUserId: userId, amount, status: "ACTIVE" },
     });
 
     await prisma.item.update({
       where: { id: itemId },
-      data: { currentBid: amount },
+      data: {
+        currentBid: amount,
+        ...(newItemEndAt ? { itemEndAt: newItemEndAt } : {}),
+      },
     });
 
+    // Broadcast bid + new end time (if extended) to all watchers
     await pusher.trigger(`item-${itemId}`, "new-bid", {
       amount,
       bidId: bid.id,
       userId: userId.substring(0, 8),
       placedAt: bid.placedAt,
+      ...(newItemEndAt ? { newEndAt: newItemEndAt.toISOString() } : {}),
     });
 
     // GHL outbid alert
@@ -109,32 +120,28 @@ export async function POST(request: NextRequest) {
           auctionName: item.auction?.title || "Auction",
           orgName: item.organization?.name || "Organization",
         }),
-      }).catch(err => console.error("GHL outbid webhook failed:", err));
+      }).catch((err) => console.error("GHL outbid webhook failed:", err));
     }
 
-    // GHL bid confirmation for the new bidder
-    const newBidderProfile = await prisma.bidderProfile.findUnique({
-      where: { clerkUserId: userId },
-    });
+    // GHL bid confirmation
     if (process.env.GHL_BID_CONFIRM_WEBHOOK) {
       fetch(process.env.GHL_BID_CONFIRM_WEBHOOK, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           event: "bid_confirmed",
-          bidderEmail: newBidderProfile?.email || userId,
-          bidderPhone: newBidderProfile?.phone || "",
-          bidderName: newBidderProfile?.name || "Bidder",
+          bidderEmail: profile.email,
+          bidderPhone: profile.phone || "",
+          bidderName: profile.name || "Bidder",
           itemTitle: item.title,
           bidAmount: amount,
           auctionName: item.auction?.title || "Auction",
           orgName: item.organization?.name || "Organization",
         }),
-      }).catch(err => console.error("GHL bid confirm webhook failed:", err));
+      }).catch((err) => console.error("GHL bid confirm webhook failed:", err));
     }
 
-    return NextResponse.json({ success: true, bid });
-
+    return NextResponse.json({ success: true, bid, newEndAt: newItemEndAt?.toISOString() ?? null });
   } catch (error) {
     console.error("Bid error:", error);
     return NextResponse.json({ error: "Failed to place bid" }, { status: 500 });
