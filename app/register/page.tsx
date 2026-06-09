@@ -1,13 +1,28 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 
 export default function RegisterPage() {
-  const { user } = useUser();
+  const { user, isLoaded } = useUser();
   const router = useRouter();
   const [phone, setPhone] = useState("");
   const [saving, setSaving] = useState(false);
+  const [checking, setChecking] = useState(true);
+
+  useEffect(() => {
+    if (!isLoaded) return;
+    fetch("/api/profile")
+      .then(res => res.json())
+      .then(data => {
+        if (data.profile?.phone) {
+          router.push("/");
+        } else {
+          setChecking(false);
+        }
+      })
+      .catch(() => setChecking(false));
+  }, [isLoaded, router]);
 
   const handleSubmit = async () => {
     if (!phone || phone.length < 10) {
@@ -27,7 +42,7 @@ export default function RegisterPage() {
       });
       const data = await res.json();
       if (data.success) {
-        router.back();
+        router.push("/");
       } else {
         alert("Error saving profile");
       }
@@ -37,6 +52,14 @@ export default function RegisterPage() {
       setSaving(false);
     }
   };
+
+  if (checking) {
+    return (
+      <main className="min-h-screen bg-gray-950 text-white flex items-center justify-center">
+        <p className="text-gray-400">Loading...</p>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-gray-950 text-white flex items-center justify-center">
@@ -64,7 +87,7 @@ export default function RegisterPage() {
             {saving ? "Saving..." : "Save & Continue"}
           </button>
           <button
-            onClick={() => router.back()}
+            onClick={() => router.push("/")}
             className="w-full text-gray-500 hover:text-gray-300 text-sm py-2"
           >
             Skip for now
