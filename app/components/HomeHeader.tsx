@@ -43,7 +43,7 @@ export default function HomeHeader() {
             <Link href="/admin/dashboard" className="text-gray-300 hover:text-white text-sm">
               Dashboard
             </Link>
-            <Link href="/my-bids" className="text-gray-300 hover:text-white text-sm">
+            <Link href="/dashboard" className="text-gray-300 hover:text-white text-sm">
               My Bids
             </Link>
             <UserButton />
@@ -51,8 +51,8 @@ export default function HomeHeader() {
         ) : (
           // Signed in but no org — bidder
           <>
-            <Link href="/my-bids" className="text-gray-300 hover:text-white text-sm">
-              My Bids
+            <Link href="/dashboard" className="text-gray-300 hover:text-white text-sm">
+              My Dashboard
             </Link>
             <Link href="/apply" className="bg-emerald-500 hover:bg-emerald-400 text-white text-sm px-4 py-2 rounded-lg">
               Host an Auction

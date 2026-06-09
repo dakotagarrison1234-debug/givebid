@@ -16,7 +16,7 @@ export default function RegisterPage() {
       .then(res => res.json())
       .then(data => {
         if (data.profile?.phone) {
-          router.push("/");
+          router.push("/dashboard");
         } else {
           setChecking(false);
         }
@@ -42,9 +42,7 @@ export default function RegisterPage() {
       });
       const data = await res.json();
       if (data.success) {
-        // Everyone lands on home as a bidder after registration
-        // They can apply to host from there
-        router.push("/");
+        router.push("/dashboard");
       } else {
         alert("Error saving profile");
       }

@@ -40,6 +40,14 @@ export async function PATCH(request: NextRequest, { params }: Props) {
       data: { status },
     });
 
+    // When opening an auction, activate all its DRAFT items so they're immediately biddable
+    if (status === "OPEN") {
+      await prisma.item.updateMany({
+        where: { auctionId, status: "DRAFT" },
+        data: { status: "ACTIVE" },
+      });
+    }
+
     return NextResponse.json({ success: true, auction: updated });
   } catch (error) {
     console.error("Auction update error:", error);

@@ -49,6 +49,28 @@ async function closeItem(item: ItemWithBidsAndOrg) {
  * then close any OPEN auctions that have no remaining ACTIVE items.
  * Called by the cron job every minute.
  */
+/**
+ * Find DRAFT auctions whose startAt has passed and open them,
+ * activating all their DRAFT items in the same pass.
+ */
+export async function openScheduledAuctions(): Promise<{ openedAuctions: number }> {
+  const now = new Date();
+
+  const dueAuctions = await prisma.auction.findMany({
+    where: { status: "DRAFT", startAt: { lte: now } },
+    select: { id: true },
+  });
+
+  for (const auction of dueAuctions) {
+    await prisma.$transaction([
+      prisma.auction.update({ where: { id: auction.id }, data: { status: "OPEN" } }),
+      prisma.item.updateMany({ where: { auctionId: auction.id, status: "DRAFT" }, data: { status: "ACTIVE" } }),
+    ]);
+  }
+
+  return { openedAuctions: dueAuctions.length };
+}
+
 export async function closeExpiredItems(): Promise<{ closedItems: number; closedAuctions: number }> {
   const now = new Date();
 

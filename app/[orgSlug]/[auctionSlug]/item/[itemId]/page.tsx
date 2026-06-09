@@ -156,7 +156,8 @@ export default function ItemPage() {
   const minBid = currentBid > 0 ? currentBid + 5 : item.startingBid;
   const auctionClosed = item.auction?.status === "CLOSED" || item.auction?.status === "SETTLED";
   const itemSold = item.status === "SOLD" || item.status === "PENDING_PICKUP" || item.status === "PICKED_UP";
-  const biddingLocked = auctionClosed || itemSold || biddingEnded;
+  const itemNotActive = item.status !== "ACTIVE";
+  const biddingLocked = auctionClosed || itemSold || itemNotActive || biddingEnded;
 
   return (
     <main className="min-h-screen bg-gray-950 text-white">
@@ -228,7 +229,7 @@ export default function ItemPage() {
           {item.description && <p className="text-gray-400 mb-6">{item.description}</p>}
 
           {/* Countdown — uses per-item end time, turns red in last 2:30 */}
-          {effectiveEndAt && !auctionClosed && !itemSold && (
+          {effectiveEndAt && !auctionClosed && !itemSold && !itemNotActive && (
             <div className="bg-gray-900 border border-gray-800 rounded-xl px-4 py-3 mb-6 flex items-center justify-between">
               <span className="text-gray-500 text-sm">
                 {biddingEnded ? "Bidding ended" : "Time remaining"}
@@ -274,6 +275,8 @@ export default function ItemPage() {
                   ? "This item has been sold."
                   : auctionClosed
                   ? "Bidding has closed for this auction."
+                  : itemNotActive
+                  ? "This item is not currently available for bidding."
                   : "Bidding for this item has ended."}
               </div>
             ) : !isLoaded ? null : !isSignedIn ? (
