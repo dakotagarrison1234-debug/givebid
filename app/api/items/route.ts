@@ -26,6 +26,7 @@ export async function POST(request: NextRequest) {
       notes,
       auctionId,
       organizationId,
+      photos,
     } = body;
 
     if (!title || !organizationId) {
@@ -50,6 +51,12 @@ export async function POST(request: NextRequest) {
         notes: notes || null,
         auctionId: auctionId || null,
         organizationId,
+        photos: photos && photos.length > 0 ? {
+          create: photos.map((url: string, index: number) => ({
+            url,
+            isPrimary: index === 0,
+          })),
+        } : undefined,
       },
     });
 
