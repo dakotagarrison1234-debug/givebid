@@ -9,7 +9,6 @@ export default async function ItemsPage() {
 
   return (
     <div className="min-h-screen bg-gray-950 text-white flex">
-      {/* Sidebar */}
       <aside className="w-64 bg-gray-900 border-r border-gray-800 flex flex-col">
         <div className="px-6 py-5 border-b border-gray-800">
           <span className="text-emerald-400 font-bold text-xl">GiveBid</span>
@@ -23,11 +22,7 @@ export default async function ItemsPage() {
             { label: "Winners", href: "/admin/winners", icon: "✓" },
             { label: "Settings", href: "/admin/settings", icon: "⚙" },
           ].map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
-            >
+            <Link key={item.href} href={item.href} className="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-400 hover:text-white hover:bg-gray-800 transition-colors">
               <span>{item.icon}</span>
               <span>{item.label}</span>
             </Link>
@@ -35,7 +30,6 @@ export default async function ItemsPage() {
         </nav>
       </aside>
 
-      {/* Main Content */}
       <div className="flex-1 flex flex-col">
         <header className="border-b border-gray-800 px-8 py-4 flex items-center justify-between">
           <h1 className="text-xl font-semibold">Items ({items.length})</h1>
@@ -64,6 +58,7 @@ export default async function ItemsPage() {
                     <th className="text-left px-6 py-4 text-gray-500 text-sm font-medium">Bids</th>
                     <th className="text-left px-6 py-4 text-gray-500 text-sm font-medium">Status</th>
                     <th className="text-left px-6 py-4 text-gray-500 text-sm font-medium">Location</th>
+                    <th className="text-left px-6 py-4 text-gray-500 text-sm font-medium">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -71,25 +66,15 @@ export default async function ItemsPage() {
                     <tr key={item.id} className="border-b border-gray-800 last:border-0 hover:bg-gray-800/50 transition-colors">
                       <td className="px-6 py-4">
                         <div className="font-medium">{item.title}</div>
-                        {item.donorName && (
-                          <div className="text-xs text-gray-500">Donor: {item.donorName}</div>
-                        )}
-                        {item.category && (
-                          <div className="text-xs text-gray-500">{item.category}</div>
-                        )}
+                        {item.donorName && <div className="text-xs text-gray-500">Donor: {item.donorName}</div>}
+                        {item.category && <div className="text-xs text-gray-500">{item.category}</div>}
                       </td>
                       <td className="px-6 py-4 text-gray-400 text-sm capitalize">
                         {item.condition.replace("_", " ").toLowerCase()}
                       </td>
-                      <td className="px-6 py-4 text-gray-400 text-sm">
-                        ${item.startingBid}
-                      </td>
-                      <td className="px-6 py-4 text-emerald-400 font-semibold text-sm">
-                        ${item.currentBid}
-                      </td>
-                      <td className="px-6 py-4 text-gray-400 text-sm">
-                        {item.bids.length}
-                      </td>
+                      <td className="px-6 py-4 text-gray-400 text-sm">${item.startingBid}</td>
+                      <td className="px-6 py-4 text-emerald-400 font-semibold text-sm">${item.currentBid}</td>
+                      <td className="px-6 py-4 text-gray-400 text-sm">{item.bids.length}</td>
                       <td className="px-6 py-4">
                         <span className={`text-xs px-2 py-1 rounded-full ${
                           item.status === "ACTIVE"
@@ -99,8 +84,11 @@ export default async function ItemsPage() {
                           {item.status.toLowerCase()}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-gray-500 text-sm">
-                        {item.storageLocation || "—"}
+                      <td className="px-6 py-4 text-gray-500 text-sm">{item.storageLocation || "—"}</td>
+                      <td className="px-6 py-4">
+                        <Link href={`/admin/items/${item.id}`} className="text-xs bg-gray-800 hover:bg-gray-700 text-white px-3 py-1 rounded-lg">
+                          Edit
+                        </Link>
                       </td>
                     </tr>
                   ))}

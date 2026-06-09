@@ -28,3 +28,36 @@ export async function GET(
     return NextResponse.json({ error: "Failed to fetch item" }, { status: 500 });
   }
 }
+
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ itemId: string }> }
+) {
+  try {
+    const { itemId } = await params;
+    const body = await request.json();
+
+    const item = await prisma.item.update({
+      where: { id: itemId },
+      data: {
+        title: body.title,
+        description: body.description || null,
+        condition: body.condition || "GOOD",
+        category: body.category || null,
+        retailValue: body.retailValue ? parseFloat(body.retailValue) : null,
+        startingBid: body.startingBid ? parseFloat(body.startingBid) : 0,
+        reservePrice: body.reservePrice ? parseFloat(body.reservePrice) : null,
+        donorName: body.donorName || null,
+        taxDeductible: body.taxDeductible || false,
+        storageLocation: body.storageLocation || null,
+        notes: body.notes || null,
+        auctionId: body.auctionId || null,
+      },
+    });
+
+    return NextResponse.json({ success: true, item });
+  } catch (error) {
+    console.error("Error updating item:", error);
+    return NextResponse.json({ error: "Failed to update item" }, { status: 500 });
+  }
+}
