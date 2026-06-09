@@ -1,8 +1,10 @@
 "use client";
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
+import { useUser, SignInButton } from "@clerk/nextjs";
 import Pusher from "pusher-js";
+import Countdown from "@/app/components/Countdown";
 
 interface Item {
   id: string;
@@ -16,31 +18,34 @@ interface Item {
   donorName: string | null;
   taxDeductible: boolean;
   storageLocation: string | null;
+  status: string;
   photos: { url: string; isPrimary: boolean }[];
   bids: { id: string; amount: number; clerkUserId: string; placedAt: string }[];
+  auction: { title: string; endAt: string; status: string } | null;
 }
 
 export default function ItemPage() {
   const params = useParams();
+  const router = useRouter();
   const { orgSlug, auctionSlug, itemId } = params as {
-    orgSlug: string;
-    auctionSlug: string;
-    itemId: string;
+    orgSlug: string; auctionSlug: string; itemId: string;
   };
+  const { isSignedIn, isLoaded } = useUser();
 
   const [item, setItem] = useState<Item | null>(null);
   const [loading, setLoading] = useState(true);
   const [bidAmount, setBidAmount] = useState("");
   const [placing, setPlacing] = useState(false);
-  const [liveBids, setLiveBids] = useState<{user: string, amount: number, time: string}[]>([]);
+  const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
+  const [liveBids, setLiveBids] = useState<{ user: string; amount: number; time: string }[]>([]);
 
   useEffect(() => {
     fetch(`/api/items/${itemId}`)
-      .then(res => res.json())
-      .then(data => {
-        if (data.item) {
-          setItem(data.item);
-          setLiveBids(data.item.bids.map((b: Item["bids"][0]) => ({
+      .then(r => r.json())
+      .then(d => {
+        if (d.item) {
+          setItem(d.item);
+          setLiveBids(d.item.bids.map((b: Item["bids"][0]) => ({
             user: b.clerkUserId.substring(0, 6) + "***",
             amount: b.amount,
             time: new Date(b.placedAt).toLocaleTimeString(),
@@ -52,13 +57,10 @@ export default function ItemPage() {
 
   useEffect(() => {
     if (!itemId) return;
-
     const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY!, {
       cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER!,
     });
-
     const channel = pusher.subscribe(`item-${itemId}`);
-
     channel.bind("new-bid", (data: { amount: number; userId: string }) => {
       setItem(prev => prev ? { ...prev, currentBid: data.amount } : prev);
       setLiveBids(prev => [
@@ -66,7 +68,6 @@ export default function ItemPage() {
         ...prev,
       ]);
     });
-
     return () => {
       channel.unbind_all();
       pusher.unsubscribe(`item-${itemId}`);
@@ -74,16 +75,19 @@ export default function ItemPage() {
   }, [itemId]);
 
   const handleBid = async () => {
-    const amount = parseFloat(bidAmount);
-    const currentBid = item?.currentBid || 0;
-    const minBid = currentBid + 5;
-
-    if (!bidAmount || amount < minBid) {
-      alert(`Minimum bid is $${minBid}`);
+    if (!isSignedIn) {
+      router.push(`/sign-in?redirect_url=${encodeURIComponent(window.location.pathname)}`);
       return;
     }
-
+    const amount = parseFloat(bidAmount);
+    const currentBid = item?.currentBid || 0;
+    const minBid = currentBid > 0 ? currentBid + 5 : (item?.startingBid || 0);
+    if (!bidAmount || amount < minBid) {
+      setMessage({ text: `Minimum bid is $${minBid}`, type: "error" });
+      return;
+    }
     setPlacing(true);
+    setMessage(null);
     try {
       const res = await fetch("/api/bids", {
         method: "POST",
@@ -93,11 +97,12 @@ export default function ItemPage() {
       const data = await res.json();
       if (data.success) {
         setBidAmount("");
+        setMessage({ text: `Bid of $${amount} placed!`, type: "success" });
       } else {
-        alert(data.error);
+        setMessage({ text: data.error, type: "error" });
       }
     } catch {
-      alert("Something went wrong");
+      setMessage({ text: "Something went wrong", type: "error" });
     } finally {
       setPlacing(false);
     }
@@ -123,7 +128,9 @@ export default function ItemPage() {
   }
 
   const currentBid = item.currentBid || item.startingBid;
-  const minBid = currentBid + 5;
+  const minBid = currentBid > 0 ? currentBid + 5 : item.startingBid;
+  const auctionClosed = item.auction?.status === "CLOSED" || item.auction?.status === "SETTLED";
+  const itemSold = item.status === "SOLD" || item.status === "PENDING_PICKUP" || item.status === "PICKED_UP";
 
   return (
     <main className="min-h-screen bg-gray-950 text-white">
@@ -141,9 +148,17 @@ export default function ItemPage() {
           <span className="text-gray-600">/</span>
           <span className="text-white">{item.title}</span>
         </div>
-        <Link href="/sign-in" className="bg-emerald-500 hover:bg-emerald-400 text-white text-sm px-4 py-2 rounded-lg">
-          Sign In to Bid
-        </Link>
+        {!isLoaded ? null : !isSignedIn ? (
+          <SignInButton mode="modal">
+            <button className="bg-emerald-500 hover:bg-emerald-400 text-white text-sm px-4 py-2 rounded-lg">
+              Sign In to Bid
+            </button>
+          </SignInButton>
+        ) : (
+          <Link href="/admin/dashboard" className="text-gray-300 hover:text-white text-sm">
+            Dashboard
+          </Link>
+        )}
       </header>
 
       <div className="max-w-6xl mx-auto px-6 py-10 grid grid-cols-1 lg:grid-cols-2 gap-12">
@@ -184,8 +199,14 @@ export default function ItemPage() {
           </div>
 
           <h1 className="text-3xl font-bold mb-2">{item.title}</h1>
-          {item.description && (
-            <p className="text-gray-400 mb-6">{item.description}</p>
+          {item.description && <p className="text-gray-400 mb-6">{item.description}</p>}
+
+          {/* Auction Countdown */}
+          {item.auction && !auctionClosed && (
+            <div className="bg-gray-900 border border-gray-800 rounded-xl px-4 py-3 mb-6 flex items-center justify-between">
+              <span className="text-gray-500 text-sm">Time remaining</span>
+              <Countdown endAt={item.auction.endAt} />
+            </div>
           )}
 
           <div className="grid grid-cols-2 gap-4 mb-6">
@@ -193,12 +214,6 @@ export default function ItemPage() {
               <div className="bg-gray-900 rounded-xl p-4">
                 <div className="text-gray-500 text-sm mb-1">Retail Value</div>
                 <div className="text-white font-bold text-xl">${item.retailValue}</div>
-              </div>
-            )}
-            {item.storageLocation && (
-              <div className="bg-gray-900 rounded-xl p-4">
-                <div className="text-gray-500 text-sm mb-1">Storage Location</div>
-                <div className="text-white font-bold">{item.storageLocation}</div>
               </div>
             )}
             {item.donorName && (
@@ -220,23 +235,48 @@ export default function ItemPage() {
                 <div className="text-white font-bold text-xl">{liveBids.length}</div>
               </div>
             </div>
-            <div className="text-gray-500 text-sm mb-4">Minimum next bid: ${minBid}</div>
-            <div className="flex gap-3">
-              <input
-                type="number"
-                value={bidAmount}
-                onChange={e => setBidAmount(e.target.value)}
-                placeholder={`Enter $${minBid} or more`}
-                className="flex-1 bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-emerald-500"
-              />
-              <button
-                onClick={handleBid}
-                disabled={placing}
-                className="bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-white font-semibold px-6 py-3 rounded-xl"
-              >
-                {placing ? "Placing..." : "Place Bid"}
-              </button>
-            </div>
+
+            {auctionClosed || itemSold ? (
+              <div className="bg-gray-800 rounded-xl px-4 py-3 text-center text-gray-400">
+                {itemSold ? "This item has been sold." : "Bidding has closed for this auction."}
+              </div>
+            ) : !isLoaded ? null : !isSignedIn ? (
+              <div className="text-center">
+                <p className="text-gray-400 text-sm mb-3">You must be signed in to place a bid.</p>
+                <SignInButton mode="modal">
+                  <button className="w-full bg-emerald-500 hover:bg-emerald-400 text-white font-semibold py-3 rounded-xl">
+                    Sign In to Bid
+                  </button>
+                </SignInButton>
+              </div>
+            ) : (
+              <>
+                <div className="text-gray-500 text-sm mb-4">Minimum next bid: ${minBid}</div>
+                {message && (
+                  <div className={`text-sm mb-3 px-3 py-2 rounded-lg ${
+                    message.type === "success" ? "bg-emerald-500/20 text-emerald-400" : "bg-red-500/20 text-red-400"
+                  }`}>
+                    {message.text}
+                  </div>
+                )}
+                <div className="flex gap-3">
+                  <input
+                    type="number"
+                    value={bidAmount}
+                    onChange={e => setBidAmount(e.target.value)}
+                    placeholder={`Enter $${minBid} or more`}
+                    className="flex-1 bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-emerald-500"
+                  />
+                  <button
+                    onClick={handleBid}
+                    disabled={placing}
+                    className="bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-white font-semibold px-6 py-3 rounded-xl"
+                  >
+                    {placing ? "Placing..." : "Place Bid"}
+                  </button>
+                </div>
+              </>
+            )}
           </div>
 
           {liveBids.length > 0 && (

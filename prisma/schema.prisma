@@ -85,6 +85,7 @@ enum AuctionStatus {
   auction         Auction?     @relation(fields: [auctionId], references: [id])
   photos          ItemPhoto[]
   bids            Bid[]
+  payments        Payment[]
 }
 
 enum Condition {
@@ -100,6 +101,8 @@ enum ItemStatus {
   ACTIVE
   SOLD
   UNSOLD
+  PENDING_PICKUP
+  PICKED_UP
 }model ItemPhoto {
   id        String   @id @default(cuid())
   itemId    String
@@ -135,6 +138,7 @@ model Payment {
   stripePaymentIntentId String?
   status                PaymentStatus @default(PENDING)
   createdAt             DateTime      @default(now())
+  item                  Item          @relation(fields: [itemId], references: [id])
 }
 
 enum PaymentStatus {

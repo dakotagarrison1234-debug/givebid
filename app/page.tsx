@@ -1,9 +1,12 @@
 export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@clerk/nextjs/server";
 import HomeHeader from "./components/HomeHeader";
 
 export default async function HomePage() {
+  const { userId } = await auth();
+
   const auctions = await prisma.auction.findMany({
     where: { status: { in: ["OPEN", "DRAFT"] } },
     include: {
@@ -26,9 +29,15 @@ export default async function HomePage() {
         <p className="text-gray-400 text-xl mb-10">
           The easiest way for churches, schools, and nonprofits to run online auctions and raise money.
         </p>
-        <Link href="/sign-up" className="bg-emerald-500 hover:bg-emerald-400 text-white text-lg px-8 py-4 rounded-xl font-semibold">
-          Start Your Free Auction
-        </Link>
+        {userId ? (
+          <Link href="/admin/dashboard" className="bg-emerald-500 hover:bg-emerald-400 text-white text-lg px-8 py-4 rounded-xl font-semibold">
+            Go to Dashboard
+          </Link>
+        ) : (
+          <Link href="/sign-up" className="bg-emerald-500 hover:bg-emerald-400 text-white text-lg px-8 py-4 rounded-xl font-semibold">
+            Start Your Free Auction
+          </Link>
+        )}
       </section>
 
       <section className="px-6 py-12 max-w-6xl mx-auto">

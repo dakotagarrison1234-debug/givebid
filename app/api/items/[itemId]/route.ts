@@ -12,9 +12,8 @@ export async function GET(
       where: { id: itemId },
       include: {
         photos: true,
-        bids: {
-          orderBy: { placedAt: "desc" },
-        },
+        bids: { orderBy: { placedAt: "desc" } },
+        auction: { select: { title: true, endAt: true, status: true } },
       },
     });
 

@@ -42,7 +42,10 @@ export default function RegisterPage() {
       });
       const data = await res.json();
       if (data.success) {
-        router.push("/");
+        // Check if user has an org; if not, send to onboarding
+        const meRes = await fetch("/api/me");
+        const meData = await meRes.json();
+        router.push(meData.orgId ? "/" : "/onboarding");
       } else {
         alert("Error saving profile");
       }

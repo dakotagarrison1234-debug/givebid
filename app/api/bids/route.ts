@@ -78,6 +78,7 @@ export async function POST(request: NextRequest) {
       placedAt: bid.placedAt,
     });
 
+    // GHL outbid alert
     if (previousActiveBid && previousActiveBid.clerkUserId !== userId) {
       fetch(process.env.GHL_OUTBID_WEBHOOK!, {
         method: "POST",
@@ -94,7 +95,28 @@ export async function POST(request: NextRequest) {
           auctionName: item.auction?.title || "Auction",
           orgName: item.organization?.name || "Organization",
         }),
-      }).catch(err => console.error("GHL webhook failed:", err));
+      }).catch(err => console.error("GHL outbid webhook failed:", err));
+    }
+
+    // GHL bid confirmation for the new bidder
+    const newBidderProfile = await prisma.bidderProfile.findUnique({
+      where: { clerkUserId: userId },
+    });
+    if (process.env.GHL_BID_CONFIRM_WEBHOOK) {
+      fetch(process.env.GHL_BID_CONFIRM_WEBHOOK, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          event: "bid_confirmed",
+          bidderEmail: newBidderProfile?.email || userId,
+          bidderPhone: newBidderProfile?.phone || "",
+          bidderName: newBidderProfile?.name || "Bidder",
+          itemTitle: item.title,
+          bidAmount: amount,
+          auctionName: item.auction?.title || "Auction",
+          orgName: item.organization?.name || "Organization",
+        }),
+      }).catch(err => console.error("GHL bid confirm webhook failed:", err));
     }
 
     return NextResponse.json({ success: true, bid });
