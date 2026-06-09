@@ -56,6 +56,7 @@ async function closeItem(item: ItemWithBidsAndOrg) {
 export async function openScheduledAuctions(): Promise<{ openedAuctions: number }> {
   const now = new Date();
 
+  // Open DRAFT auctions whose startAt has passed
   const dueAuctions = await prisma.auction.findMany({
     where: { status: "DRAFT", startAt: { lte: now } },
     select: { id: true },
@@ -67,6 +68,13 @@ export async function openScheduledAuctions(): Promise<{ openedAuctions: number 
       prisma.item.updateMany({ where: { auctionId: auction.id, status: "DRAFT" }, data: { status: "ACTIVE" } }),
     ]);
   }
+
+  // Also activate any DRAFT items that are already inside an OPEN auction
+  // (handles items added after the auction was opened, or pre-existing DRAFT items)
+  await prisma.item.updateMany({
+    where: { status: "DRAFT", auction: { status: "OPEN" } },
+    data: { status: "ACTIVE" },
+  });
 
   return { openedAuctions: dueAuctions.length };
 }
