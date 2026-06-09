@@ -10,6 +10,7 @@ export default async function SuperAdminOrgsPage() {
     include: {
       members: true,
       auctions: { select: { id: true, status: true } },
+      items: { select: { id: true } },
     },
     orderBy: { createdAt: "desc" },
   });
@@ -35,18 +36,19 @@ export default async function SuperAdminOrgsPage() {
                   <div>
                     <div className="font-semibold">{org.name}</div>
                     <div className="text-gray-500 text-sm">
-                      /{org.slug} · {org.members.length} member{org.members.length !== 1 ? "s" : ""} · {org.auctions.length} auction{org.auctions.length !== 1 ? "s" : ""}
-                      {openAuctions > 0 && (
-                        <span className="ml-2 text-emerald-400">{openAuctions} live</span>
-                      )}
+                      /{org.slug} · {org.members.length} member{org.members.length !== 1 ? "s" : ""} · {org.items.length} items · {org.auctions.length} auctions
+                      {openAuctions > 0 && <span className="ml-2 text-emerald-400">{openAuctions} live</span>}
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
                     <span className={`text-xs px-2 py-1 rounded-full ${org.isActive ? "bg-emerald-500/20 text-emerald-400" : "bg-gray-700 text-gray-500"}`}>
                       {org.isActive ? "Active" : "Inactive"}
                     </span>
-                    <Link href={`/${org.slug}`} target="_blank" className="text-gray-500 hover:text-white text-sm">
-                      View →
+                    <Link
+                      href={`/superadmin/orgs/${org.id}`}
+                      className="bg-gray-800 hover:bg-gray-700 text-white text-sm px-4 py-1.5 rounded-lg"
+                    >
+                      Manage →
                     </Link>
                   </div>
                 </div>

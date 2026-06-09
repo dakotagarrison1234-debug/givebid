@@ -1,6 +1,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { canAccessOrg } from "@/lib/auth";
 
 interface Props {
   params: Promise<{ auctionId: string }>;
@@ -30,10 +31,7 @@ export async function PATCH(request: NextRequest, { params }: Props) {
       return NextResponse.json({ error: "Auction not found" }, { status: 404 });
     }
 
-    const membership = await prisma.orgMember.findFirst({
-      where: { clerkUserId: userId, organizationId: auction.organizationId },
-    });
-    if (!membership) {
+    if (!(await canAccessOrg(auction.organizationId))) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
