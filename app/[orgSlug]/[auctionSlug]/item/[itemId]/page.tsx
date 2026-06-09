@@ -1,15 +1,80 @@
+"use client";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useParams } from "next/navigation";
+import Pusher from "pusher-js";
 
-interface Props {
-  params: Promise<{ orgSlug: string; auctionSlug: string; itemId: string }>;
-}
+export default function ItemPage() {
+  const params = useParams();
+  const { orgSlug, auctionSlug, itemId } = params as {
+    orgSlug: string;
+    auctionSlug: string;
+    itemId: string;
+  };
 
-export default async function ItemPage({ params }: Props) {
-  const { orgSlug, auctionSlug, itemId } = await params;
+  const [currentBid, setCurrentBid] = useState(450);
+  const [bidAmount, setBidAmount] = useState("");
+  const [placing, setPlacing] = useState(false);
+  const [bids, setBids] = useState([
+    { user: "J***n", amount: 450, time: "2 min ago" },
+    { user: "S***h", amount: 425, time: "15 min ago" },
+    { user: "M***e", amount: 400, time: "1 hr ago" },
+  ]);
+
+  useEffect(() => {
+    const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY!, {
+      cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER!,
+    });
+
+    const channel = pusher.subscribe(`item-${itemId}`);
+
+    channel.bind("new-bid", (data: { amount: number; userId: string }) => {
+      setCurrentBid(data.amount);
+      setBids(prev => [
+        { user: data.userId + "***", amount: data.amount, time: "just now" },
+        ...prev,
+      ]);
+    });
+
+    return () => {
+      channel.unbind_all();
+      pusher.unsubscribe(`item-${itemId}`);
+    };
+  }, [itemId]);
+
+  const handleBid = async () => {
+    const amount = parseFloat(bidAmount);
+    const minBid = currentBid + 5;
+
+    if (!bidAmount || amount < minBid) {
+      alert(`Minimum bid is $${minBid}`);
+      return;
+    }
+
+    setPlacing(true);
+    try {
+      const res = await fetch("/api/bids", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ itemId, amount }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setBidAmount("");
+      } else {
+        alert(data.error);
+      }
+    } catch {
+      alert("Something went wrong");
+    } finally {
+      setPlacing(false);
+    }
+  };
+
+  const minBid = currentBid + 5;
 
   return (
     <main className="min-h-screen bg-gray-950 text-white">
-      {/* Header */}
       <header className="border-b border-gray-800 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3 text-sm">
           <Link href="/" className="text-emerald-400 font-bold text-xl">GiveBid</Link>
@@ -30,7 +95,6 @@ export default async function ItemPage({ params }: Props) {
       </header>
 
       <div className="max-w-6xl mx-auto px-6 py-10 grid grid-cols-1 lg:grid-cols-2 gap-12">
-        {/* Photos */}
         <div>
           <div className="w-full h-96 bg-gray-800 rounded-2xl flex items-center justify-center text-gray-600 mb-4">
             Main Photo
@@ -44,7 +108,6 @@ export default async function ItemPage({ params }: Props) {
           </div>
         </div>
 
-        {/* Item Details */}
         <div>
           <div className="flex items-center gap-2 mb-3">
             <span className="text-xs text-gray-500 bg-gray-800 px-2 py-1 rounded">Electronics</span>
@@ -54,7 +117,7 @@ export default async function ItemPage({ params }: Props) {
 
           <h1 className="text-3xl font-bold mb-2">iPad Pro 12.9"</h1>
           <p className="text-gray-400 mb-6">
-            Apple iPad Pro 12.9" with M2 chip. Includes original box and charger. Donated by Smith Family Electronics.
+            Apple iPad Pro 12.9" with M2 chip. Includes original box and charger.
           </p>
 
           <div className="grid grid-cols-2 gap-4 mb-6">
@@ -68,40 +131,42 @@ export default async function ItemPage({ params }: Props) {
             </div>
           </div>
 
-          {/* Bid Box */}
           <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 mb-6">
             <div className="flex items-center justify-between mb-4">
               <div>
                 <div className="text-gray-500 text-sm">Current Bid</div>
-                <div className="text-emerald-400 font-bold text-4xl">$450</div>
+                <div className="text-emerald-400 font-bold text-4xl">${currentBid}</div>
               </div>
               <div className="text-right">
                 <div className="text-gray-500 text-sm">Time Remaining</div>
                 <div className="text-white font-bold text-xl">3d 4h 22m</div>
               </div>
             </div>
-            <div className="text-gray-500 text-sm mb-4">12 bids · Minimum next bid: $475</div>
+            <div className="text-gray-500 text-sm mb-4">
+              {bids.length} bids · Minimum next bid: ${minBid}
+            </div>
             <div className="flex gap-3">
               <input
                 type="number"
-                placeholder="Enter $475 or more"
+                value={bidAmount}
+                onChange={e => setBidAmount(e.target.value)}
+                placeholder={`Enter $${minBid} or more`}
                 className="flex-1 bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-emerald-500"
               />
-              <button className="bg-emerald-500 hover:bg-emerald-400 text-white font-semibold px-6 py-3 rounded-xl">
-                Place Bid
+              <button
+                onClick={handleBid}
+                disabled={placing}
+                className="bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-white font-semibold px-6 py-3 rounded-xl"
+              >
+                {placing ? "Placing..." : "Place Bid"}
               </button>
             </div>
           </div>
 
-          {/* Bid History */}
           <div>
             <h3 className="font-semibold mb-3">Bid History</h3>
             <div className="space-y-2">
-              {[
-                { user: "J***n", amount: 450, time: "2 min ago" },
-                { user: "S***h", amount: 425, time: "15 min ago" },
-                { user: "M***e", amount: 400, time: "1 hr ago" },
-              ].map((bid, i) => (
+              {bids.map((bid, i) => (
                 <div key={i} className="flex items-center justify-between bg-gray-900 rounded-lg px-4 py-3">
                   <span className="text-gray-400">{bid.user}</span>
                   <span className="text-emerald-400 font-semibold">${bid.amount}</span>
