@@ -102,6 +102,15 @@ export default async function AdminLayout({ children }: { children: React.ReactN
                 <span>{item.label}</span>
               </Link>
             ))}
+            <div className="pt-2 border-t border-gray-800 mt-2">
+              <Link
+                href="/dashboard"
+                className="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+              >
+                <span>↑</span>
+                <span>My Bids</span>
+              </Link>
+            </div>
           </nav>
 
           {superAdmin && (

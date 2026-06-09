@@ -10,14 +10,12 @@ if (!databaseUrl) {
   throw new Error("DATABASE_URL environment variable is not set");
 }
 
+// Always reuse the global instance — prevents connection exhaustion in
+// serverless environments where multiple functions share the same process.
 export const prisma =
   globalForPrisma.prisma ??
   new PrismaClient({
-    datasources: {
-      db: {
-        url: databaseUrl,
-      },
-    },
+    datasources: { db: { url: databaseUrl } },
   });
 
-if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
+globalForPrisma.prisma = prisma;
