@@ -26,7 +26,7 @@ export default function HomeHeader() {
             <Link href="/admin/dashboard" className="text-gray-300 hover:text-white text-sm">
               Dashboard
             </Link>
-            <UserButton afterSignOutUrl="/" />
+            <UserButton />
           </>
         )}
       </div>
