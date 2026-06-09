@@ -10,6 +10,8 @@ export default function EditItemPage() {
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [photos, setPhotos] = useState<string[]>([]);
   const [auctions, setAuctions] = useState<{id: string, title: string}[]>([]);
   const [formData, setFormData] = useState({
     title: "",
@@ -46,6 +48,9 @@ export default function EditItemPage() {
             notes: item.notes || "",
             auctionId: item.auctionId || "",
           });
+          if (item.photos) {
+            setPhotos(item.photos.map((p: {url: string}) => p.url));
+          }
         }
         setLoading(false);
       });
@@ -63,13 +68,42 @@ export default function EditItemPage() {
     setFormData({ ...formData, [e.target.name]: value });
   };
 
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (photos.length + files.length > 10) {
+      alert("Maximum 10 photos per item");
+      return;
+    }
+    setUploading(true);
+    try {
+      for (const file of files) {
+        const res = await fetch("/api/upload", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ fileName: file.name, fileType: file.type }),
+        });
+        const { signedUrl, publicUrl } = await res.json();
+        await fetch(signedUrl, {
+          method: "PUT",
+          body: file,
+          headers: { "Content-Type": file.type },
+        });
+        setPhotos(prev => [...prev, publicUrl]);
+      }
+    } catch {
+      alert("Upload failed. Please try again.");
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const handleSave = async () => {
     setSaving(true);
     try {
       const response = await fetch(`/api/items/${itemId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({ ...formData, photos }),
       });
       const data = await response.json();
       if (data.success) {
@@ -122,11 +156,8 @@ export default function EditItemPage() {
             <span className="text-gray-600">/</span>
             <h1 className="text-xl font-semibold">Edit Item</h1>
           </div>
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-white text-sm px-6 py-2 rounded-lg font-semibold"
-          >
+          <button onClick={handleSave} disabled={saving}
+            className="bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-white text-sm px-6 py-2 rounded-lg font-semibold">
             {saving ? "Saving..." : "Save Changes"}
           </button>
         </header>
@@ -197,6 +228,29 @@ export default function EditItemPage() {
                   </div>
                 ))}
               </div>
+            </div>
+
+            <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
+              <h2 className="font-semibold mb-4">Photos <span className="text-gray-500 text-sm font-normal">(up to 10)</span></h2>
+              {photos.length > 0 && (
+                <div className="grid grid-cols-4 gap-2 mb-4">
+                  {photos.map((url, i) => (
+                    <div key={i} className="relative">
+                      <img src={url} alt={`Photo ${i + 1}`} className="w-full h-20 object-cover rounded-lg" />
+                      <button onClick={() => setPhotos(photos.filter((_, idx) => idx !== i))}
+                        className="absolute top-1 right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <input type="file" accept="image/*" multiple id="photo-upload" className="hidden" onChange={handlePhotoUpload} />
+              <label htmlFor="photo-upload"
+                className="border-2 border-dashed border-gray-700 rounded-xl p-6 text-center hover:border-emerald-500 transition-colors cursor-pointer block">
+                <div className="text-gray-500 mb-1">📷</div>
+                <div className="text-gray-400 text-sm">{uploading ? "Uploading..." : "Click to add photos"}</div>
+              </label>
             </div>
           </div>
 
