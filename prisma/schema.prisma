@@ -142,3 +142,12 @@ enum PaymentStatus {
   REFUNDED
   FAILED
 }
+model BidderProfile {
+  id          String   @id @default(cuid())
+  clerkUserId String   @unique
+  phone       String?
+  email       String?
+  name        String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}

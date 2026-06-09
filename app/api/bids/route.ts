@@ -27,7 +27,11 @@ export async function POST(request: NextRequest) {
 
     const item = await prisma.item.findUnique({
       where: { id: itemId },
-      include: { bids: true },
+      include: {
+        bids: { where: { status: "ACTIVE" } },
+        auction: true,
+        organization: true,
+      },
     });
 
     if (!item) {
@@ -37,11 +41,16 @@ export async function POST(request: NextRequest) {
     const minBid = item.currentBid > 0 ? item.currentBid + 5 : item.startingBid;
 
     if (amount < minBid) {
-      return NextResponse.json(
-        { error: `Minimum bid is $${minBid}` },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: `Minimum bid is $${minBid}` }, { status: 400 });
     }
+
+    const previousActiveBid = item.bids[0];
+
+    const outbidProfile = previousActiveBid
+      ? await prisma.bidderProfile.findUnique({
+          where: { clerkUserId: previousActiveBid.clerkUserId },
+        })
+      : null;
 
     await prisma.bid.updateMany({
       where: { itemId, status: "ACTIVE" },
@@ -69,7 +78,27 @@ export async function POST(request: NextRequest) {
       placedAt: bid.placedAt,
     });
 
+    if (previousActiveBid && previousActiveBid.clerkUserId !== userId) {
+      fetch(process.env.GHL_OUTBID_WEBHOOK!, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          event: "outbid",
+          bidderEmail: outbidProfile?.email || previousActiveBid.clerkUserId,
+          bidderPhone: outbidProfile?.phone || "",
+          bidderName: outbidProfile?.name || "Bidder",
+          itemTitle: item.title,
+          itemUrl: `${process.env.NEXT_PUBLIC_APP_URL}`,
+          outbidAmount: previousActiveBid.amount,
+          newBidAmount: amount,
+          auctionName: item.auction?.title || "Auction",
+          orgName: item.organization?.name || "Organization",
+        }),
+      }).catch(err => console.error("GHL webhook failed:", err));
+    }
+
     return NextResponse.json({ success: true, bid });
+
   } catch (error) {
     console.error("Bid error:", error);
     return NextResponse.json({ error: "Failed to place bid" }, { status: 500 });
