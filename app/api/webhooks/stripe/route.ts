@@ -22,52 +22,56 @@ export async function POST(request: NextRequest) {
 
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
-    const { itemId, bidId, clerkUserId } = session.metadata || {};
+    const { itemIds, clerkUserId } = session.metadata || {};
 
-    if (!itemId || !clerkUserId) {
+    if (!itemIds || !clerkUserId) {
       return NextResponse.json({ error: "Missing metadata" }, { status: 400 });
     }
 
+    const itemIdList = itemIds.split(",").filter(Boolean);
+    const paymentIntentId = session.payment_intent as string;
+    const amountPerItem = (session.amount_total || 0) / 100 / itemIdList.length;
+
     try {
-      // Update or create payment record
-      const existing = await prisma.payment.findFirst({
-        where: { itemId, clerkUserId },
-      });
-      if (existing) {
-        await prisma.payment.update({
-          where: { id: existing.id },
-          data: { status: "PAID", stripePaymentIntentId: session.payment_intent as string },
-        });
-      } else {
-        await prisma.payment.create({
-          data: {
-            clerkUserId,
-            itemId,
-            amount: (session.amount_total || 0) / 100,
-            stripePaymentIntentId: session.payment_intent as string,
-            status: "PAID",
-          },
-        });
+      for (const itemId of itemIdList) {
+        // Upsert payment record
+        const existing = await prisma.payment.findFirst({ where: { itemId, clerkUserId } });
+        if (existing) {
+          await prisma.payment.update({
+            where: { id: existing.id },
+            data: { status: "PAID", stripePaymentIntentId: paymentIntentId },
+          });
+        } else {
+          await prisma.payment.create({
+            data: {
+              clerkUserId,
+              itemId,
+              amount: amountPerItem,
+              stripePaymentIntentId: paymentIntentId,
+              status: "PAID",
+            },
+          });
+        }
+
+        // Move item to PENDING_PICKUP
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await prisma.item.update({ where: { id: itemId }, data: { status: "PENDING_PICKUP" as any } });
       }
 
-      // Move item to PENDING_PICKUP
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await prisma.item.update({
-        where: { id: itemId },
-        data: { status: "PENDING_PICKUP" as any },
-      });
-
-      // Get item + winner profile for receipt
-      const item = await prisma.item.findUnique({
-        where: { id: itemId },
+      // Get all items + winner profile for receipt notification
+      const items = await prisma.item.findMany({
+        where: { id: { in: itemIdList } },
         include: { auction: true, organization: true },
       });
-      const winnerProfile = await prisma.bidderProfile.findUnique({
-        where: { clerkUserId },
-      });
+      const winnerProfile = await prisma.bidderProfile.findUnique({ where: { clerkUserId } });
 
-      // GHL payment receipt webhook
-      if (process.env.GHL_PAYMENT_RECEIPT_WEBHOOK && item) {
+      // GHL payment receipt webhook — one notification for the whole batch
+      if (process.env.GHL_PAYMENT_RECEIPT_WEBHOOK && items.length > 0) {
+        const totalPaid = (session.amount_total || 0) / 100;
+        const orgName = items[0].organization?.name || "Organization";
+        const auctionName = items[0].auction?.title || "Auction";
+        const itemSummary = items.map((i) => i.title).join(", ");
+
         fetch(process.env.GHL_PAYMENT_RECEIPT_WEBHOOK, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -76,14 +80,13 @@ export async function POST(request: NextRequest) {
             bidderEmail: winnerProfile?.email || clerkUserId,
             bidderPhone: winnerProfile?.phone || "",
             bidderName: winnerProfile?.name || "Winner",
-            itemTitle: item.title,
-            itemId,
-            amountPaid: (session.amount_total || 0) / 100,
-            auctionName: item.auction?.title || "Auction",
-            orgName: item.organization?.name || "Organization",
-            storageLocation: item.storageLocation || "",
+            itemCount: items.length,
+            itemSummary,
+            totalAmountPaid: totalPaid,
+            auctionName,
+            orgName,
           }),
-        }).catch(err => console.error("GHL receipt webhook failed:", err));
+        }).catch((err) => console.error("GHL receipt webhook failed:", err));
       }
     } catch (err) {
       console.error("Error processing Stripe webhook:", err);
