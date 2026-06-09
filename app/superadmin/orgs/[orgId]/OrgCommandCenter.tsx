@@ -7,7 +7,7 @@ type OrgRole = "OWNER" | "ADMIN" | "STAFF";
 
 interface Member { id: string; clerkUserId: string; role: OrgRole }
 interface AuctionItem { id: string; title: string; status: string; currentBid: number }
-interface Auction { id: string; title: string; status: string; startAt: string; endAt: string; items: AuctionItem[] }
+interface Auction { id: string; title: string; status: string; startAt: Date | string; endAt: Date | string; items: AuctionItem[] }
 interface Item {
   id: string; title: string; status: string; currentBid: number; startingBid: number;
   photos: { url: string }[];
@@ -15,7 +15,7 @@ interface Item {
 }
 interface Org {
   id: string; name: string; slug: string; description: string | null;
-  isActive: boolean; createdAt: string;
+  isActive: boolean; createdAt: Date | string;
   members: Member[];
   auctions: Auction[];
   items: Item[];
@@ -260,7 +260,7 @@ export default function OrgCommandCenter({ org: initial }: { org: Org }) {
                   <div className="flex-1 min-w-0">
                     <div className="font-semibold text-lg">{auction.title}</div>
                     <div className="text-gray-500 text-sm">
-                      {auction.items.length} items · Ends {new Date(auction.endAt).toLocaleDateString()}
+                      {auction.items.length} items · Ends {new Date(auction.endAt as string).toLocaleDateString()}
                     </div>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
