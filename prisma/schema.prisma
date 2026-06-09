@@ -21,6 +21,7 @@ model Organization {
   auctions        Auction[]
   items           Item[]
   members         OrgMember[]
+  invites         OrgInvite[]
 }
 
 model OrgMember {
@@ -155,4 +156,46 @@ model BidderProfile {
   name        String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model OrgApplication {
+  id           String            @id @default(cuid())
+  clerkUserId  String
+  orgName      String
+  slug         String
+  description  String?
+  website      String?
+  contactName  String
+  contactEmail String
+  contactPhone String?
+  status       ApplicationStatus @default(PENDING)
+  reviewedBy   String?
+  reviewNote   String?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  @@index([clerkUserId])
+  @@index([status])
+}
+
+enum ApplicationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model OrgInvite {
+  id             String       @id @default(cuid())
+  organizationId String
+  email          String
+  role           OrgRole      @default(STAFF)
+  token          String       @unique @default(cuid())
+  clerkUserId    String?
+  accepted       Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+  expiresAt      DateTime
+  organization   Organization @relation(fields: [organizationId], references: [id])
+
+  @@index([email])
+  @@index([token])
 }

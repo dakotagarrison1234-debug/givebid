@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { UserButton } from "@clerk/nextjs";
 import { prisma } from "@/lib/prisma";
+import { isSuperAdmin } from "@/lib/auth";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const { userId } = await auth();
@@ -13,15 +14,18 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     include: { organization: true },
   });
 
-  if (!membership) redirect("/onboarding");
+  if (!membership) redirect("/apply");
 
   const org = membership.organization;
+  const isOwnerOrAdmin = membership.role === "OWNER" || membership.role === "ADMIN";
+  const superAdmin = await isSuperAdmin();
 
   const navItems = [
     { label: "Overview", href: "/admin/dashboard", icon: "▦" },
     { label: "Items", href: "/admin/items", icon: "☰" },
     { label: "Auctions", href: "/admin/auctions", icon: "◷" },
     { label: "Winners", href: "/admin/winners", icon: "✓" },
+    ...(isOwnerOrAdmin ? [{ label: "Team", href: "/admin/staff", icon: "👥" }] : []),
   ];
 
   return (
@@ -46,6 +50,19 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             </Link>
           ))}
         </nav>
+
+        {superAdmin && (
+          <div className="px-4 pb-2">
+            <Link
+              href="/superadmin"
+              className="flex items-center gap-3 px-4 py-3 rounded-xl text-orange-400 hover:text-orange-300 hover:bg-orange-500/10 transition-colors text-sm"
+            >
+              <span>⚡</span>
+              <span>Super Admin</span>
+            </Link>
+          </div>
+        )}
+
         <div className="px-4 py-4 border-t border-gray-800 flex items-center gap-3">
           <UserButton />
           <div className="text-sm text-gray-500 truncate">Account</div>

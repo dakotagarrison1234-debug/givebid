@@ -7,9 +7,12 @@ const isPublicRoute = createRouteMatcher([
   "/auctions(.*)",
   "/register(.*)",
   "/onboarding(.*)",
+  "/apply(.*)",
+  "/join(.*)",
   "/:orgSlug/:auctionSlug(.*)",
 ]);
 
+// Super admin routes still require auth (handled by requireSuperAdmin inside the layout)
 export default clerkMiddleware(async (auth, request) => {
   if (!isPublicRoute(request)) {
     await auth.protect();

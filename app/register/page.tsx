@@ -42,10 +42,9 @@ export default function RegisterPage() {
       });
       const data = await res.json();
       if (data.success) {
-        // Check if user has an org; if not, send to onboarding
-        const meRes = await fetch("/api/me");
-        const meData = await meRes.json();
-        router.push(meData.orgId ? "/" : "/onboarding");
+        // Everyone lands on home as a bidder after registration
+        // They can apply to host from there
+        router.push("/");
       } else {
         alert("Error saving profile");
       }
