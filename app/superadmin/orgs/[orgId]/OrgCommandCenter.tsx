@@ -280,12 +280,20 @@ export default function OrgCommandCenter({ org: initial }: { org: Org }) {
                   </div>
                 </div>
                 {auction.items.length > 0 && (
-                  <div className="mt-3 pt-3 border-t border-gray-800 flex flex-wrap gap-2">
-                    {auction.items.map((item) => (
-                      <span key={item.id} className={`text-xs px-2 py-0.5 rounded ${statusColor(item.status)}`}>
-                        {item.title} — ${item.currentBid}
-                      </span>
-                    ))}
+                  <div className="mt-3 pt-3 border-t border-gray-800 flex items-center gap-4 text-xs text-gray-500">
+                    {(() => {
+                      const active = auction.items.filter(i => i.status === "ACTIVE").length;
+                      const sold = auction.items.filter(i => i.status === "SOLD").length;
+                      const draft = auction.items.filter(i => i.status === "DRAFT").length;
+                      const totalBid = auction.items.reduce((s, i) => s + i.currentBid, 0);
+                      return <>
+                        <span>{auction.items.length} items</span>
+                        {active > 0 && <span className="text-emerald-400">{active} active</span>}
+                        {sold > 0 && <span className="text-gray-400">{sold} sold</span>}
+                        {draft > 0 && <span className="text-yellow-600">{draft} draft</span>}
+                        <span className="text-emerald-400 ml-auto">${totalBid.toLocaleString()} raised</span>
+                      </>;
+                    })()}
                   </div>
                 )}
               </div>
