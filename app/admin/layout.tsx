@@ -18,33 +18,26 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const cookieStore = await cookies();
   const actAsOrgId = superAdmin ? cookieStore.get("sa_org_id")?.value : undefined;
 
+  type MembershipWithOrg = NonNullable<Awaited<ReturnType<typeof prisma.orgMember.findFirst<{ include: { organization: true } }>>>>;
+
   let membership = await prisma.orgMember.findFirst({
     where: { clerkUserId: userId },
     include: { organization: true },
-  });
+  }) as MembershipWithOrg | null;
 
   let actingAsOrg = null;
 
   if (superAdmin && actAsOrgId) {
     actingAsOrg = await prisma.organization.findUnique({ where: { id: actAsOrgId } });
-    if (actingAsOrg && !membership) {
-      // Super admin with no personal org — synthesize a membership for display
+    if (actingAsOrg) {
       membership = {
-        id: "superadmin_synthetic",
+        id: membership?.id ?? "superadmin_synthetic",
         clerkUserId: userId,
         organizationId: actingAsOrg.id,
         role: "OWNER",
-        createdAt: new Date(),
+        createdAt: membership?.createdAt ?? new Date(),
         organization: actingAsOrg,
-      } as typeof membership;
-    } else if (actingAsOrg) {
-      // Override the org context
-      membership = {
-        ...membership!,
-        organizationId: actingAsOrg.id,
-        role: "OWNER",
-        organization: actingAsOrg,
-      };
+      } as MembershipWithOrg;
     }
   }
 
