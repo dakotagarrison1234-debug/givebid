@@ -81,20 +81,20 @@ function NewItemForm() {
 
   return (
     <>
-      <header className="border-b border-gray-800 px-4 sm:px-8 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
+      <header className="border-b border-gray-800 px-4 sm:px-8 py-4 flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-2 min-w-0">
           {preselectedAuctionId ? (
-            <Link href={`/admin/auctions/${preselectedAuctionId}`} className="text-gray-400 hover:text-white text-sm">
+            <Link href={`/admin/auctions/${preselectedAuctionId}`} className="text-gray-400 hover:text-white text-sm shrink-0">
               ← Auction
             </Link>
           ) : (
-            <Link href="/admin/items" className="text-gray-400 hover:text-white text-sm">← Items</Link>
+            <Link href="/admin/items" className="text-gray-400 hover:text-white text-sm shrink-0">← Items</Link>
           )}
           <span className="text-gray-600">/</span>
-          <h1 className="text-xl font-semibold">Add New Item</h1>
+          <h1 className="text-lg sm:text-xl font-semibold">Add New Item</h1>
         </div>
         <button onClick={handleSave} disabled={saving}
-          className="bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-white text-sm px-6 py-2 rounded-lg font-semibold">
+          className="bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-white text-sm px-4 sm:px-6 py-2 rounded-lg font-semibold shrink-0">
           {saving ? "Saving..." : "Save Item"}
         </button>
       </header>
@@ -143,7 +143,7 @@ function NewItemForm() {
 
           <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
             <h2 className="font-semibold mb-4">Pricing</h2>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {[
                 { label: "Retail / Est. Value", name: "retailValue", placeholder: "0.00" },
                 { label: "Starting Bid *", name: "startingBid", placeholder: "0.00" },

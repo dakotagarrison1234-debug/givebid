@@ -161,36 +161,40 @@ export default function ItemPage() {
 
   return (
     <main className="min-h-screen bg-gray-950 text-white">
-      <header className="border-b border-gray-800 px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-3 text-sm">
-          <Link href="/" className="text-emerald-400 font-bold text-xl">GiveBid</Link>
-          <span className="text-gray-600">/</span>
-          <Link href={`/${orgSlug}`} className="text-gray-400 hover:text-white capitalize">
+      <header className="border-b border-gray-800 px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2 text-sm min-w-0">
+          <Link href="/" className="text-emerald-400 font-bold text-lg sm:text-xl shrink-0">GiveBid</Link>
+          <span className="text-gray-600 hidden sm:inline">/</span>
+          <Link href={`/${orgSlug}`} className="text-gray-400 hover:text-white capitalize hidden sm:inline truncate max-w-[100px]">
             {orgSlug.replace(/-/g, " ")}
           </Link>
-          <span className="text-gray-600">/</span>
-          <Link href={`/${orgSlug}/${auctionSlug}`} className="text-gray-400 hover:text-white capitalize">
+          <span className="text-gray-600 hidden sm:inline">/</span>
+          <Link href={`/${orgSlug}/${auctionSlug}`} className="text-gray-400 hover:text-white capitalize hidden sm:inline truncate max-w-[100px]">
             {auctionSlug.replace(/-/g, " ")}
           </Link>
-          <span className="text-gray-600">/</span>
-          <span className="text-white">{item.title}</span>
+          {/* Mobile: just show back arrow to auction */}
+          <Link href={`/${orgSlug}/${auctionSlug}`} className="text-gray-400 hover:text-white sm:hidden shrink-0">
+            ← Auction
+          </Link>
+          <span className="text-gray-600 hidden sm:inline">/</span>
+          <span className="text-white truncate hidden sm:inline">{item.title}</span>
         </div>
         {!isLoaded ? null : !isSignedIn ? (
           <SignInButton mode="modal">
-            <button className="bg-emerald-500 hover:bg-emerald-400 text-white text-sm px-4 py-2 rounded-lg">
+            <button className="bg-emerald-500 hover:bg-emerald-400 text-white text-sm px-3 sm:px-4 py-2 rounded-lg shrink-0 whitespace-nowrap">
               Sign In to Bid
             </button>
           </SignInButton>
         ) : (
-          <Link href="/admin/dashboard" className="text-gray-300 hover:text-white text-sm">
+          <Link href="/dashboard" className="text-gray-300 hover:text-white text-sm shrink-0">
             Dashboard
           </Link>
         )}
       </header>
 
-      <div className="max-w-6xl mx-auto px-6 py-10 grid grid-cols-1 lg:grid-cols-2 gap-12">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-10 grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-12">
         <div>
-          <div className="w-full h-96 bg-gray-800 rounded-2xl overflow-hidden mb-4">
+          <div className="w-full h-56 sm:h-96 bg-gray-800 rounded-2xl overflow-hidden mb-4">
             {item.photos.length > 0 ? (
               <img
                 src={item.photos.find(p => p.isPrimary)?.url || item.photos[0].url}
@@ -225,7 +229,7 @@ export default function ItemPage() {
             )}
           </div>
 
-          <h1 className="text-3xl font-bold mb-2">{item.title}</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold mb-2">{item.title}</h1>
           {item.description && <p className="text-gray-400 mb-6">{item.description}</p>}
 
           {/* Countdown — uses per-item end time, turns red in last 2:30 */}
@@ -261,7 +265,7 @@ export default function ItemPage() {
             <div className="flex items-center justify-between mb-4">
               <div>
                 <div className="text-gray-500 text-sm">Current Bid</div>
-                <div className="text-emerald-400 font-bold text-4xl">${currentBid.toLocaleString()}</div>
+                <div className="text-emerald-400 font-bold text-3xl sm:text-4xl">${currentBid.toLocaleString()}</div>
               </div>
               <div className="text-right">
                 <div className="text-gray-500 text-sm">Bids</div>
