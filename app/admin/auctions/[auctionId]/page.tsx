@@ -65,7 +65,7 @@ export default async function ManageAuctionPage({ params }: Props) {
             { label: "Total Raised", value: `$${totalRaised.toLocaleString()}` },
             { label: "Items", value: auction.items.length },
             { label: "Total Bids", value: auction.items.reduce((sum, item) => sum + item.bids.length, 0) },
-            { label: "Closes", value: new Date(auction.endAt).toLocaleDateString() },
+            { label: "Closes", value: new Date(auction.endAt).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) },
           ].map((stat) => (
             <div key={stat.label} className="bg-gray-900 border border-gray-800 rounded-xl p-5">
               <div className="text-gray-500 text-sm mb-1">{stat.label}</div>
@@ -78,7 +78,7 @@ export default async function ManageAuctionPage({ params }: Props) {
         <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-800 flex items-center justify-between">
             <h2 className="font-semibold">Items in this Auction</h2>
-            <Link href="/admin/items/new" className="bg-emerald-500 hover:bg-emerald-400 text-white text-sm px-4 py-2 rounded-lg">
+            <Link href={`/admin/items/new?auctionId=${auction.id}`} className="bg-emerald-500 hover:bg-emerald-400 text-white text-sm px-4 py-2 rounded-lg">
               + Add Item
             </Link>
           </div>

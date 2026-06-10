@@ -29,10 +29,14 @@ export default function NewAuctionPage() {
     if (!orgId) { alert("Organization not loaded. Please refresh."); return; }
     setSaving(true);
     try {
+      // Convert datetime-local values (local time, no tz) to UTC ISO strings
+      // so Vercel (UTC) stores the correct moment the user intended.
+      const startAtISO = new Date(formData.startAt).toISOString();
+      const endAtISO = new Date(formData.endAt).toISOString();
       const res = await fetch("/api/auctions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...formData, organizationId: orgId }),
+        body: JSON.stringify({ ...formData, startAt: startAtISO, endAt: endAtISO, organizationId: orgId }),
       });
       const data = await res.json();
       if (data.success) {
