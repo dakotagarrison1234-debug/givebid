@@ -324,22 +324,23 @@ export default function ItemPage() {
 
   return (
     <main className="min-h-screen bg-gray-950 text-white">
-      <header className="border-b border-gray-800 px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
+      <header className="border-b border-gray-800/60 px-4 sm:px-6 py-3.5 flex items-center justify-between gap-3 bg-gray-950/95 backdrop-blur-md sticky top-0 z-40">
         <div className="flex items-center gap-2 text-sm min-w-0">
-          <Link href="/" className="text-emerald-400 font-bold text-lg sm:text-xl shrink-0">GiveBid</Link>
-          <span className="text-gray-600 hidden sm:inline">/</span>
-          <Link href={`/${orgSlug}`} className="text-gray-400 hover:text-white capitalize hidden sm:inline truncate max-w-[100px]">
+          <Link href="/" className="text-lg font-extrabold tracking-tight bg-gradient-to-r from-emerald-400 to-emerald-300 bg-clip-text text-transparent shrink-0">GiveBid</Link>
+          <span className="text-gray-700 hidden sm:inline">/</span>
+          <Link href={`/${orgSlug}`} className="text-gray-500 hover:text-white capitalize hidden sm:inline truncate max-w-[100px] transition-colors">
             {orgSlug.replace(/-/g, " ")}
           </Link>
-          <span className="text-gray-600 hidden sm:inline">/</span>
-          <Link href={`/${orgSlug}/${auctionSlug}`} className="text-gray-400 hover:text-white capitalize hidden sm:inline truncate max-w-[100px]">
+          <span className="text-gray-700 hidden sm:inline">/</span>
+          <Link href={`/${orgSlug}/${auctionSlug}`} className="text-gray-500 hover:text-white capitalize hidden sm:inline truncate max-w-[100px] transition-colors">
             {auctionSlug.replace(/-/g, " ")}
           </Link>
-          <Link href={`/${orgSlug}/${auctionSlug}`} className="text-gray-400 hover:text-white sm:hidden shrink-0">
-            ← Auction
+          <Link href={`/${orgSlug}/${auctionSlug}`} className="text-gray-500 hover:text-white sm:hidden shrink-0 flex items-center gap-1 transition-colors text-xs font-medium">
+            <svg className="w-3 h-3" fill="none" viewBox="0 0 12 12" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round"><path d="M8 2L4 6l4 4" /></svg>
+            Auction
           </Link>
-          <span className="text-gray-600 hidden sm:inline">/</span>
-          <span className="text-white truncate hidden sm:inline">{item.title}</span>
+          <span className="text-gray-700 hidden sm:inline">/</span>
+          <span className="text-gray-300 truncate hidden sm:inline">{item.title}</span>
         </div>
         <UserMenu />
       </header>
@@ -388,8 +389,12 @@ export default function ItemPage() {
 
           {/* Countdown */}
           {effectiveEndAt && !auctionClosed && !itemSold && !itemNotActive && (
-            <div className="bg-gray-900 border border-gray-800 rounded-xl px-4 py-3 mb-6 flex items-center justify-between">
-              <span className="text-gray-500 text-sm">
+            <div className={`rounded-2xl px-4 py-3 mb-6 flex items-center justify-between border transition-all ${
+              biddingEnded
+                ? "bg-gray-900 border-gray-800"
+                : "bg-gray-900 border-gray-800 shadow-[0_0_20px_rgba(52,211,153,0.04)]"
+            }`}>
+              <span className="text-gray-500 text-sm font-medium">
                 {biddingEnded ? "Bidding ended" : "Time remaining"}
               </span>
               {!biddingEnded ? (
@@ -417,7 +422,7 @@ export default function ItemPage() {
           </div>
 
           {/* Current bid + bidding UI */}
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 mb-4">
+          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 mb-4 shadow-[0_0_25px_rgba(52,211,153,0.04)]">
             <div className="flex items-center justify-between mb-2">
               <div>
                 <div className="text-gray-500 text-sm">Current Bid</div>
@@ -425,8 +430,11 @@ export default function ItemPage() {
                 {/* Fix #4: You're Winning badge */}
                 {showWinning && (
                   <div className="mt-1.5">
-                    <span className="text-xs bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2.5 py-0.5 rounded-full font-semibold">
-                      🏆 You&apos;re Winning
+                    <span className="inline-flex items-center gap-1.5 text-xs bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2.5 py-0.5 rounded-full font-semibold">
+                      <svg className="w-3 h-3" fill="none" viewBox="0 0 12 12" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M3 5H1V3h2M9 5h2V3h-2M3 5h6v3a3 3 0 0 1-6 0V5zM4 11h4M6 8v3" />
+                      </svg>
+                      You&apos;re Winning
                     </span>
                   </div>
                 )}
@@ -489,9 +497,9 @@ export default function ItemPage() {
                   <button
                     onClick={handleBid}
                     disabled={placing}
-                    className="bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-white font-semibold px-6 py-3 rounded-xl"
+                    className="bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-white font-bold px-6 py-3 rounded-xl transition-all hover:shadow-[0_0_20px_rgba(52,211,153,0.3)] shrink-0"
                   >
-                    {placing ? "Placing..." : "Place Bid"}
+                    {placing ? "Placing…" : "Place Bid"}
                   </button>
                 </div>
               </>
