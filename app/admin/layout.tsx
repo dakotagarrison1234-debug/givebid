@@ -7,6 +7,7 @@ import { isSuperAdmin } from "@/lib/auth";
 import { cookies } from "next/headers";
 import ActAsExitButton from "./ActAsExitButton";
 import OrgSwitcher from "./OrgSwitcher";
+import MobileNav from "./MobileNav";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const { userId } = await auth();
@@ -66,16 +67,25 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     <div className="min-h-screen bg-gray-950 text-white flex flex-col">
       {/* Act-as banner */}
       {actingAsOrg && (
-        <div className="bg-orange-500/20 border-b border-orange-500/40 px-6 py-2 flex items-center justify-between text-sm">
-          <span className="text-orange-300">
-            ⚡ Acting as <span className="font-semibold text-orange-200">{actingAsOrg.name}</span> — you have full owner access
+        <div className="bg-orange-500/20 border-b border-orange-500/40 px-4 sm:px-6 py-2 flex items-center justify-between text-xs sm:text-sm gap-2">
+          <span className="text-orange-300 truncate">
+            ⚡ Acting as <span className="font-semibold text-orange-200">{actingAsOrg.name}</span>
           </span>
           <ActAsExitButton />
         </div>
       )}
 
+      {/* Mobile nav (hamburger + drawer) */}
+      <MobileNav
+        navItems={navItems}
+        orgName={org.name}
+        role={membership.role.toLowerCase()}
+        superAdmin={superAdmin}
+        showSuperAdmin={superAdmin}
+      />
+
       <div className="flex flex-1 min-h-0">
-        <aside className="w-64 bg-gray-900 border-r border-gray-800 flex flex-col shrink-0">
+        <aside className="hidden md:flex w-64 bg-gray-900 border-r border-gray-800 flex-col shrink-0">
           <div className="px-6 py-5 border-b border-gray-800">
             <Link href="/admin/dashboard">
               <span className="text-emerald-400 font-bold text-xl">GiveBid</span>
