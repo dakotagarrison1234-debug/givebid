@@ -3,6 +3,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
 import HomeHeader from "./components/HomeHeader";
+import LocalDate from "./components/LocalDate";
 
 export default async function HomePage() {
   const { userId } = await auth();
@@ -62,7 +63,7 @@ export default async function HomePage() {
                 </div>
                 <h3 className="font-semibold text-lg mb-1">{auction.title}</h3>
                 <p className="text-gray-500 text-sm mb-4">
-                  {auction.items.length} items · Closes {new Date(auction.endAt).toLocaleDateString()}
+                  {auction.items.length} items · Closes <LocalDate iso={auction.endAt.toISOString()} format="date" />
                 </p>
                 <div className="flex items-center justify-between">
                   <span className="text-emerald-400 font-semibold">

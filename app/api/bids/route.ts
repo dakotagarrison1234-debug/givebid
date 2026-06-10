@@ -115,7 +115,7 @@ export async function POST(request: NextRequest) {
           bidderPhone: outbidProfile?.phone || "",
           bidderName: outbidProfile?.name || "Bidder",
           itemTitle: item.title,
-          itemUrl: `${process.env.NEXT_PUBLIC_APP_URL}`,
+          itemUrl: `${process.env.NEXT_PUBLIC_APP_URL}/${item.organization?.slug}/${item.auction?.slug}/item/${item.id}`,
           outbidAmount: previousActiveBid.amount,
           newBidAmount: amount,
           auctionName: item.auction?.title || "Auction",

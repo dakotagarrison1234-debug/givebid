@@ -81,7 +81,7 @@ function NewItemForm() {
 
   return (
     <>
-      <header className="border-b border-gray-800 px-8 py-4 flex items-center justify-between">
+      <header className="border-b border-gray-800 px-4 sm:px-8 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
           {preselectedAuctionId ? (
             <Link href={`/admin/auctions/${preselectedAuctionId}`} className="text-gray-400 hover:text-white text-sm">
@@ -99,8 +99,8 @@ function NewItemForm() {
         </button>
       </header>
 
-      <div className="flex-1 px-8 py-6 grid grid-cols-3 gap-8 overflow-auto">
-        <div className="col-span-2 space-y-6">
+      <div className="flex-1 px-4 sm:px-8 py-6 grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 overflow-auto">
+        <div className="lg:col-span-2 space-y-6">
           <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
             <h2 className="font-semibold mb-4">Item Details</h2>
             <div className="space-y-4">

@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { requireUserOrg } from "@/lib/auth";
+import LocalDate from "@/app/components/LocalDate";
 
 export default async function AuctionsPage() {
   const membership = await requireUserOrg();
@@ -36,7 +37,7 @@ export default async function AuctionsPage() {
                 <div className="min-w-0">
                   <h3 className="font-semibold text-lg truncate">{auction.title}</h3>
                   <p className="text-gray-500 text-sm mt-1">
-                    {auction.items.length} items · {new Date(auction.startAt).toLocaleDateString()} — {new Date(auction.endAt).toLocaleDateString()}
+                    {auction.items.length} items · <LocalDate iso={auction.startAt.toISOString()} format="date" /> — <LocalDate iso={auction.endAt.toISOString()} format="date" />
                   </p>
                 </div>
                 <div className="flex items-center gap-3 shrink-0">

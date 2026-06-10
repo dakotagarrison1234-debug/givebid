@@ -30,7 +30,22 @@ export default async function WinnersPage() {
     }),
   ]);
 
+  // Resolve bidder display names
+  const allBidderIds = [...new Set([
+    ...wonBids.map(b => b.clerkUserId),
+    ...activeBids.map(b => b.clerkUserId),
+  ])];
+  const profiles = allBidderIds.length
+    ? await prisma.bidderProfile.findMany({ where: { clerkUserId: { in: allBidderIds } } })
+    : [];
+  const profileMap = new Map(profiles.map(p => [p.clerkUserId, p]));
+
   const paymentMap = new Map(payments.map((p) => [p.itemId, p]));
+
+  const displayName = (clerkUserId: string) => {
+    const p = profileMap.get(clerkUserId);
+    return p?.name || p?.email || `${clerkUserId.substring(0, 8)}…`;
+  };
 
   return (
     <>
@@ -66,8 +81,8 @@ export default async function WinnersPage() {
                       <tr key={bid.id} className="border-b border-gray-800 last:border-0 hover:bg-gray-800/50">
                         <td className="px-6 py-4 font-medium">{bid.item.title}</td>
                         <td className="px-6 py-4 text-emerald-400 font-bold">${bid.amount}</td>
-                        <td className="px-6 py-4 text-gray-400 text-sm">
-                          {bid.clerkUserId.substring(0, 8)}...
+                        <td className="px-6 py-4 text-gray-300 text-sm">
+                          {displayName(bid.clerkUserId)}
                         </td>
                         <td className="px-6 py-4">
                           {payment?.status === "PAID" ? (
@@ -125,7 +140,7 @@ export default async function WinnersPage() {
                       <td className="px-6 py-4 font-medium">{bid.item.title}</td>
                       <td className="px-6 py-4 text-gray-400 text-sm">{bid.item.auction?.title || "—"}</td>
                       <td className="px-6 py-4 text-emerald-400 font-bold">${bid.amount}</td>
-                      <td className="px-6 py-4 text-gray-400 text-sm">{bid.clerkUserId.substring(0, 8)}...</td>
+                      <td className="px-6 py-4 text-gray-300 text-sm">{displayName(bid.clerkUserId)}</td>
                     </tr>
                   ))}
                 </tbody>

@@ -9,8 +9,8 @@ export default function PaymentSuccess() {
         <p className="text-gray-400 mb-8">
           Congratulations on your winning bid. You will receive a confirmation email shortly with pickup details.
         </p>
-        <Link href="/" className="bg-emerald-500 hover:bg-emerald-400 text-white px-8 py-3 rounded-xl font-semibold">
-          Back to Auctions
+        <Link href="/dashboard" className="bg-emerald-500 hover:bg-emerald-400 text-white px-8 py-3 rounded-xl font-semibold">
+          Go to My Bids
         </Link>
       </div>
     </main>
