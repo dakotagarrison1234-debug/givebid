@@ -43,13 +43,25 @@ export function getValidBidSuggestions(currentBid: number, count = 5): number[] 
  * Intentionally spaced far apart so they never accidentally land on a competing proxy's
  * exact max amount (which would leak that information to the bidder).
  *
- * Suggestions are: ~1.5x, ~2x, ~3x, ~5x the minimum next bid, rounded up to nearest $5.
+ * Generates unique values only: starts at ~1.5x, 2x, 3x, 5x, 8x, 12x … until
+ * we have `count` distinct amounts (handles very low current bids where small
+ * multipliers round to the same $5 bucket).
  */
 export function getProxySuggestions(currentBid: number, count = 4): number[] {
   const min = currentBid > 0 ? getNextValidBid(currentBid) : 1;
-  const multipliers = [1.5, 2, 3, 5];
-  return multipliers.slice(0, count).map((m) => {
+  const multipliers = [1.5, 2, 3, 5, 8, 12, 20];
+  const seen = new Set<number>();
+  const result: number[] = [];
+
+  for (const m of multipliers) {
+    if (result.length >= count) break;
     const raw = min * m;
-    return Math.ceil(raw / 5) * 5; // round up to nearest $5
-  });
+    const rounded = Math.ceil(raw / 5) * 5; // round up to nearest $5
+    if (!seen.has(rounded)) {
+      seen.add(rounded);
+      result.push(rounded);
+    }
+  }
+
+  return result;
 }
