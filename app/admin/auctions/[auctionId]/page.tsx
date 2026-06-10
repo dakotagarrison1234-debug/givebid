@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import AuctionStatusButtons from "@/app/components/AuctionStatusButtons";
+import LocalDate from "@/app/components/LocalDate";
 
 interface Props {
   params: Promise<{ auctionId: string }>;
@@ -65,7 +66,7 @@ export default async function ManageAuctionPage({ params }: Props) {
             { label: "Total Raised", value: `$${totalRaised.toLocaleString()}` },
             { label: "Items", value: auction.items.length },
             { label: "Total Bids", value: auction.items.reduce((sum, item) => sum + item.bids.length, 0) },
-            { label: "Closes", value: new Date(auction.endAt).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) },
+            { label: "Closes", value: <LocalDate iso={auction.endAt.toISOString()} /> },
           ].map((stat) => (
             <div key={stat.label} className="bg-gray-900 border border-gray-800 rounded-xl p-5">
               <div className="text-gray-500 text-sm mb-1">{stat.label}</div>
