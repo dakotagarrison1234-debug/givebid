@@ -57,7 +57,6 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   const navItems = [
     { label: "Overview", href: "/admin/dashboard", icon: "▦" },
-    { label: "Items", href: "/admin/items", icon: "☰" },
     { label: "Auctions", href: "/admin/auctions", icon: "◷" },
     { label: "Winners", href: "/admin/winners", icon: "✓" },
     { label: "Pickup", href: "/admin/pickup", icon: "📦" },

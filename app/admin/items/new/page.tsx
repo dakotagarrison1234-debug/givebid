@@ -70,7 +70,7 @@ function NewItemForm() {
         if (preselectedAuctionId) {
           router.push(`/admin/auctions/${preselectedAuctionId}`);
         } else {
-          router.push("/admin/items");
+          router.push("/admin/auctions");
         }
       } else {
         alert("Error saving item: " + data.error);

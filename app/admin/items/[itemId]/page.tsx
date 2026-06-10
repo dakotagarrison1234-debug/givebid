@@ -77,7 +77,7 @@ export default function EditItemPage() {
       });
       const data = await res.json();
       if (data.success) {
-        router.push("/admin/items");
+        router.push(formData.auctionId ? `/admin/auctions/${formData.auctionId}` : "/admin/auctions");
       } else {
         alert("Error: " + data.error);
       }
@@ -93,7 +93,12 @@ export default function EditItemPage() {
     <>
       <header className="border-b border-gray-800 px-4 sm:px-8 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Link href="/admin/items" className="text-gray-400 hover:text-white text-sm">← Items</Link>
+          <Link
+            href={formData.auctionId ? `/admin/auctions/${formData.auctionId}` : "/admin/auctions"}
+            className="text-gray-400 hover:text-white text-sm"
+          >
+            ← {loading ? "Back" : formData.auctionId ? "Auction" : "Auctions"}
+          </Link>
           <span className="text-gray-600">/</span>
           <h1 className="text-xl font-semibold">Edit Item</h1>
         </div>

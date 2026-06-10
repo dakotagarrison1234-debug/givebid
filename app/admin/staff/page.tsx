@@ -5,6 +5,7 @@ interface Member {
   id: string;
   clerkUserId: string;
   role: string;
+  displayName?: string | null;
 }
 
 interface Invite {
@@ -90,11 +91,11 @@ export default function StaffPage() {
 
   return (
     <>
-      <header className="border-b border-gray-800 px-8 py-4">
+      <header className="border-b border-gray-800 px-4 sm:px-8 py-4">
         <h1 className="text-xl font-semibold">Team Members</h1>
       </header>
 
-      <div className="px-8 py-6 max-w-2xl space-y-8">
+      <div className="px-4 sm:px-8 py-6 max-w-2xl space-y-8">
         {/* Current Members */}
         <section>
           <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">
@@ -103,7 +104,16 @@ export default function StaffPage() {
           <div className="bg-gray-900 border border-gray-800 rounded-xl divide-y divide-gray-800">
             {members.map((member) => (
               <div key={member.id} className="px-5 py-4 flex items-center justify-between">
-                <div className="text-sm text-gray-400 font-mono">{member.clerkUserId.substring(0, 20)}...</div>
+                <div>
+                  <div className="text-sm font-medium text-white">
+                    {member.displayName || (
+                      <span className="text-gray-500 font-mono text-xs">{member.clerkUserId.substring(0, 20)}…</span>
+                    )}
+                  </div>
+                  {member.displayName && (
+                    <div className="text-xs text-gray-600 font-mono mt-0.5">{member.clerkUserId.substring(0, 16)}…</div>
+                  )}
+                </div>
                 <span className={`text-xs font-semibold ${roleColor(member.role)}`}>
                   {roleLabel(member.role)}
                 </span>
@@ -124,7 +134,7 @@ export default function StaffPage() {
                   <div>
                     <div className="text-sm">{invite.email}</div>
                     <div className="text-xs text-gray-600 mt-0.5">
-                      Expires {new Date(invite.expiresAt).toLocaleDateString()}
+                      Expires <span suppressHydrationWarning>{new Date(invite.expiresAt).toLocaleDateString()}</span>
                     </div>
                   </div>
                   <span className="text-xs text-gray-500">{roleLabel(invite.role)}</span>
@@ -135,64 +145,66 @@ export default function StaffPage() {
         )}
 
         {/* Invite Form — OWNER/ADMIN only */}
-        {canInvite && <section>
-          <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">
-            Invite Someone
-          </h2>
-          <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 space-y-4">
-            <div>
-              <label className="text-sm text-gray-400 mb-1 block">Email Address</label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="teammate@email.com"
-                className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-emerald-500"
-              />
-            </div>
-            <div>
-              <label className="text-sm text-gray-400 mb-1 block">Role</label>
-              <select
-                value={role}
-                onChange={(e) => setRole(e.target.value as "STAFF" | "ADMIN")}
-                className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500"
-              >
-                <option value="STAFF">Staff — can manage items and auctions</option>
-                <option value="ADMIN">Admin — can manage everything including team</option>
-              </select>
-            </div>
-
-            {error && <p className="text-red-400 text-sm">{error}</p>}
-
-            <button
-              onClick={handleInvite}
-              disabled={sending}
-              className="w-full bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-white font-semibold py-3 rounded-xl"
-            >
-              {sending ? "Generating Invite..." : "Generate Invite Link"}
-            </button>
-
-            {inviteUrl && (
-              <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-4">
-                <p className="text-emerald-400 text-sm font-semibold mb-2">Invite link created! Share this:</p>
-                <div className="flex items-center gap-2">
-                  <input
-                    readOnly
-                    value={inviteUrl}
-                    className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-xs text-gray-300 font-mono"
-                  />
-                  <button
-                    onClick={() => navigator.clipboard.writeText(inviteUrl)}
-                    className="bg-gray-700 hover:bg-gray-600 text-white text-xs px-3 py-2 rounded-lg"
-                  >
-                    Copy
-                  </button>
-                </div>
-                <p className="text-gray-600 text-xs mt-2">Expires in 7 days. One-time use.</p>
+        {canInvite && (
+          <section>
+            <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">
+              Invite Someone
+            </h2>
+            <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 space-y-4">
+              <div>
+                <label className="text-sm text-gray-400 mb-1 block">Email Address</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="teammate@email.com"
+                  className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-emerald-500"
+                />
               </div>
-            )}
-          </div>
-        </section>}
+              <div>
+                <label className="text-sm text-gray-400 mb-1 block">Role</label>
+                <select
+                  value={role}
+                  onChange={(e) => setRole(e.target.value as "STAFF" | "ADMIN")}
+                  className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500"
+                >
+                  <option value="STAFF">Staff — can manage items and auctions</option>
+                  <option value="ADMIN">Admin — can manage everything including team</option>
+                </select>
+              </div>
+
+              {error && <p className="text-red-400 text-sm">{error}</p>}
+
+              <button
+                onClick={handleInvite}
+                disabled={sending}
+                className="w-full bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-white font-semibold py-3 rounded-xl"
+              >
+                {sending ? "Generating Invite..." : "Generate Invite Link"}
+              </button>
+
+              {inviteUrl && (
+                <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-4">
+                  <p className="text-emerald-400 text-sm font-semibold mb-2">Invite link created! Share this:</p>
+                  <div className="flex items-center gap-2">
+                    <input
+                      readOnly
+                      value={inviteUrl}
+                      className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-xs text-gray-300 font-mono"
+                    />
+                    <button
+                      onClick={() => navigator.clipboard.writeText(inviteUrl)}
+                      className="bg-gray-700 hover:bg-gray-600 text-white text-xs px-3 py-2 rounded-lg"
+                    >
+                      Copy
+                    </button>
+                  </div>
+                  <p className="text-gray-600 text-xs mt-2">Expires in 7 days. One-time use.</p>
+                </div>
+              )}
+            </div>
+          </section>
+        )}
       </div>
     </>
   );

@@ -4,13 +4,17 @@ import { prisma } from "@/lib/prisma";
 import { requireUserOrg } from "@/lib/auth";
 import LocalDate from "@/app/components/LocalDate";
 
+const SOLD_STATUSES = ["SOLD", "PENDING_PICKUP", "PICKED_UP"];
+
 export default async function AuctionsPage() {
   const membership = await requireUserOrg();
 
   const auctions = await prisma.auction.findMany({
     where: { organizationId: membership.organization.id },
     orderBy: { createdAt: "desc" },
-    include: { items: true },
+    include: {
+      items: { include: { bids: { select: { id: true } } } },
+    },
   });
 
   return (
@@ -31,29 +35,47 @@ export default async function AuctionsPage() {
             </Link>
           </div>
         ) : (
-          <div className="space-y-4">
-            {auctions.map((auction) => (
-              <div key={auction.id} className="bg-gray-900 border border-gray-800 rounded-xl p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                <div className="min-w-0">
-                  <h3 className="font-semibold text-lg truncate">{auction.title}</h3>
-                  <p className="text-gray-500 text-sm mt-1">
-                    {auction.items.length} items · <LocalDate iso={auction.startAt.toISOString()} format="date" /> — <LocalDate iso={auction.endAt.toISOString()} format="date" />
-                  </p>
-                </div>
-                <div className="flex items-center gap-3 shrink-0">
-                  <span className={`text-xs px-3 py-1 rounded-full ${
-                    auction.status === "OPEN" ? "bg-emerald-500/20 text-emerald-400"
-                    : auction.status === "DRAFT" ? "bg-gray-700 text-gray-400"
-                    : "bg-red-500/20 text-red-400"
-                  }`}>
-                    {auction.status.toLowerCase()}
-                  </span>
-                  <Link href={`/admin/auctions/${auction.id}`} className="text-gray-400 hover:text-white text-sm whitespace-nowrap">
-                    Manage →
-                  </Link>
-                </div>
-              </div>
-            ))}
+          <div className="space-y-3">
+            {auctions.map((auction) => {
+              const raised = auction.items
+                .filter(i => SOLD_STATUSES.includes(i.status))
+                .reduce((sum, i) => sum + i.currentBid, 0);
+              const totalBids = auction.items.reduce((sum, i) => sum + i.bids.length, 0);
+
+              return (
+                <Link
+                  key={auction.id}
+                  href={`/admin/auctions/${auction.id}`}
+                  className="block bg-gray-900 border border-gray-800 hover:border-gray-600 rounded-xl p-5 transition-colors"
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="font-semibold text-lg truncate">{auction.title}</h3>
+                        <span className={`text-xs px-2 py-0.5 rounded-full shrink-0 ${
+                          auction.status === "OPEN" ? "bg-emerald-500/20 text-emerald-400"
+                          : auction.status === "DRAFT" ? "bg-gray-700 text-gray-400"
+                          : "bg-red-500/20 text-red-400"
+                        }`}>
+                          {auction.status.toLowerCase()}
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1.5 text-sm text-gray-500">
+                        <span>{auction.items.length} items</span>
+                        <span className="text-emerald-400 font-medium">${raised.toLocaleString()} raised</span>
+                        {totalBids > 0 && <span>{totalBids} bids</span>}
+                        <span>
+                          <LocalDate iso={auction.startAt.toISOString()} format="date" /> → <LocalDate iso={auction.endAt.toISOString()} format="date" />
+                        </span>
+                      </div>
+                    </div>
+                    <span className="text-gray-500 hover:text-white text-sm whitespace-nowrap shrink-0 self-end sm:self-auto">
+                      Manage →
+                    </span>
+                  </div>
+                </Link>
+              );
+            })}
           </div>
         )}
       </div>

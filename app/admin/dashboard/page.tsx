@@ -42,10 +42,10 @@ export default async function AdminDashboard() {
       <header className="border-b border-gray-800 px-4 sm:px-8 py-4 flex items-center justify-between">
         <h1 className="text-xl font-semibold">Dashboard</h1>
         <Link
-          href="/admin/items/new"
+          href="/admin/auctions/new"
           className="bg-emerald-500 hover:bg-emerald-400 text-white text-sm px-4 py-2 rounded-lg"
         >
-          + Add Item
+          + New Auction
         </Link>
       </header>
 
@@ -160,10 +160,10 @@ export default async function AdminDashboard() {
       <div className="px-4 sm:px-8 pb-8">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
-            { label: "Items", href: "/admin/items", icon: "☰" },
             { label: "Auctions", href: "/admin/auctions", icon: "◷" },
             { label: "Winners", href: "/admin/winners", icon: "✓" },
             { label: "Pickup", href: "/admin/pickup", icon: "📦" },
+            { label: "Team", href: "/admin/staff", icon: "👥" },
           ].map((link) => (
             <Link
               key={link.href}

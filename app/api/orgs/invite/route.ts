@@ -23,7 +23,19 @@ export async function GET() {
   });
   if (!org) return NextResponse.json({ error: "Org not found" }, { status: 404 });
 
-  return NextResponse.json({ members: org.members, invites: org.invites });
+  // Enrich members with display names from bidder profiles
+  const memberIds = org.members.map(m => m.clerkUserId);
+  const profiles = memberIds.length
+    ? await prisma.bidderProfile.findMany({ where: { clerkUserId: { in: memberIds } } })
+    : [];
+  const profileMap = new Map(profiles.map(p => [p.clerkUserId, p]));
+
+  const enrichedMembers = org.members.map(m => ({
+    ...m,
+    displayName: profileMap.get(m.clerkUserId)?.name || profileMap.get(m.clerkUserId)?.email || null,
+  }));
+
+  return NextResponse.json({ members: enrichedMembers, invites: org.invites });
 }
 
 // POST — create an invite link for a new staff member
