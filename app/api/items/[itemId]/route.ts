@@ -37,7 +37,7 @@ export async function PATCH(
 
     const item = await prisma.item.findUnique({
       where: { id: itemId },
-      select: { organizationId: true },
+      select: { organizationId: true, status: true, auctionId: true },
     });
     if (!item) return NextResponse.json({ error: "Item not found" }, { status: 404 });
 
@@ -46,6 +46,17 @@ export async function PATCH(
     }
 
     const body = await request.json();
+
+    // If this item is still DRAFT but belongs to an OPEN auction, promote it to ACTIVE on save
+    const targetAuctionId = body.auctionId || item.auctionId;
+    let autoActivate = false;
+    if (item.status === "DRAFT" && targetAuctionId) {
+      const parentAuction = await prisma.auction.findUnique({
+        where: { id: targetAuctionId },
+        select: { status: true },
+      });
+      if (parentAuction?.status === "OPEN") autoActivate = true;
+    }
 
     await prisma.item.update({
       where: { id: itemId },
@@ -62,6 +73,7 @@ export async function PATCH(
         storageLocation: body.storageLocation || null,
         notes: body.notes || null,
         auctionId: body.auctionId || null,
+        ...(autoActivate ? { status: "ACTIVE" } : {}),
       },
     });
 

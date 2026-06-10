@@ -32,6 +32,9 @@ export default async function ManageAuctionPage({ params }: Props) {
 
   const totalRaised = auction.items.reduce((sum, item) => sum + item.currentBid, 0);
   const totalBids = auction.items.reduce((sum, item) => sum + item.bids.length, 0);
+  const now = new Date();
+  const isScheduled = auction.status === "DRAFT" && auction.startAt > now;
+  const isPastStart = auction.status === "DRAFT" && auction.startAt <= now;
 
   return (
     <>
@@ -42,11 +45,17 @@ export default async function ManageAuctionPage({ params }: Props) {
           <h1 className="text-lg sm:text-xl font-semibold truncate">{auction.title}</h1>
           <span className={`text-xs px-2 py-1 rounded-full shrink-0 ${
             auction.status === "OPEN" ? "bg-emerald-500/20 text-emerald-400"
-            : auction.status === "CLOSED" ? "bg-red-500/20 text-red-400"
+            : auction.status === "CLOSED" || auction.status === "SETTLED" ? "bg-red-500/20 text-red-400"
+            : isScheduled ? "bg-blue-500/20 text-blue-400"
             : "bg-gray-700 text-gray-400"
           }`}>
-            {auction.status.toLowerCase()}
+            {isScheduled ? "scheduled" : auction.status.toLowerCase()}
           </span>
+          {isPastStart && (
+            <span className="text-xs text-yellow-400 bg-yellow-500/10 px-2 py-1 rounded-full shrink-0">
+              ⚠ opens on next cron run
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           <Link
@@ -67,13 +76,43 @@ export default async function ManageAuctionPage({ params }: Props) {
             { label: "Total Raised", value: `$${totalRaised.toLocaleString()}` },
             { label: "Items", value: auction.items.length },
             { label: "Total Bids", value: totalBids },
-            { label: "Closes", value: <LocalDate iso={auction.endAt.toISOString()} /> },
+            { label: "Active Items", value: auction.items.filter(i => i.status === "ACTIVE").length },
           ].map((stat) => (
             <div key={stat.label} className="bg-gray-900 border border-gray-800 rounded-xl p-4 sm:p-5">
               <div className="text-gray-500 text-xs sm:text-sm mb-1">{stat.label}</div>
               <div className="text-xl sm:text-2xl font-bold">{stat.value}</div>
             </div>
           ))}
+        </div>
+
+        {/* Auction timeline */}
+        <div className="bg-gray-900 border border-gray-800 rounded-xl px-5 py-4 flex flex-col sm:flex-row sm:items-center gap-4 text-sm">
+          <div className="flex items-center gap-3 flex-1">
+            <span className="text-gray-500 shrink-0">Opens</span>
+            <span className={`font-medium ${auction.status === "OPEN" || auction.status === "CLOSED" || auction.status === "SETTLED" ? "text-emerald-400" : "text-white"}`}>
+              <LocalDate iso={auction.startAt.toISOString()} />
+            </span>
+            {(auction.status === "OPEN" || auction.status === "CLOSED" || auction.status === "SETTLED") && (
+              <span className="text-emerald-500 text-xs">✓ opened</span>
+            )}
+          </div>
+          <div className="hidden sm:block text-gray-700">→</div>
+          <div className="flex items-center gap-3 flex-1">
+            <span className="text-gray-500 shrink-0">Closes</span>
+            <span className={`font-medium ${auction.status === "CLOSED" || auction.status === "SETTLED" ? "text-red-400" : "text-white"}`}>
+              <LocalDate iso={auction.endAt.toISOString()} />
+            </span>
+            {(auction.status === "CLOSED" || auction.status === "SETTLED") && (
+              <span className="text-red-400 text-xs">✓ closed</span>
+            )}
+          </div>
+          {auction.status === "DRAFT" && (
+            <div className="text-gray-500 text-xs sm:text-right">
+              {isScheduled
+                ? "Will auto-open at start time (cron runs every minute)"
+                : "Start time passed — will open on next cron run"}
+            </div>
+          )}
         </div>
 
         {/* Items */}

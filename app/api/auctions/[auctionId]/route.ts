@@ -2,6 +2,7 @@ import { auth } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { canAccessOrg } from "@/lib/auth";
+import { fireAuctionStartedWebhook } from "@/lib/closeAuction";
 
 interface Props {
   params: Promise<{ auctionId: string }>;
@@ -25,7 +26,7 @@ export async function PATCH(request: NextRequest, { params }: Props) {
     // Verify the user belongs to the org that owns this auction
     const auction = await prisma.auction.findUnique({
       where: { id: auctionId },
-      select: { organizationId: true },
+      include: { organization: true },
     });
     if (!auction) {
       return NextResponse.json({ error: "Auction not found" }, { status: 404 });
@@ -40,12 +41,13 @@ export async function PATCH(request: NextRequest, { params }: Props) {
       data: { status },
     });
 
-    // When opening an auction, activate all its DRAFT items so they're immediately biddable
+    // When opening an auction, activate all DRAFT items and fire the started webhook
     if (status === "OPEN") {
       await prisma.item.updateMany({
         where: { auctionId, status: "DRAFT" },
         data: { status: "ACTIVE" },
       });
+      fireAuctionStartedWebhook(auction);
     }
 
     return NextResponse.json({ success: true, auction: updated });

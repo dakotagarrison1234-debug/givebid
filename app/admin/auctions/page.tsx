@@ -41,6 +41,7 @@ export default async function AuctionsPage() {
                 .filter(i => SOLD_STATUSES.includes(i.status))
                 .reduce((sum, i) => sum + i.currentBid, 0);
               const totalBids = auction.items.reduce((sum, i) => sum + i.bids.length, 0);
+              const isScheduled = auction.status === "DRAFT" && auction.startAt > new Date();
 
               return (
                 <Link
@@ -54,10 +55,11 @@ export default async function AuctionsPage() {
                         <h3 className="font-semibold text-lg truncate">{auction.title}</h3>
                         <span className={`text-xs px-2 py-0.5 rounded-full shrink-0 ${
                           auction.status === "OPEN" ? "bg-emerald-500/20 text-emerald-400"
+                          : isScheduled ? "bg-blue-500/20 text-blue-400"
                           : auction.status === "DRAFT" ? "bg-gray-700 text-gray-400"
                           : "bg-red-500/20 text-red-400"
                         }`}>
-                          {auction.status.toLowerCase()}
+                          {isScheduled ? "scheduled" : auction.status.toLowerCase()}
                         </span>
                       </div>
                       <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1.5 text-sm text-gray-500">

@@ -70,7 +70,7 @@ export async function openScheduledAuctions(): Promise<{ openedAuctions: number 
   // Open DRAFT auctions whose startAt has passed
   const dueAuctions = await prisma.auction.findMany({
     where: { status: "DRAFT", startAt: { lte: now } },
-    select: { id: true },
+    include: { organization: true },
   });
 
   for (const auction of dueAuctions) {
@@ -78,6 +78,9 @@ export async function openScheduledAuctions(): Promise<{ openedAuctions: number 
       prisma.auction.update({ where: { id: auction.id }, data: { status: "OPEN" } }),
       prisma.item.updateMany({ where: { auctionId: auction.id, status: "DRAFT" }, data: { status: "ACTIVE" } }),
     ]);
+
+    // Notify GHL that this auction just went live
+    fireAuctionStartedWebhook(auction);
   }
 
   // Also activate any DRAFT items that are already inside an OPEN auction
@@ -88,6 +91,32 @@ export async function openScheduledAuctions(): Promise<{ openedAuctions: number 
   });
 
   return { openedAuctions: dueAuctions.length };
+}
+
+/** Fire GHL auction-started webhook (fire-and-forget). */
+export function fireAuctionStartedWebhook(auction: {
+  id: string;
+  title: string;
+  slug: string;
+  startAt: Date;
+  endAt: Date;
+  organization: { name: string; slug: string };
+}) {
+  if (!process.env.GHL_AUCTION_STARTED_WEBHOOK) return;
+  const auctionUrl = `${process.env.NEXT_PUBLIC_APP_URL}/${auction.organization.slug}/${auction.slug}`;
+  fetch(process.env.GHL_AUCTION_STARTED_WEBHOOK, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      event: "auction_started",
+      auctionId: auction.id,
+      auctionTitle: auction.title,
+      auctionUrl,
+      orgName: auction.organization.name,
+      startAt: auction.startAt.toISOString(),
+      endAt: auction.endAt.toISOString(),
+    }),
+  }).catch((err) => console.error("GHL auction started webhook failed:", err));
 }
 
 export async function closeExpiredItems(): Promise<{ closedItems: number; closedAuctions: number }> {

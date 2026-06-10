@@ -41,6 +41,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
+    // If the parent auction is already OPEN, activate immediately so bidders can bid right away
+    let itemStatus: "DRAFT" | "ACTIVE" = "DRAFT";
+    if (auctionId) {
+      const parentAuction = await prisma.auction.findUnique({
+        where: { id: auctionId },
+        select: { status: true },
+      });
+      if (parentAuction?.status === "OPEN") itemStatus = "ACTIVE";
+    }
+
     const item = await prisma.item.create({
       data: {
         title,
@@ -56,6 +66,7 @@ export async function POST(request: NextRequest) {
         notes: notes || null,
         auctionId: auctionId || null,
         organizationId,
+        status: itemStatus,
         photos: photos && photos.length > 0 ? {
           create: photos.map((url: string, index: number) => ({
             url,
