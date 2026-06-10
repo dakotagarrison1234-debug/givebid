@@ -6,6 +6,7 @@ import { useUser, SignInButton } from "@clerk/nextjs";
 import UserMenu from "@/app/components/UserMenu";
 import Pusher from "pusher-js";
 import Countdown from "@/app/components/Countdown";
+import { getNextValidBid, getValidBidSuggestions } from "@/lib/bidIncrements";
 
 interface Item {
   id: string;
@@ -22,9 +23,11 @@ interface Item {
   status: string;
   itemEndAt: string | null;
   photos: { url: string; isPrimary: boolean }[];
-  bids: { id: string; amount: number; clerkUserId: string; placedAt: string }[];
+  bids: { id: string; amount: number; clerkUserId: string; placedAt: string; isProxy?: boolean }[];
   auction: { title: string; endAt: string; status: string } | null;
 }
+
+type LiveBid = { user: string; amount: number; time: string; isProxy?: boolean };
 
 export default function ItemPage() {
   const params = useParams();
@@ -36,11 +39,23 @@ export default function ItemPage() {
 
   const [item, setItem] = useState<Item | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Manual bid
   const [bidAmount, setBidAmount] = useState("");
   const [placing, setPlacing] = useState(false);
   const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
-  const [liveBids, setLiveBids] = useState<{ user: string; amount: number; time: string }[]>([]);
-  // Stable map: clerkUserId → "Bidder N" — persists across renders, never exposed to bidders
+
+  // Proxy bid
+  const [proxyAmount, setProxyAmount] = useState("");
+  const [proxyPlacing, setProxyPlacing] = useState(false);
+  const [proxyMessage, setProxyMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
+  const [userProxy, setUserProxy] = useState<{ maxAmount: number } | null>(null);
+  const [hasActiveProxy, setHasActiveProxy] = useState(false);
+  const [cancellingProxy, setCancellingProxy] = useState(false);
+
+  const [liveBids, setLiveBids] = useState<LiveBid[]>([]);
+
+  // Stable bidder anonymization map
   const bidderMapRef = useRef<Map<string, string>>(new Map());
   const bidderCounterRef = useRef(0);
   const assignBidder = (uid: string): string => {
@@ -50,23 +65,20 @@ export default function ItemPage() {
     }
     return bidderMapRef.current.get(uid)!;
   };
-  // Tracks the current effective end time (updated by popcorn bids)
+
   const [effectiveEndAt, setEffectiveEndAt] = useState<string | null>(null);
-  // True once the countdown fires onExpire
   const [biddingEnded, setBiddingEnded] = useState(false);
 
+  // Load item data
   useEffect(() => {
     fetch(`/api/items/${itemId}`)
       .then(r => r.json())
       .then(d => {
         if (d.item) {
           setItem(d.item);
-          // Use per-item endAt if set, otherwise auction endAt
           const end = d.item.itemEndAt ?? d.item.auction?.endAt ?? null;
           setEffectiveEndAt(end);
-          // Already expired?
           if (end && new Date(end) <= new Date()) setBiddingEnded(true);
-          // Sort ascending so bidder numbers are assigned chronologically
           const sorted = [...d.item.bids].sort(
             (a: Item["bids"][0], b: Item["bids"][0]) =>
               new Date(a.placedAt).getTime() - new Date(b.placedAt).getTime()
@@ -75,30 +87,61 @@ export default function ItemPage() {
             user: assignBidder(b.clerkUserId),
             amount: b.amount,
             time: new Date(b.placedAt).toLocaleTimeString(),
+            isProxy: b.isProxy ?? false,
           })));
         }
         setLoading(false);
       });
   }, [itemId]);
 
+  // Load proxy status (user's proxy + whether any proxy is active on this item)
+  useEffect(() => {
+    if (!itemId) return;
+    fetch(`/api/proxy-bids/${itemId}`)
+      .then(r => r.json())
+      .then(d => {
+        setUserProxy(d.userProxy ?? null);
+        setHasActiveProxy(d.hasActiveProxy ?? false);
+      })
+      .catch(() => {/* non-critical */});
+  }, [itemId]);
+
+  // Pusher real-time updates
   useEffect(() => {
     if (!itemId) return;
     const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY!, {
       cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER!,
     });
     const channel = pusher.subscribe(`item-${itemId}`);
-    channel.bind("new-bid", (data: { amount: number; userId: string; newEndAt?: string }) => {
+
+    channel.bind("new-bid", (data: {
+      amount: number;
+      userId: string;
+      isProxy?: boolean;
+      hasActiveProxy?: boolean;
+      newEndAt?: string;
+    }) => {
       setItem(prev => prev ? { ...prev, currentBid: data.amount } : prev);
       setLiveBids(prev => [
-        { user: assignBidder(data.userId), amount: data.amount, time: "just now" },
+        {
+          user: assignBidder(data.userId),
+          amount: data.amount,
+          time: "just now",
+          isProxy: data.isProxy ?? false,
+        },
         ...prev,
       ]);
-      // Popcorn: update effective end time and re-enable bidding if timer was at zero
+      if (data.hasActiveProxy !== undefined) setHasActiveProxy(data.hasActiveProxy);
       if (data.newEndAt) {
         setEffectiveEndAt(data.newEndAt);
         setBiddingEnded(false);
       }
     });
+
+    channel.bind("proxy-update", (data: { hasActiveProxy: boolean }) => {
+      setHasActiveProxy(data.hasActiveProxy);
+    });
+
     return () => {
       channel.unbind_all();
       pusher.unsubscribe(`item-${itemId}`);
@@ -109,6 +152,7 @@ export default function ItemPage() {
     setBiddingEnded(true);
   }, []);
 
+  // Manual bid handler
   const handleBid = async () => {
     if (!isSignedIn) {
       router.push(`/sign-in?redirect_url=${encodeURIComponent(window.location.pathname)}`);
@@ -116,9 +160,9 @@ export default function ItemPage() {
     }
     const amount = parseFloat(bidAmount);
     const currentBid = item?.currentBid || 0;
-    const minBid = currentBid > 0 ? currentBid + 5 : (item?.startingBid || 0);
+    const minBid = currentBid > 0 ? getNextValidBid(currentBid) : (item?.startingBid || 0);
     if (!bidAmount || amount < minBid) {
-      setMessage({ text: `Minimum bid is $${minBid}`, type: "error" });
+      setMessage({ text: `Minimum bid is $${minBid.toLocaleString()}`, type: "error" });
       return;
     }
     setPlacing(true);
@@ -132,7 +176,11 @@ export default function ItemPage() {
       const data = await res.json();
       if (data.success) {
         setBidAmount("");
-        setMessage({ text: `Bid of $${amount.toLocaleString()} placed!`, type: "success" });
+        if (data.proxyFired) {
+          setMessage({ text: `Bid of $${amount.toLocaleString()} placed — instantly outbid by an active proxy.`, type: "error" });
+        } else {
+          setMessage({ text: `Bid of $${amount.toLocaleString()} placed!`, type: "success" });
+        }
         if (data.newEndAt) {
           setEffectiveEndAt(data.newEndAt);
           setBiddingEnded(false);
@@ -146,6 +194,74 @@ export default function ItemPage() {
       setMessage({ text: "Something went wrong", type: "error" });
     } finally {
       setPlacing(false);
+    }
+  };
+
+  // Set / update proxy bid handler
+  const handleSetProxy = async () => {
+    if (!isSignedIn) {
+      router.push(`/sign-in?redirect_url=${encodeURIComponent(window.location.pathname)}`);
+      return;
+    }
+    const amount = parseFloat(proxyAmount);
+    const currentBid = item?.currentBid || 0;
+    const minProxy = currentBid > 0 ? getNextValidBid(currentBid) : (item?.startingBid || 1);
+    if (!proxyAmount || isNaN(amount) || amount < minProxy) {
+      setProxyMessage({ text: `Proxy max must be at least $${minProxy.toLocaleString()}`, type: "error" });
+      return;
+    }
+    setProxyPlacing(true);
+    setProxyMessage(null);
+    try {
+      const res = await fetch("/api/proxy-bids", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ itemId, maxAmount: amount }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setUserProxy({ maxAmount: amount });
+        setHasActiveProxy(true);
+        setProxyAmount("");
+        setProxyMessage({
+          text: data.proxyFired
+            ? `Proxy set at $${amount.toLocaleString()} — auto-bid placed!`
+            : `Proxy set at $${amount.toLocaleString()}. We'll bid for you automatically.`,
+          type: "success",
+        });
+        if (data.newEndAt) {
+          setEffectiveEndAt(data.newEndAt);
+          setBiddingEnded(false);
+        }
+      } else if (data.requiresRegistration) {
+        router.push("/register");
+      } else {
+        setProxyMessage({ text: data.error, type: "error" });
+      }
+    } catch {
+      setProxyMessage({ text: "Something went wrong", type: "error" });
+    } finally {
+      setProxyPlacing(false);
+    }
+  };
+
+  // Cancel proxy handler
+  const handleCancelProxy = async () => {
+    setCancellingProxy(true);
+    setProxyMessage(null);
+    try {
+      const res = await fetch(`/api/proxy-bids/${itemId}`, { method: "DELETE" });
+      const data = await res.json();
+      if (data.success) {
+        setUserProxy(null);
+        setProxyMessage({ text: "Proxy cancelled. Your existing bids remain active.", type: "success" });
+      } else {
+        setProxyMessage({ text: data.error || "Failed to cancel proxy", type: "error" });
+      }
+    } catch {
+      setProxyMessage({ text: "Something went wrong", type: "error" });
+    } finally {
+      setCancellingProxy(false);
     }
   };
 
@@ -169,7 +285,9 @@ export default function ItemPage() {
   }
 
   const currentBid = item.currentBid || item.startingBid;
-  const minBid = currentBid > 0 ? currentBid + 5 : item.startingBid;
+  const minBid = item.currentBid > 0 ? getNextValidBid(item.currentBid) : item.startingBid;
+  const minProxy = item.currentBid > 0 ? getNextValidBid(item.currentBid) : (item.startingBid > 0 ? item.startingBid : 1);
+  const proxySuggestions = getValidBidSuggestions(item.currentBid || 0, 4);
   const auctionClosed = item.auction?.status === "CLOSED" || item.auction?.status === "SETTLED";
   const itemSold = item.status === "SOLD" || item.status === "PENDING_PICKUP" || item.status === "PICKED_UP";
   const itemNotActive = item.status !== "ACTIVE";
@@ -188,7 +306,6 @@ export default function ItemPage() {
           <Link href={`/${orgSlug}/${auctionSlug}`} className="text-gray-400 hover:text-white capitalize hidden sm:inline truncate max-w-[100px]">
             {auctionSlug.replace(/-/g, " ")}
           </Link>
-          {/* Mobile: just show back arrow to auction */}
           <Link href={`/${orgSlug}/${auctionSlug}`} className="text-gray-400 hover:text-white sm:hidden shrink-0">
             ← Auction
           </Link>
@@ -199,6 +316,7 @@ export default function ItemPage() {
       </header>
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-10 grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-12">
+        {/* Left: photos */}
         <div>
           <div className="w-full h-56 sm:h-96 bg-gray-800 rounded-2xl overflow-hidden mb-4">
             {item.photos.length > 0 ? (
@@ -222,6 +340,7 @@ export default function ItemPage() {
           )}
         </div>
 
+        {/* Right: bidding */}
         <div>
           <div className="flex items-center gap-2 mb-3">
             {item.category && (
@@ -238,7 +357,7 @@ export default function ItemPage() {
           <h1 className="text-2xl sm:text-3xl font-bold mb-2">{item.title}</h1>
           {item.description && <p className="text-gray-400 mb-6">{item.description}</p>}
 
-          {/* Countdown — uses per-item end time, turns red in last 2:30 */}
+          {/* Countdown */}
           {effectiveEndAt && !auctionClosed && !itemSold && !itemNotActive && (
             <div className="bg-gray-900 border border-gray-800 rounded-xl px-4 py-3 mb-6 flex items-center justify-between">
               <span className="text-gray-500 text-sm">
@@ -252,6 +371,7 @@ export default function ItemPage() {
             </div>
           )}
 
+          {/* Donor / retail value */}
           <div className="grid grid-cols-2 gap-4 mb-6">
             {item.retailValue && (
               <div className="bg-gray-900 rounded-xl p-4">
@@ -267,15 +387,29 @@ export default function ItemPage() {
             )}
           </div>
 
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 mb-6">
+          {/* Current bid + bidding UI */}
+          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 mb-4">
             <div className="flex items-center justify-between mb-4">
               <div>
                 <div className="text-gray-500 text-sm">Current Bid</div>
                 <div className="text-emerald-400 font-bold text-3xl sm:text-4xl">${currentBid.toLocaleString()}</div>
               </div>
-              <div className="text-right">
-                <div className="text-gray-500 text-sm">Bids</div>
-                <div className="text-white font-bold text-xl">{liveBids.length}</div>
+              <div className="text-right flex flex-col items-end gap-2">
+                <div>
+                  <div className="text-gray-500 text-sm">Bids</div>
+                  <div className="text-white font-bold text-xl">{liveBids.length}</div>
+                </div>
+                {hasActiveProxy && (
+                  <div className="flex items-center gap-1">
+                    <span className="text-xs bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded-full font-medium">
+                      Proxy Active
+                    </span>
+                    <span
+                      title="A bidder has set an automatic maximum. The system will bid on their behalf up to their limit — the amount is private."
+                      className="w-4 h-4 rounded-full border border-gray-600 text-gray-500 text-xs flex items-center justify-center cursor-help hover:border-gray-400 hover:text-gray-300 transition-colors"
+                    >?</span>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -316,7 +450,7 @@ export default function ItemPage() {
                     step="1"
                     onChange={e => setBidAmount(e.target.value)}
                     onKeyDown={e => e.key === "Enter" && !placing && handleBid()}
-                    placeholder={`Enter $${minBid} or more`}
+                    placeholder={`Enter $${minBid.toLocaleString()} or more`}
                     className="flex-1 bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-emerald-500"
                   />
                   <button
@@ -331,13 +465,112 @@ export default function ItemPage() {
             )}
           </div>
 
+          {/* Proxy bidding section */}
+          {!biddingLocked && isLoaded && isSignedIn && (
+            <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 mb-6">
+              <div className="flex items-center gap-2 mb-1">
+                <h3 className="font-semibold text-sm">Proxy Bidding</h3>
+                <span
+                  title="Set your maximum and we'll automatically bid for you — up to your limit — so you never have to watch the clock."
+                  className="w-4 h-4 rounded-full border border-gray-600 text-gray-500 text-xs flex items-center justify-center cursor-help hover:border-gray-400 hover:text-gray-300 transition-colors"
+                >?</span>
+              </div>
+
+              {proxyMessage && (
+                <div className={`text-sm mb-3 px-3 py-2 rounded-lg ${
+                  proxyMessage.type === "success" ? "bg-emerald-500/20 text-emerald-400" : "bg-red-500/20 text-red-400"
+                }`}>
+                  {proxyMessage.text}
+                </div>
+              )}
+
+              {userProxy ? (
+                /* User has an active proxy */
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-gray-400 text-sm">
+                      Your max:{" "}
+                      <span className="text-indigo-300 font-semibold">${userProxy.maxAmount.toLocaleString()}</span>
+                    </p>
+                    <p className="text-gray-600 text-xs mt-0.5">We're bidding automatically on your behalf.</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => {
+                        setProxyAmount(String(userProxy.maxAmount));
+                        setUserProxy(null);
+                      }}
+                      className="text-xs text-gray-400 hover:text-white border border-gray-700 hover:border-gray-500 px-3 py-1.5 rounded-lg transition-colors"
+                    >
+                      Update
+                    </button>
+                    <button
+                      onClick={handleCancelProxy}
+                      disabled={cancellingProxy}
+                      className="text-xs text-red-400 hover:text-red-300 border border-red-900 hover:border-red-700 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
+                    >
+                      {cancellingProxy ? "Cancelling..." : "Cancel"}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                /* No proxy yet — show set form */
+                <div>
+                  <p className="text-gray-500 text-xs mb-3">
+                    Set a max and we'll bid for you. Suggestions:
+                  </p>
+                  <div className="flex gap-2 mb-3 flex-wrap">
+                    {proxySuggestions.map(s => (
+                      <button
+                        key={s}
+                        onClick={() => setProxyAmount(String(s))}
+                        className={`text-xs px-3 py-1.5 rounded-lg border transition-colors ${
+                          proxyAmount === String(s)
+                            ? "bg-indigo-600 border-indigo-500 text-white"
+                            : "bg-gray-800 border-gray-700 text-gray-300 hover:bg-gray-700"
+                        }`}
+                      >
+                        ${s.toLocaleString()}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="flex gap-3">
+                    <input
+                      type="number"
+                      value={proxyAmount}
+                      min={minProxy}
+                      step="1"
+                      onChange={e => setProxyAmount(e.target.value)}
+                      onKeyDown={e => e.key === "Enter" && !proxyPlacing && handleSetProxy()}
+                      placeholder={`Max $${minProxy.toLocaleString()} or more`}
+                      className="flex-1 bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500"
+                    />
+                    <button
+                      onClick={handleSetProxy}
+                      disabled={proxyPlacing}
+                      className="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-semibold px-6 py-3 rounded-xl"
+                    >
+                      {proxyPlacing ? "Setting..." : "Set Proxy"}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Bid history */}
           {liveBids.length > 0 && (
             <div>
               <h3 className="font-semibold mb-3">Bid History</h3>
               <div className="space-y-2">
                 {liveBids.map((bid, i) => (
                   <div key={i} className="flex items-center justify-between bg-gray-900 rounded-lg px-4 py-3">
-                    <span className="text-gray-400">{bid.user}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-gray-400">{bid.user}</span>
+                      {bid.isProxy && (
+                        <span className="text-xs text-indigo-400 bg-indigo-500/10 px-1.5 py-0.5 rounded">auto</span>
+                      )}
+                    </div>
                     <span className="text-emerald-400 font-semibold">${bid.amount.toLocaleString()}</span>
                     <span className="text-gray-600 text-sm">{bid.time}</span>
                   </div>

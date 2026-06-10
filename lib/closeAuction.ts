@@ -15,6 +15,8 @@ async function closeItem(item: ItemWithBidsAndOrg) {
     await prisma.$transaction([
       prisma.bid.update({ where: { id: winningBid.id }, data: { status: "WON" } }),
       prisma.item.update({ where: { id: item.id }, data: { status: "SOLD" } }),
+      // Deactivate all proxy bids for this item — auction is over
+      prisma.proxyBid.updateMany({ where: { itemId: item.id, isActive: true }, data: { isActive: false } }),
     ]);
 
     const winnerProfile = await prisma.bidderProfile.findUnique({
@@ -51,7 +53,11 @@ async function closeItem(item: ItemWithBidsAndOrg) {
       }).catch((err) => console.error("GHL won webhook failed:", err));
     }
   } else {
-    await prisma.item.update({ where: { id: item.id }, data: { status: "UNSOLD" } });
+    await prisma.$transaction([
+      prisma.item.update({ where: { id: item.id }, data: { status: "UNSOLD" } }),
+      // Deactivate all proxy bids even on unsold items
+      prisma.proxyBid.updateMany({ where: { itemId: item.id, isActive: true }, data: { isActive: false } }),
+    ]);
   }
 }
 

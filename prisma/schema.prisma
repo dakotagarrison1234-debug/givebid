@@ -88,6 +88,7 @@ enum AuctionStatus {
   photos          ItemPhoto[]
   bids            Bid[]
   payments        Payment[]
+  proxyBids       ProxyBid[]
 }
 
 enum Condition {
@@ -121,8 +122,23 @@ model Bid {
   clerkUserId String
   amount      Float
   status      BidStatus @default(ACTIVE)
+  isProxy     Boolean   @default(false)
   placedAt    DateTime  @default(now())
   item        Item      @relation(fields: [itemId], references: [id])
+}
+
+model ProxyBid {
+  id          String   @id @default(cuid())
+  itemId      String
+  clerkUserId String
+  maxAmount   Float
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  item        Item     @relation(fields: [itemId], references: [id])
+
+  @@unique([itemId, clerkUserId])
+  @@index([itemId, isActive])
 }
 
 enum BidStatus {

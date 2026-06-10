@@ -2,6 +2,8 @@ import { auth } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import Pusher from "pusher";
+import { getNextValidBid } from "@/lib/bidIncrements";
+import { resolveProxiesAfterBid } from "@/lib/proxyBidResolver";
 
 const pusher = new Pusher({
   appId: process.env.PUSHER_APP_ID!,
@@ -62,7 +64,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const minBid = item.currentBid > 0 ? item.currentBid + 5 : item.startingBid;
+    // Use the real increment table (not hardcoded +5)
+    const minBid = item.currentBid > 0 ? getNextValidBid(item.currentBid) : item.startingBid;
     if (amount < minBid) {
       return NextResponse.json({ error: `Minimum bid is $${minBid}` }, { status: 400 });
     }
@@ -79,11 +82,11 @@ export async function POST(request: NextRequest) {
       newItemEndAt = new Date(Date.now() + POPCORN_EXTENSION_MS);
     }
 
-    // Record the bid atomically — prevents race conditions under concurrent bids
+    // Record the manual bid atomically
     const bid = await prisma.$transaction(async (tx) => {
       await tx.bid.updateMany({ where: { itemId, status: "ACTIVE" }, data: { status: "OUTBID" } });
       const newBid = await tx.bid.create({
-        data: { itemId, clerkUserId: userId, amount, status: "ACTIVE" },
+        data: { itemId, clerkUserId: userId, amount, status: "ACTIVE", isProxy: false },
       });
       await tx.item.update({
         where: { id: itemId },
@@ -95,17 +98,30 @@ export async function POST(request: NextRequest) {
       return newBid;
     });
 
-    // Broadcast bid + new end time (if extended) to all watchers
-    await pusher.trigger(`item-${itemId}`, "new-bid", {
-      amount,
-      bidId: bid.id,
-      userId: userId.substring(0, 8),
-      placedAt: bid.placedAt,
-      ...(newItemEndAt ? { newEndAt: newItemEndAt.toISOString() } : {}),
-    });
+    // After the manual bid is saved, check if any proxy should fire back
+    const proxyResult = await resolveProxiesAfterBid(itemId, amount, userId);
 
-    // GHL outbid alert
-    if (previousActiveBid && previousActiveBid.clerkUserId !== userId && process.env.GHL_OUTBID_WEBHOOK) {
+    // If a proxy fired, the Pusher event is already sent by resolveProxiesAfterBid.
+    // Only broadcast the manual bid event if no proxy fired (otherwise the proxy event supersedes it).
+    if (!proxyResult.proxyFired) {
+      await pusher.trigger(`item-${itemId}`, "new-bid", {
+        amount,
+        bidId: bid.id,
+        userId: userId.substring(0, 8),
+        placedAt: bid.placedAt,
+        isProxy: false,
+        hasActiveProxy: proxyResult.hasActiveProxy,
+        ...(newItemEndAt ? { newEndAt: newItemEndAt.toISOString() } : {}),
+      });
+    }
+
+    // GHL outbid alert (only fire if the proxy didn't already outbid the previous holder)
+    if (
+      !proxyResult.proxyFired &&
+      previousActiveBid &&
+      previousActiveBid.clerkUserId !== userId &&
+      process.env.GHL_OUTBID_WEBHOOK
+    ) {
       const outbidEmail = outbidProfile?.email || "";
       const outbidPhone = outbidProfile?.phone || "";
       const outbidName = outbidProfile?.name || "Bidder";
@@ -114,13 +130,11 @@ export async function POST(request: NextRequest) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          // GHL contact lookup fields (must be top-level)
           email: outbidEmail,
           phone: outbidPhone,
           name: outbidName,
           firstName: outbidName.split(" ")[0] || outbidName,
           lastName: outbidName.split(" ").slice(1).join(" ") || "",
-          // Custom workflow variables
           event: "outbid",
           bidderEmail: outbidEmail,
           bidderPhone: outbidPhone,
@@ -135,8 +149,10 @@ export async function POST(request: NextRequest) {
       }).catch((err) => console.error("GHL outbid webhook failed:", err));
     }
 
-    // GHL bid confirmation
-    if (process.env.GHL_BID_CONFIRM_WEBHOOK) {
+    // GHL bid confirmation (for the manual bidder — only if they're still the winner)
+    // If a proxy fired back, the proxy owner's confirmation is handled by the resolver.
+    // The manual bidder was outbid — we skip their "bid confirmed" (they get "outbid" instead).
+    if (!proxyResult.proxyFired && process.env.GHL_BID_CONFIRM_WEBHOOK) {
       const confirmEmail = profile.email || "";
       const confirmPhone = profile.phone || "";
       const confirmName = profile.name || "Bidder";
@@ -145,13 +161,11 @@ export async function POST(request: NextRequest) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          // GHL contact lookup fields (must be top-level)
           email: confirmEmail,
           phone: confirmPhone,
           name: confirmName,
           firstName: confirmName.split(" ")[0] || confirmName,
           lastName: confirmName.split(" ").slice(1).join(" ") || "",
-          // Custom workflow variables
           event: "bid_confirmed",
           bidderEmail: confirmEmail,
           bidderPhone: confirmPhone,
@@ -165,7 +179,19 @@ export async function POST(request: NextRequest) {
       }).catch((err) => console.error("GHL bid confirm webhook failed:", err));
     }
 
-    return NextResponse.json({ success: true, bid, newEndAt: newItemEndAt?.toISOString() ?? null });
+    // If proxy fired, the new effective amount and end time come from the proxy resolution
+    const finalAmount = proxyResult.proxyFired ? proxyResult.newAmount : amount;
+    const finalEndAt = proxyResult.proxyFired
+      ? (proxyResult.newEndAt ?? newItemEndAt?.toISOString() ?? null)
+      : (newItemEndAt?.toISOString() ?? null);
+
+    return NextResponse.json({
+      success: true,
+      bid,
+      proxyFired: proxyResult.proxyFired,
+      newEndAt: finalEndAt,
+      currentBid: finalAmount,
+    });
   } catch (error) {
     console.error("Bid error:", error);
     return NextResponse.json({ error: "Failed to place bid" }, { status: 500 });
