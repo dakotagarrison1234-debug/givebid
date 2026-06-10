@@ -18,7 +18,7 @@ export async function GET(
     const { userId } = await auth();
     const { itemId } = await params;
 
-    const [userProxy, activeProxyCount] = await Promise.all([
+    const [userProxy, activeProxyCount, topBid] = await Promise.all([
       userId
         ? prisma.proxyBid.findUnique({
             where: { itemId_clerkUserId: { itemId, clerkUserId: userId } },
@@ -26,11 +26,17 @@ export async function GET(
           })
         : Promise.resolve(null),
       prisma.proxyBid.count({ where: { itemId, isActive: true } }),
+      prisma.bid.findFirst({
+        where: { itemId, status: "ACTIVE" },
+        orderBy: { amount: "desc" },
+        select: { clerkUserId: true },
+      }),
     ]);
 
     return NextResponse.json({
       userProxy: userProxy?.isActive ? { maxAmount: userProxy.maxAmount } : null,
       hasActiveProxy: activeProxyCount > 0,
+      isWinning: !!userId && topBid?.clerkUserId === userId,
     });
   } catch (error) {
     console.error("GET proxy-bids error:", error);

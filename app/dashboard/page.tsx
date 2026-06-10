@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
+import Pusher from "pusher-js";
 import UserMenu from "@/app/components/UserMenu";
 
 type Tab = "overview" | "winning" | "losing" | "past" | "profile";
@@ -66,6 +67,28 @@ export default function BidderDashboard() {
     if (!isSignedIn) { router.push("/sign-in?redirect_url=/dashboard"); return; }
     load();
   }, [isLoaded, isSignedIn, router, load]);
+
+  // Fix #3: real-time Pusher updates — re-fetch when any active bid item gets a new bid
+  useEffect(() => {
+    if (!data) return;
+    const activeItems = [...(data.winning ?? []), ...(data.losing ?? [])];
+    if (activeItems.length === 0) return;
+
+    const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY!, {
+      cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER!,
+    });
+
+    const channels = activeItems.map((b) => {
+      const ch = pusher.subscribe(`item-${b.itemId}`);
+      ch.bind("new-bid", () => load());
+      return ch;
+    });
+
+    return () => {
+      channels.forEach((ch) => ch.unbind_all());
+      pusher.disconnect();
+    };
+  }, [data, load]);
 
   const saveProfile = async () => {
     setSavingProfile(true);

@@ -6,7 +6,7 @@ import { useUser, SignInButton } from "@clerk/nextjs";
 import UserMenu from "@/app/components/UserMenu";
 import Pusher from "pusher-js";
 import Countdown from "@/app/components/Countdown";
-import { getNextValidBid, getValidBidSuggestions } from "@/lib/bidIncrements";
+import { getNextValidBid, getProxySuggestions } from "@/lib/bidIncrements";
 
 interface Item {
   id: string;
@@ -35,7 +35,7 @@ export default function ItemPage() {
   const { orgSlug, auctionSlug, itemId } = params as {
     orgSlug: string; auctionSlug: string; itemId: string;
   };
-  const { isSignedIn, isLoaded } = useUser();
+  const { isSignedIn, isLoaded, user } = useUser();
 
   const [item, setItem] = useState<Item | null>(null);
   const [loading, setLoading] = useState(true);
@@ -52,6 +52,10 @@ export default function ItemPage() {
   const [userProxy, setUserProxy] = useState<{ maxAmount: number } | null>(null);
   const [hasActiveProxy, setHasActiveProxy] = useState(false);
   const [cancellingProxy, setCancellingProxy] = useState(false);
+  const [proxyWasBeaten, setProxyWasBeaten] = useState(false);
+
+  // Winning state
+  const [isWinning, setIsWinning] = useState(false);
 
   const [liveBids, setLiveBids] = useState<LiveBid[]>([]);
 
@@ -68,6 +72,8 @@ export default function ItemPage() {
 
   const [effectiveEndAt, setEffectiveEndAt] = useState<string | null>(null);
   const [biddingEnded, setBiddingEnded] = useState(false);
+  const userProxyRef = useRef<{ maxAmount: number } | null>(null);
+  userProxyRef.current = userProxy;
 
   // Load item data
   useEffect(() => {
@@ -83,7 +89,8 @@ export default function ItemPage() {
             (a: Item["bids"][0], b: Item["bids"][0]) =>
               new Date(a.placedAt).getTime() - new Date(b.placedAt).getTime()
           );
-          setLiveBids(sorted.reverse().map((b: Item["bids"][0]) => ({
+          // Fix #1: only show last 5 bids
+          setLiveBids(sorted.reverse().slice(0, 5).map((b: Item["bids"][0]) => ({
             user: assignBidder(b.clerkUserId),
             amount: b.amount,
             time: new Date(b.placedAt).toLocaleTimeString(),
@@ -94,17 +101,29 @@ export default function ItemPage() {
       });
   }, [itemId]);
 
-  // Load proxy status (user's proxy + whether any proxy is active on this item)
-  useEffect(() => {
-    if (!itemId) return;
+  // Helper: refresh proxy status from server
+  const refreshProxyStatus = useCallback(() => {
+    const hadProxy = !!userProxyRef.current;
     fetch(`/api/proxy-bids/${itemId}`)
       .then(r => r.json())
       .then(d => {
+        // Fix #5: detect beaten proxy and auto-reset to set form
+        if (hadProxy && !d.userProxy) {
+          setProxyWasBeaten(true);
+        }
         setUserProxy(d.userProxy ?? null);
         setHasActiveProxy(d.hasActiveProxy ?? false);
+        // Fix #4: update winning state
+        setIsWinning(d.isWinning ?? false);
       })
       .catch(() => {/* non-critical */});
   }, [itemId]);
+
+  // Load proxy status on mount
+  useEffect(() => {
+    if (!itemId) return;
+    refreshProxyStatus();
+  }, [itemId, refreshProxyStatus]);
 
   // Pusher real-time updates
   useEffect(() => {
@@ -122,6 +141,7 @@ export default function ItemPage() {
       newEndAt?: string;
     }) => {
       setItem(prev => prev ? { ...prev, currentBid: data.amount } : prev);
+      // Fix #1: cap live bids at 5
       setLiveBids(prev => [
         {
           user: assignBidder(data.userId),
@@ -130,12 +150,14 @@ export default function ItemPage() {
           isProxy: data.isProxy ?? false,
         },
         ...prev,
-      ]);
+      ].slice(0, 5));
       if (data.hasActiveProxy !== undefined) setHasActiveProxy(data.hasActiveProxy);
       if (data.newEndAt) {
         setEffectiveEndAt(data.newEndAt);
         setBiddingEnded(false);
       }
+      // Fix #4 + #5: re-fetch proxy status on every bid to detect beaten proxy + winning state
+      refreshProxyStatus();
     });
 
     channel.bind("proxy-update", (data: { hasActiveProxy: boolean }) => {
@@ -146,10 +168,12 @@ export default function ItemPage() {
       channel.unbind_all();
       pusher.unsubscribe(`item-${itemId}`);
     };
-  }, [itemId]);
+  }, [itemId, refreshProxyStatus]);
 
+  // Fix #7: auto-refresh 75s after bidding ends (to pick up cron job results)
   const handleExpire = useCallback(() => {
     setBiddingEnded(true);
+    setTimeout(() => window.location.reload(), 75_000);
   }, []);
 
   // Manual bid handler
@@ -222,6 +246,7 @@ export default function ItemPage() {
       if (data.success) {
         setUserProxy({ maxAmount: amount });
         setHasActiveProxy(true);
+        setProxyWasBeaten(false);
         setProxyAmount("");
         setProxyMessage({
           text: data.proxyFired
@@ -254,6 +279,7 @@ export default function ItemPage() {
       const data = await res.json();
       if (data.success) {
         setUserProxy(null);
+        setProxyWasBeaten(false);
         setProxyMessage({ text: "Proxy cancelled. Your existing bids remain active.", type: "success" });
       } else {
         setProxyMessage({ text: data.error || "Failed to cancel proxy", type: "error" });
@@ -287,11 +313,14 @@ export default function ItemPage() {
   const currentBid = item.currentBid || item.startingBid;
   const minBid = item.currentBid > 0 ? getNextValidBid(item.currentBid) : item.startingBid;
   const minProxy = item.currentBid > 0 ? getNextValidBid(item.currentBid) : (item.startingBid > 0 ? item.startingBid : 1);
-  const proxySuggestions = getValidBidSuggestions(item.currentBid || 0, 4);
+  // Fix #2: use getProxySuggestions — jumps are far apart so they can't accidentally reveal a competing proxy's max
+  const proxySuggestions = getProxySuggestions(item.currentBid || 0, 4);
   const auctionClosed = item.auction?.status === "CLOSED" || item.auction?.status === "SETTLED";
   const itemSold = item.status === "SOLD" || item.status === "PENDING_PICKUP" || item.status === "PICKED_UP";
   const itemNotActive = item.status !== "ACTIVE";
   const biddingLocked = auctionClosed || itemSold || itemNotActive || biddingEnded;
+  // Fix #4: determine if current user is winning (only show when signed in)
+  const showWinning = isSignedIn && isLoaded && isWinning && !biddingEnded;
 
   return (
     <main className="min-h-screen bg-gray-950 text-white">
@@ -366,7 +395,7 @@ export default function ItemPage() {
               {!biddingEnded ? (
                 <Countdown endAt={effectiveEndAt} onExpire={handleExpire} />
               ) : (
-                <span className="text-gray-500 font-semibold">—</span>
+                <span className="text-gray-500 font-semibold text-sm">Refreshing results shortly…</span>
               )}
             </div>
           )}
@@ -389,10 +418,18 @@ export default function ItemPage() {
 
           {/* Current bid + bidding UI */}
           <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 mb-4">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-2">
               <div>
                 <div className="text-gray-500 text-sm">Current Bid</div>
                 <div className="text-emerald-400 font-bold text-3xl sm:text-4xl">${currentBid.toLocaleString()}</div>
+                {/* Fix #4: You're Winning badge */}
+                {showWinning && (
+                  <div className="mt-1.5">
+                    <span className="text-xs bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2.5 py-0.5 rounded-full font-semibold">
+                      🏆 You&apos;re Winning
+                    </span>
+                  </div>
+                )}
               </div>
               <div className="text-right flex flex-col items-end gap-2">
                 <div>
@@ -404,10 +441,6 @@ export default function ItemPage() {
                     <span className="text-xs bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded-full font-medium">
                       Proxy Active
                     </span>
-                    <span
-                      title="A bidder has set an automatic maximum. The system will bid on their behalf up to their limit — the amount is private."
-                      className="w-4 h-4 rounded-full border border-gray-600 text-gray-500 text-xs flex items-center justify-center cursor-help hover:border-gray-400 hover:text-gray-300 transition-colors"
-                    >?</span>
                   </div>
                 )}
               </div>
@@ -434,7 +467,7 @@ export default function ItemPage() {
               </div>
             ) : (
               <>
-                <div className="text-gray-500 text-sm mb-4">Minimum next bid: ${minBid.toLocaleString()}</div>
+                <div className="text-gray-500 text-sm mb-4 mt-4">Minimum next bid: ${minBid.toLocaleString()}</div>
                 {message && (
                   <div className={`text-sm mb-3 px-3 py-2 rounded-lg ${
                     message.type === "success" ? "bg-emerald-500/20 text-emerald-400" : "bg-red-500/20 text-red-400"
@@ -468,12 +501,14 @@ export default function ItemPage() {
           {/* Proxy bidding section */}
           {!biddingLocked && isLoaded && isSignedIn && (
             <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 mb-6">
-              <div className="flex items-center gap-2 mb-1">
+              <div className="flex items-center gap-2 mb-3">
                 <h3 className="font-semibold text-sm">Proxy Bidding</h3>
-                <span
-                  title="Set your maximum and we'll automatically bid for you — up to your limit — so you never have to watch the clock."
-                  className="w-4 h-4 rounded-full border border-gray-600 text-gray-500 text-xs flex items-center justify-center cursor-help hover:border-gray-400 hover:text-gray-300 transition-colors"
-                >?</span>
+              </div>
+
+              {/* Fix #8: Proper proxy explanation (always visible) */}
+              <div className="bg-gray-800/60 rounded-xl px-4 py-3 mb-4 text-xs text-gray-400 leading-relaxed">
+                <p className="font-medium text-gray-300 mb-1">How proxy bidding works</p>
+                Set your maximum and we&apos;ll automatically bid for you in the smallest increments needed to keep you in the lead — up to your limit. Your max stays private. If someone else sets a higher max, you&apos;ll be notified so you can decide whether to bid again.
               </div>
 
               {proxyMessage && (
@@ -492,7 +527,7 @@ export default function ItemPage() {
                       Your max:{" "}
                       <span className="text-indigo-300 font-semibold">${userProxy.maxAmount.toLocaleString()}</span>
                     </p>
-                    <p className="text-gray-600 text-xs mt-0.5">We're bidding automatically on your behalf.</p>
+                    <p className="text-gray-600 text-xs mt-0.5">We&apos;re bidding automatically on your behalf.</p>
                   </div>
                   <div className="flex gap-2">
                     <button
@@ -514,10 +549,15 @@ export default function ItemPage() {
                   </div>
                 </div>
               ) : (
-                /* No proxy yet — show set form */
+                /* Fix #5: No proxy — show set form. If proxy was beaten, show alert. */
                 <div>
+                  {proxyWasBeaten && (
+                    <div className="bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2 mb-3 text-xs text-red-400">
+                      Your proxy was outbid. Set a new maximum to get back in the lead.
+                    </div>
+                  )}
                   <p className="text-gray-500 text-xs mb-3">
-                    Set a max and we'll bid for you. Suggestions:
+                    Set a max and we&apos;ll bid for you. Quick picks:
                   </p>
                   <div className="flex gap-2 mb-3 flex-wrap">
                     {proxySuggestions.map(s => (
@@ -558,10 +598,10 @@ export default function ItemPage() {
             </div>
           )}
 
-          {/* Bid history */}
+          {/* Bid history — Fix #1: capped at 5 via state */}
           {liveBids.length > 0 && (
             <div>
-              <h3 className="font-semibold mb-3">Bid History</h3>
+              <h3 className="font-semibold mb-3">Recent Bids</h3>
               <div className="space-y-2">
                 {liveBids.map((bid, i) => (
                   <div key={i} className="flex items-center justify-between bg-gray-900 rounded-lg px-4 py-3">

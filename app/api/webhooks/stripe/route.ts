@@ -78,40 +78,7 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // GHL payment receipt — one notification for the whole batch
-      const winnerProfile = await prisma.bidderProfile.findUnique({ where: { clerkUserId } });
-      if (process.env.GHL_PAYMENT_RECEIPT_WEBHOOK && items.length > 0) {
-        const totalPaid = (session.amount_total || 0) / 100;
-        const orgName = items[0].organization?.name || "Organization";
-        const auctionName = items[0].auction?.title || "Auction";
-        const itemSummary = items.map((i) => i.title).join(", ");
-        const receiptEmail = winnerProfile?.email || "";
-        const receiptPhone = winnerProfile?.phone || "";
-        const receiptName = winnerProfile?.name || "Winner";
-
-        fetch(process.env.GHL_PAYMENT_RECEIPT_WEBHOOK, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            // GHL contact lookup fields — must be top-level for GHL to find/create contact
-            email: receiptEmail,
-            phone: receiptPhone,
-            name: receiptName,
-            firstName: receiptName.split(" ")[0] || receiptName,
-            lastName: receiptName.split(" ").slice(1).join(" ") || "",
-            // Custom workflow variables
-            event: "payment_received",
-            bidderEmail: receiptEmail,
-            bidderPhone: receiptPhone,
-            bidderName: receiptName,
-            itemCount: items.length,
-            itemSummary,
-            totalAmountPaid: totalPaid,
-            auctionName,
-            orgName,
-          }),
-        }).catch((err) => console.error("GHL receipt webhook failed:", err));
-      }
+      // Payment receipt is handled by Stripe's built-in email receipts
     } catch (err) {
       console.error("Error processing Stripe webhook:", err);
       return NextResponse.json({ error: "Processing failed" }, { status: 500 });
