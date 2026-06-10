@@ -40,18 +40,17 @@ export default async function HomePage() {
 
       {/* ── Hero ── */}
       <section className="relative overflow-hidden px-4 sm:px-6 pt-16 pb-20 sm:pt-24 sm:pb-28">
-        {/* Background glow */}
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-emerald-500/10 rounded-full blur-3xl" />
         </div>
 
         <div className="relative max-w-3xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-medium px-3 py-1.5 rounded-full mb-6">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse inline-block" />
-            {activeAuctions.length > 0
-              ? `${activeAuctions.length} live auction${activeAuctions.length !== 1 ? "s" : ""} happening now`
-              : "Free online auctions for nonprofits"}
-          </div>
+          {activeAuctions.length > 0 && (
+            <div className="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-medium px-3 py-1.5 rounded-full mb-6">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse inline-block" />
+              {activeAuctions.length} live auction{activeAuctions.length !== 1 ? "s" : ""} happening now
+            </div>
+          )}
 
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-tight tracking-tight mb-5">
             Bid on items.<br />
@@ -59,26 +58,17 @@ export default async function HomePage() {
           </h1>
 
           <p className="text-gray-400 text-base sm:text-lg max-w-xl mx-auto mb-8 leading-relaxed">
-            GiveBid powers live online auctions for schools, churches, and nonprofits. Browse items,
-            place bids, and help organizations raise more — from anywhere.
+            Live online auctions from local schools, churches, and nonprofits.
+            Browse items, place bids from your phone, and win something great — all while giving back.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            {activeAuctions.length > 0 ? (
-              <a
-                href="#live-auctions"
-                className="bg-emerald-500 hover:bg-emerald-400 text-white font-semibold px-8 py-3.5 rounded-xl text-base transition-colors w-full sm:w-auto text-center"
-              >
-                Browse Live Auctions →
-              </a>
-            ) : (
-              <Link
-                href={sortedOrgs[0] ? `/${sortedOrgs[0].slug}` : "/apply"}
-                className="bg-emerald-500 hover:bg-emerald-400 text-white font-semibold px-8 py-3.5 rounded-xl text-base transition-colors w-full sm:w-auto text-center"
-              >
-                Explore Organizations →
-              </Link>
-            )}
+            <a
+              href="#live-auctions"
+              className="bg-emerald-500 hover:bg-emerald-400 text-white font-semibold px-8 py-3.5 rounded-xl text-base transition-colors w-full sm:w-auto text-center"
+            >
+              {activeAuctions.length > 0 ? "Browse Live Auctions →" : "Explore Organizations →"}
+            </a>
             {!userId && (
               <Link
                 href="/sign-up"
@@ -91,92 +81,126 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* ── How it works ── */}
+      {/* ── How bidding works ── */}
       <section className="border-t border-gray-800/60 bg-gray-900/40 px-4 sm:px-6 py-12 sm:py-16">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-5xl mx-auto">
           <h2 className="text-center text-gray-500 text-xs font-semibold uppercase tracking-widest mb-10">
-            How it works
+            How bidding works
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8 mb-12">
             {[
               {
-                step: "1",
                 icon: "🔍",
                 title: "Find an auction",
-                desc: "Browse live auctions from organizations in your community — schools, nonprofits, churches, and more.",
+                desc: "Browse live auctions from organizations in your community. Each one has a set end time — when it hits zero, the highest bidder wins.",
               },
               {
-                step: "2",
                 icon: "⚡",
-                title: "Place your bids",
-                desc: "Bid on items you love in real time. Get instant alerts if you're outbid so you never miss out.",
+                title: "Place your bid",
+                desc: "Enter any amount at or above the minimum increment. Bids update in real time — if you're outbid, you'll get an instant notification.",
               },
               {
-                step: "3",
                 icon: "🏆",
                 title: "Win & pick up",
-                desc: "Win the auction, pay securely online, then pick up your item — simple from start to finish.",
+                desc: "Highest bid when the clock runs out wins the item. Pay securely online and pick up your item at the organization's location.",
               },
-            ].map(({ step, icon, title, desc }) => (
-              <div key={step} className="flex flex-col items-center text-center gap-3">
+            ].map(({ icon, title, desc }) => (
+              <div key={title} className="flex flex-col items-center text-center gap-3">
                 <div className="w-14 h-14 bg-gray-800 border border-gray-700 rounded-2xl flex items-center justify-center text-2xl mb-1">
                   {icon}
                 </div>
-                <div className="text-xs text-gray-600 font-semibold uppercase tracking-widest">Step {step}</div>
                 <h3 className="font-bold text-base">{title}</h3>
                 <p className="text-gray-500 text-sm leading-relaxed">{desc}</p>
               </div>
             ))}
+          </div>
+
+          {/* ── What makes GiveBid different ── */}
+          <div className="border-t border-gray-800 pt-10">
+            <h3 className="text-center text-gray-500 text-xs font-semibold uppercase tracking-widest mb-8">
+              Built for fair, stress-free bidding
+            </h3>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              {[
+                {
+                  icon: "🤖",
+                  title: "Proxy bidding",
+                  desc: "Set your max and we'll automatically bid for you — up to your limit. Your max stays private.",
+                },
+                {
+                  icon: "📲",
+                  title: "Outbid alerts",
+                  desc: "Get an SMS or email the moment someone outbids you, so you never miss a chance to respond.",
+                },
+                {
+                  icon: "⏱️",
+                  title: "Popcorn timer",
+                  desc: "A bid in the final 2:30 extends the clock — giving everyone a fair shot until the real last bid.",
+                },
+                {
+                  icon: "🔒",
+                  title: "Secure checkout",
+                  desc: "Pay online via Stripe when you win. No cash, no awkward exchanges — just a simple checkout link.",
+                },
+              ].map(({ icon, title, desc }) => (
+                <div key={title} className="bg-gray-900 border border-gray-800 rounded-xl p-4">
+                  <div className="text-2xl mb-2">{icon}</div>
+                  <h4 className="font-semibold text-sm mb-1">{title}</h4>
+                  <p className="text-gray-500 text-xs leading-relaxed">{desc}</p>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
 
       {/* ── Live Auctions ── */}
       <section id="live-auctions" className="px-4 sm:px-6 py-10 sm:py-14 max-w-6xl mx-auto">
+        <div className="flex items-center gap-3 mb-6">
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse inline-block shrink-0" />
+          <h2 className="text-xl sm:text-2xl font-bold">Live Auctions</h2>
+          {activeAuctions.length > 0 && (
+            <span className="text-gray-600 text-sm">({activeAuctions.length})</span>
+          )}
+        </div>
+
         {activeAuctions.length > 0 ? (
-          <>
-            <div className="flex items-center justify-between gap-3 mb-6">
-              <div className="flex items-center gap-3">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse inline-block shrink-0" />
-                <h2 className="text-xl sm:text-2xl font-bold">Live Auctions</h2>
-                <span className="text-gray-600 text-sm">({activeAuctions.length})</span>
-              </div>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {activeAuctions.map((auction) => {
-                const raised = auction.items.reduce((sum, i) => sum + i.currentBid, 0);
-                const activeItems = auction.items.filter(i => i.status === "ACTIVE").length;
-                return (
-                  <Link
-                    key={auction.id}
-                    href={`/${auction.organization.slug}/${auction.slug}`}
-                    className="bg-gray-900 border border-gray-800 hover:border-emerald-500 rounded-xl p-5 transition-colors group"
-                  >
-                    <div className="flex items-start justify-between gap-2 mb-3">
-                      <div className="min-w-0">
-                        <div className="text-xs text-emerald-400 font-medium mb-1 truncate">
-                          {auction.organization.name}
-                        </div>
-                        <h3 className="font-semibold text-base group-hover:text-emerald-400 transition-colors truncate">
-                          {auction.title}
-                        </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {activeAuctions.map((auction) => {
+              const raised = auction.items.reduce((sum, i) => sum + i.currentBid, 0);
+              const activeItems = auction.items.filter(i => i.status === "ACTIVE").length;
+              return (
+                <Link
+                  key={auction.id}
+                  href={`/${auction.organization.slug}/${auction.slug}`}
+                  className="bg-gray-900 border border-gray-800 hover:border-emerald-500 rounded-xl p-5 transition-colors group"
+                >
+                  <div className="flex items-start justify-between gap-2 mb-3">
+                    <div className="min-w-0">
+                      <div className="text-xs text-emerald-400 font-medium mb-1 truncate">
+                        {auction.organization.name}
                       </div>
-                      <span className="text-xs bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full shrink-0">
-                        Live
-                      </span>
+                      <h3 className="font-semibold text-base group-hover:text-emerald-400 transition-colors truncate">
+                        {auction.title}
+                      </h3>
                     </div>
-                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-gray-500">
-                      <span>{activeItems} items</span>
-                      {raised > 0 && <span className="text-emerald-400 font-medium">${raised.toLocaleString()} raised</span>}
-                    </div>
-                    <div className="text-xs text-gray-600 mt-2">
-                      Closes <LocalDate iso={auction.endAt.toISOString()} />
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
-          </>
+                    <span className="text-xs bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full shrink-0">
+                      Live
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-gray-500">
+                    <span>{activeItems} item{activeItems !== 1 ? "s" : ""}</span>
+                    {raised > 0 && (
+                      <span className="text-emerald-400 font-medium">${raised.toLocaleString()} raised</span>
+                    )}
+                  </div>
+                  <div className="text-xs text-gray-600 mt-2">
+                    Closes <LocalDate iso={auction.endAt.toISOString()} />
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
         ) : (
           <div className="text-center py-14 text-gray-600 bg-gray-900 rounded-2xl border border-gray-800">
             <div className="text-4xl mb-3">📅</div>
@@ -190,7 +214,7 @@ export default async function HomePage() {
       {sortedOrgs.length > 0 && (
         <section className="px-4 sm:px-6 py-10 sm:py-14 max-w-6xl mx-auto border-t border-gray-800/50">
           <div className="flex items-center gap-3 mb-6">
-            <h2 className="text-xl sm:text-2xl font-bold">Organizations</h2>
+            <h2 className="text-xl sm:text-2xl font-bold">Browse by Organization</h2>
             <span className="text-gray-600 text-sm">({sortedOrgs.length})</span>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
@@ -219,33 +243,6 @@ export default async function HomePage() {
         </section>
       )}
 
-      {/* ── Org CTA ── */}
-      <section className="px-4 sm:px-6 py-16 sm:py-20 text-center border-t border-gray-800">
-        <div className="max-w-xl mx-auto">
-          <div className="text-3xl mb-4">🏫</div>
-          <h2 className="text-2xl sm:text-3xl font-bold mb-3">Run your own auction</h2>
-          <p className="text-gray-500 text-sm sm:text-base mb-8 leading-relaxed">
-            GiveBid is free for schools, churches, and nonprofits. Set up your auction in minutes,
-            manage items from your phone, and let your community bid from anywhere.
-          </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <Link
-              href="/apply"
-              className="bg-emerald-500 hover:bg-emerald-400 text-white px-8 py-3.5 rounded-xl font-semibold text-base w-full sm:w-auto text-center"
-            >
-              Apply for Your Organization
-            </Link>
-            {!userId && (
-              <Link
-                href="/sign-in"
-                className="text-gray-400 hover:text-white text-sm w-full sm:w-auto text-center py-2"
-              >
-                Already have an account? Sign in →
-              </Link>
-            )}
-          </div>
-        </div>
-      </section>
     </main>
   );
 }
