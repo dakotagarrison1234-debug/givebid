@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useUser, SignInButton } from "@clerk/nextjs";
+import UserMenu from "@/app/components/UserMenu";
 import Pusher from "pusher-js";
 import Countdown from "@/app/components/Countdown";
 
@@ -179,17 +180,7 @@ export default function ItemPage() {
           <span className="text-gray-600 hidden sm:inline">/</span>
           <span className="text-white truncate hidden sm:inline">{item.title}</span>
         </div>
-        {!isLoaded ? null : !isSignedIn ? (
-          <SignInButton mode="modal">
-            <button className="bg-emerald-500 hover:bg-emerald-400 text-white text-sm px-3 sm:px-4 py-2 rounded-lg shrink-0 whitespace-nowrap">
-              Sign In to Bid
-            </button>
-          </SignInButton>
-        ) : (
-          <Link href="/dashboard" className="text-gray-300 hover:text-white text-sm shrink-0">
-            Dashboard
-          </Link>
-        )}
+        <UserMenu />
       </header>
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-10 grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-12">

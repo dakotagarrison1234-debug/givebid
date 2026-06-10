@@ -1,12 +1,12 @@
 export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
-import { getUserOrg } from "@/lib/auth";
+import { getUserOrg, isSuperAdmin } from "@/lib/auth";
 
 export async function GET() {
-  const membership = await getUserOrg();
+  const [membership, superAdmin] = await Promise.all([getUserOrg(), isSuperAdmin()]);
 
   if (!membership) {
-    return NextResponse.json({ orgId: null, orgName: null, role: null });
+    return NextResponse.json({ orgId: null, orgName: null, role: null, isSuperAdmin: superAdmin });
   }
 
   return NextResponse.json({
@@ -14,5 +14,6 @@ export async function GET() {
     orgName: membership.organization.name,
     orgSlug: membership.organization.slug,
     role: membership.role,
+    isSuperAdmin: superAdmin,
   });
 }

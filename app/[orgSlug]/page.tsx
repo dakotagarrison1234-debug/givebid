@@ -1,9 +1,9 @@
 export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { auth } from "@clerk/nextjs/server";
 import LocalDate from "@/app/components/LocalDate";
 import OrgLogo from "@/app/components/OrgLogo";
+import UserMenu from "@/app/components/UserMenu";
 
 interface Props {
   params: Promise<{ orgSlug: string }>;
@@ -11,7 +11,6 @@ interface Props {
 
 export default async function OrgPage({ params }: Props) {
   const { orgSlug } = await params;
-  const { userId } = await auth();
 
   const org = await prisma.organization.findUnique({
     where: { slug: orgSlug },
@@ -49,21 +48,7 @@ export default async function OrgPage({ params }: Props) {
       {/* Header */}
       <header className="border-b border-gray-800 px-4 sm:px-6 py-3 flex items-center justify-between gap-3 bg-gray-950/95 backdrop-blur sticky top-0 z-40">
         <Link href="/" className="text-emerald-400 font-bold text-xl shrink-0">GiveBid</Link>
-        {!userId ? (
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-            <Link href="/sign-in" className="text-gray-400 hover:text-white text-sm hidden sm:inline">Sign In</Link>
-            <Link href="/sign-up" className="bg-emerald-500 hover:bg-emerald-400 text-white text-sm px-4 py-2 rounded-lg whitespace-nowrap">
-              Register to Bid
-            </Link>
-          </div>
-        ) : (
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-            <Link href="/my-bids" className="text-gray-400 hover:text-white text-sm hidden sm:inline">My Bids</Link>
-            <Link href="/dashboard" className="bg-gray-800 hover:bg-gray-700 text-white text-sm px-4 py-2 rounded-lg">
-              Dashboard
-            </Link>
-          </div>
-        )}
+        <UserMenu />
       </header>
 
       {/* Org hero */}

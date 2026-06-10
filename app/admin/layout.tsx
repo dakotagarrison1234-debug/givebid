@@ -1,7 +1,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { UserButton } from "@clerk/nextjs";
+import UserMenu from "@/app/components/UserMenu";
 import { prisma } from "@/lib/prisma";
 import { isSuperAdmin } from "@/lib/auth";
 import { cookies } from "next/headers";
@@ -140,7 +140,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           )}
 
           <div className="px-4 py-4 border-t border-gray-800 flex items-center gap-3">
-            <UserButton />
+            <UserMenu />
             <div className="text-sm text-gray-500 truncate">Account</div>
           </div>
         </aside>

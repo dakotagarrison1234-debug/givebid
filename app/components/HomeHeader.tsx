@@ -1,29 +1,13 @@
 "use client";
 import Link from "next/link";
-import { useAuth, UserButton } from "@clerk/nextjs";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-
-interface MeData {
-  orgId?: string;
-  role?: string;
-  orgSlug?: string;
-}
+import UserMenu from "./UserMenu";
 
 export default function HomeHeader() {
-  const { isSignedIn, isLoaded } = useAuth();
-  const [me, setMe] = useState<MeData | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQ, setSearchQ] = useState("");
   const router = useRouter();
-
-  useEffect(() => {
-    if (!isLoaded || !isSignedIn) return;
-    fetch("/api/me")
-      .then((r) => r.json())
-      .then((d) => setMe(d))
-      .catch(() => {});
-  }, [isLoaded, isSignedIn]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,7 +25,6 @@ export default function HomeHeader() {
         <span className="text-gray-600 text-sm hidden sm:inline">Nonprofit Auctions</span>
       </Link>
 
-      {/* Inline search (expands when open) */}
       {searchOpen ? (
         <form onSubmit={handleSearch} className="flex-1 flex items-center gap-2">
           <input
@@ -55,12 +38,13 @@ export default function HomeHeader() {
           <button type="submit" className="bg-emerald-500 hover:bg-emerald-400 text-white px-4 py-2 rounded-xl text-sm font-medium shrink-0">
             Go
           </button>
-          <button type="button" onClick={() => { setSearchOpen(false); setSearchQ(""); }} className="text-gray-500 hover:text-gray-300 text-xl px-1 shrink-0">
+          <button type="button" onClick={() => { setSearchOpen(false); setSearchQ(""); }}
+            className="text-gray-500 hover:text-gray-300 text-xl px-1 shrink-0">
             ×
           </button>
         </form>
       ) : (
-        <div className="flex items-center gap-2 sm:gap-4">
+        <div className="flex items-center gap-2 sm:gap-3">
           {/* Search icon */}
           <button
             onClick={() => setSearchOpen(true)}
@@ -73,37 +57,8 @@ export default function HomeHeader() {
             </svg>
           </button>
 
-          {/* Nav links */}
-          {!isLoaded ? null : !isSignedIn ? (
-            <>
-              <Link href="/sign-in" className="text-gray-400 hover:text-white text-sm hidden sm:inline">
-                Sign In
-              </Link>
-              <Link href="/sign-up" className="bg-emerald-500 hover:bg-emerald-400 text-white text-sm px-4 py-2 rounded-lg whitespace-nowrap">
-                Sign Up
-              </Link>
-            </>
-          ) : me?.orgId ? (
-            <>
-              <Link href="/admin/dashboard" className="text-gray-400 hover:text-white text-sm hidden sm:inline">
-                Admin
-              </Link>
-              <Link href="/dashboard" className="text-gray-400 hover:text-white text-sm hidden sm:inline">
-                My Bids
-              </Link>
-              <UserButton />
-            </>
-          ) : (
-            <>
-              <Link href="/dashboard" className="text-gray-400 hover:text-white text-sm hidden sm:inline">
-                My Bids
-              </Link>
-              <Link href="/apply" className="bg-emerald-500 hover:bg-emerald-400 text-white text-sm px-4 py-2 rounded-lg hidden sm:inline whitespace-nowrap">
-                Host an Auction
-              </Link>
-              <UserButton />
-            </>
-          )}
+          {/* Single user menu — handles all auth states, roles, and sign out */}
+          <UserMenu />
         </div>
       )}
     </header>
