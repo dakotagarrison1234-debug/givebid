@@ -34,12 +34,12 @@ export default async function ManageAuctionPage({ params }: Props) {
 
   return (
     <>
-      <header className="border-b border-gray-800 px-8 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Link href="/admin/auctions" className="text-gray-400 hover:text-white text-sm">← Auctions</Link>
+      <header className="border-b border-gray-800 px-4 sm:px-8 py-4 flex flex-col sm:flex-row sm:items-center gap-3">
+        <div className="flex items-center gap-2 min-w-0 flex-1">
+          <Link href="/admin/auctions" className="text-gray-400 hover:text-white text-sm shrink-0">← Auctions</Link>
           <span className="text-gray-600">/</span>
-          <h1 className="text-xl font-semibold">{auction.title}</h1>
-          <span className={`text-xs px-2 py-1 rounded-full ${
+          <h1 className="text-lg sm:text-xl font-semibold truncate">{auction.title}</h1>
+          <span className={`text-xs px-2 py-1 rounded-full shrink-0 ${
             auction.status === "OPEN" ? "bg-emerald-500/20 text-emerald-400"
             : auction.status === "CLOSED" ? "bg-red-500/20 text-red-400"
             : "bg-gray-700 text-gray-400"
@@ -47,30 +47,30 @@ export default async function ManageAuctionPage({ params }: Props) {
             {auction.status.toLowerCase()}
           </span>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           <Link
             href={`/${auction.organization.slug}/${auction.slug}`}
             target="_blank"
-            className="text-gray-400 hover:text-white text-sm border border-gray-700 px-4 py-2 rounded-lg"
+            className="text-gray-400 hover:text-white text-xs sm:text-sm border border-gray-700 px-3 py-2 rounded-lg whitespace-nowrap"
           >
-            View Public Page ↗
+            View ↗
           </Link>
           <AuctionStatusButtons auctionId={auction.id} status={auction.status} />
         </div>
       </header>
 
-      <div className="px-8 py-6 space-y-6">
+      <div className="px-4 sm:px-8 py-6 space-y-6">
         {/* Stats */}
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
           {[
             { label: "Total Raised", value: `$${totalRaised.toLocaleString()}` },
             { label: "Items", value: auction.items.length },
             { label: "Total Bids", value: auction.items.reduce((sum, item) => sum + item.bids.length, 0) },
             { label: "Closes", value: <LocalDate iso={auction.endAt.toISOString()} /> },
           ].map((stat) => (
-            <div key={stat.label} className="bg-gray-900 border border-gray-800 rounded-xl p-5">
-              <div className="text-gray-500 text-sm mb-1">{stat.label}</div>
-              <div className="text-2xl font-bold">{stat.value}</div>
+            <div key={stat.label} className="bg-gray-900 border border-gray-800 rounded-xl p-4 sm:p-5">
+              <div className="text-gray-500 text-xs sm:text-sm mb-1">{stat.label}</div>
+              <div className="text-xl sm:text-2xl font-bold">{stat.value}</div>
             </div>
           ))}
         </div>
@@ -88,7 +88,8 @@ export default async function ManageAuctionPage({ params }: Props) {
               No items yet — add items and assign them to this auction.
             </div>
           ) : (
-            <table className="w-full">
+            <div className="overflow-x-auto">
+            <table className="w-full min-w-[600px]">
               <thead>
                 <tr className="border-b border-gray-800">
                   <th className="text-left px-6 py-4 text-gray-500 text-sm font-medium">Item</th>
@@ -135,6 +136,7 @@ export default async function ManageAuctionPage({ params }: Props) {
                 ))}
               </tbody>
             </table>
+            </div>
           )}
         </div>
       </div>

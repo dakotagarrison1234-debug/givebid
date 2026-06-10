@@ -34,11 +34,11 @@ export default async function WinnersPage() {
 
   return (
     <>
-      <header className="border-b border-gray-800 px-8 py-4">
+      <header className="border-b border-gray-800 px-4 sm:px-8 py-4">
         <h1 className="text-xl font-semibold">Winners &amp; Payments</h1>
       </header>
 
-      <div className="px-8 py-6 space-y-8">
+      <div className="px-4 sm:px-8 py-6 space-y-8">
 
         {/* Confirmed Winners */}
         <div>
@@ -47,7 +47,8 @@ export default async function WinnersPage() {
             <p className="text-gray-500">No confirmed winners yet — winners are set when an auction closes.</p>
           ) : (
             <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
-              <table className="w-full">
+              <div className="overflow-x-auto">
+              <table className="w-full min-w-[600px]">
                 <thead>
                   <tr className="border-b border-gray-800">
                     <th className="text-left px-6 py-4 text-gray-500 text-sm font-medium">Item</th>
@@ -96,6 +97,7 @@ export default async function WinnersPage() {
                   })}
                 </tbody>
               </table>
+              </div>
             </div>
           )}
         </div>
@@ -107,7 +109,8 @@ export default async function WinnersPage() {
             <p className="text-gray-500">No active bids yet.</p>
           ) : (
             <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
-              <table className="w-full">
+              <div className="overflow-x-auto">
+              <table className="w-full min-w-[500px]">
                 <thead>
                   <tr className="border-b border-gray-800">
                     <th className="text-left px-6 py-4 text-gray-500 text-sm font-medium">Item</th>
@@ -127,6 +130,7 @@ export default async function WinnersPage() {
                   ))}
                 </tbody>
               </table>
+              </div>
             </div>
           )}
         </div>

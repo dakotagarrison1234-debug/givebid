@@ -60,6 +60,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     { label: "Items", href: "/admin/items", icon: "☰" },
     { label: "Auctions", href: "/admin/auctions", icon: "◷" },
     { label: "Winners", href: "/admin/winners", icon: "✓" },
+    { label: "Pickup", href: "/admin/pickup", icon: "📦" },
     ...(isOwnerOrAdmin ? [{ label: "Team", href: "/admin/staff", icon: "👥" }] : []),
   ];
 

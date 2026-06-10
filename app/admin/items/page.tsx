@@ -14,14 +14,14 @@ export default async function ItemsPage() {
 
   return (
     <>
-      <header className="border-b border-gray-800 px-8 py-4 flex items-center justify-between">
+      <header className="border-b border-gray-800 px-4 sm:px-8 py-4 flex items-center justify-between">
         <h1 className="text-xl font-semibold">Items ({items.length})</h1>
         <Link href="/admin/items/new" className="bg-emerald-500 hover:bg-emerald-400 text-white text-sm px-4 py-2 rounded-lg">
           + Add Item
         </Link>
       </header>
 
-      <div className="px-8 py-6">
+      <div className="px-4 sm:px-8 py-6">
         {items.length === 0 ? (
           <div className="text-center py-20 text-gray-500">
             <p className="text-lg mb-4">No items yet</p>
@@ -31,7 +31,8 @@ export default async function ItemsPage() {
           </div>
         ) : (
           <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
-            <table className="w-full">
+            <div className="overflow-x-auto">
+            <table className="w-full min-w-[700px]">
               <thead>
                 <tr className="border-b border-gray-800">
                   <th className="text-left px-6 py-4 text-gray-500 text-sm font-medium">Item</th>
@@ -79,6 +80,7 @@ export default async function ItemsPage() {
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
         )}
       </div>
