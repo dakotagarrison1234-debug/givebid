@@ -2,7 +2,8 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useUser, UserButton } from "@clerk/nextjs";
+import { useUser } from "@clerk/nextjs";
+import UserMenu from "@/app/components/UserMenu";
 
 type Tab = "overview" | "winning" | "losing" | "past" | "profile";
 
@@ -150,7 +151,7 @@ export default function BidderDashboard() {
           </Link>
         </div>
         <div className="px-4 py-4 border-t border-gray-800 flex items-center gap-3">
-          <UserButton />
+          <UserMenu />
           <div className="min-w-0">
             <div className="text-sm text-white font-medium truncate">{user?.firstName || "Account"}</div>
             <div className="text-xs text-gray-500 truncate">{user?.primaryEmailAddress?.emailAddress}</div>
@@ -168,7 +169,7 @@ export default function BidderDashboard() {
             {unpaidWins.length > 0 && (
               <span className="bg-orange-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">{unpaidWins.length}</span>
             )}
-            <UserButton />
+            <UserMenu />
           </div>
         </header>
 
@@ -390,7 +391,7 @@ export default function BidderDashboard() {
           {tab === "profile" && (
             <div className="max-w-lg">
               <div className="flex items-center gap-4 mb-6 pb-6 border-b border-gray-800">
-                <UserButton />
+                <UserMenu />
                 <div>
                   <div className="font-semibold">{user?.fullName || "Your Account"}</div>
                   <div className="text-gray-500 text-sm">{user?.primaryEmailAddress?.emailAddress}</div>
