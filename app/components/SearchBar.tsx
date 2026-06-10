@@ -1,0 +1,267 @@
+"use client";
+import { useState, useEffect, useRef, useCallback } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+
+interface SearchItem {
+  id: string;
+  title: string;
+  currentBid: number;
+  organization: { name: string; slug: string };
+  auction: { slug: string; title: string } | null;
+  photos: { url: string }[];
+}
+
+interface SearchAuction {
+  id: string;
+  title: string;
+  slug: string;
+  organization: { name: string; slug: string };
+  _count: { items: number };
+}
+
+interface SearchOrg {
+  id: string;
+  name: string;
+  slug: string;
+  _count: { auctions: number };
+  auctions: { id: string }[];
+}
+
+interface SearchResults {
+  items: SearchItem[];
+  auctions: SearchAuction[];
+  orgs: SearchOrg[];
+}
+
+interface Props {
+  defaultValue?: string;
+  placeholder?: string;
+  size?: "default" | "large";
+}
+
+export default function SearchBar({
+  defaultValue = "",
+  placeholder = "Search items, auctions, organizations…",
+  size = "default",
+}: Props) {
+  const [query, setQuery] = useState(defaultValue);
+  const [results, setResults] = useState<SearchResults | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+  const router = useRouter();
+
+  const search = useCallback(async (q: string) => {
+    if (q.length < 2) {
+      setResults(null);
+      setOpen(false);
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
+      const data: SearchResults = await res.json();
+      setResults(data);
+      setOpen(true);
+    } catch {
+      // ignore network errors
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => search(query), 250);
+    return () => clearTimeout(debounceRef.current);
+  }, [query, search]);
+
+  // Close on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const hasResults =
+    results &&
+    (results.items.length + results.auctions.length + results.orgs.length) > 0;
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Escape") {
+      setOpen(false);
+      inputRef.current?.blur();
+    }
+    if (e.key === "Enter" && query.length >= 2) {
+      setOpen(false);
+      router.push(`/search?q=${encodeURIComponent(query)}`);
+    }
+  };
+
+  const clearAndClose = () => {
+    setOpen(false);
+    setQuery("");
+  };
+
+  const inputClass =
+    size === "large"
+      ? "w-full bg-gray-800 border border-gray-700 rounded-xl pl-12 pr-4 py-4 text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500 text-base"
+      : "w-full bg-gray-800 border border-gray-700 rounded-xl pl-11 pr-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500 text-sm";
+
+  return (
+    <div ref={containerRef} className="relative w-full">
+      <div className="relative">
+        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none select-none">
+          🔍
+        </span>
+        <input
+          ref={inputRef}
+          type="text"
+          value={query}
+          onChange={e => setQuery(e.target.value)}
+          onFocus={() => hasResults && setOpen(true)}
+          onKeyDown={handleKeyDown}
+          placeholder={placeholder}
+          className={inputClass}
+          autoComplete="off"
+        />
+        {loading && (
+          <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 text-xs animate-pulse">
+            searching…
+          </span>
+        )}
+        {!loading && query && (
+          <button
+            onClick={() => { setQuery(""); setOpen(false); }}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-600 hover:text-gray-400 text-lg leading-none"
+          >
+            ×
+          </button>
+        )}
+      </div>
+
+      {/* Dropdown */}
+      {open && query.length >= 2 && (
+        <div className="absolute top-full mt-2 w-full bg-gray-900 border border-gray-700 rounded-xl shadow-2xl z-50 overflow-hidden max-h-[70vh] overflow-y-auto">
+          {hasResults ? (
+            <>
+              {/* Items */}
+              {results!.items.length > 0 && (
+                <div>
+                  <div className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-800">
+                    Items
+                  </div>
+                  {results!.items.map(item => (
+                    <Link
+                      key={item.id}
+                      href={`/${item.organization.slug}/${item.auction?.slug}/item/${item.id}`}
+                      onClick={clearAndClose}
+                      className="flex items-center gap-3 px-4 py-3 hover:bg-gray-800 transition-colors"
+                    >
+                      {item.photos[0] ? (
+                        <img
+                          src={item.photos[0].url}
+                          alt=""
+                          className="w-10 h-10 object-cover rounded-lg shrink-0"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 bg-gray-800 rounded-lg shrink-0 flex items-center justify-center text-gray-600 text-xs">
+                          ?
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-medium text-white truncate">{item.title}</div>
+                        <div className="text-xs text-gray-500 truncate">{item.organization.name}</div>
+                      </div>
+                      <div className="text-emerald-400 text-sm font-semibold shrink-0">
+                        ${(item.currentBid || 0).toLocaleString()}
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
+
+              {/* Auctions */}
+              {results!.auctions.length > 0 && (
+                <div>
+                  <div className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-800 border-t border-t-gray-800">
+                    Live Auctions
+                  </div>
+                  {results!.auctions.map(auction => (
+                    <Link
+                      key={auction.id}
+                      href={`/${auction.organization.slug}/${auction.slug}`}
+                      onClick={clearAndClose}
+                      className="flex items-center gap-3 px-4 py-3 hover:bg-gray-800 transition-colors"
+                    >
+                      <div className="w-10 h-10 bg-emerald-500/20 rounded-lg shrink-0 flex items-center justify-center text-emerald-400 text-base">
+                        ◷
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-medium text-white truncate">{auction.title}</div>
+                        <div className="text-xs text-gray-500">{auction.organization.name} · {auction._count.items} items</div>
+                      </div>
+                      <span className="text-xs bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full shrink-0">Live</span>
+                    </Link>
+                  ))}
+                </div>
+              )}
+
+              {/* Orgs */}
+              {results!.orgs.length > 0 && (
+                <div>
+                  <div className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-800 border-t border-t-gray-800">
+                    Organizations
+                  </div>
+                  {results!.orgs.map(org => (
+                    <Link
+                      key={org.id}
+                      href={`/${org.slug}`}
+                      onClick={clearAndClose}
+                      className="flex items-center gap-3 px-4 py-3 hover:bg-gray-800 transition-colors"
+                    >
+                      <div className="w-10 h-10 bg-gray-800 rounded-lg shrink-0 flex items-center justify-center text-white font-bold text-base">
+                        {org.name[0].toUpperCase()}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-medium text-white truncate">{org.name}</div>
+                        <div className="text-xs text-gray-500">
+                          {org.auctions.length > 0
+                            ? <span className="text-emerald-500">{org.auctions.length} live now</span>
+                            : `${org._count.auctions} auctions total`
+                          }
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
+
+              {/* See all results link */}
+              <Link
+                href={`/search?q=${encodeURIComponent(query)}`}
+                onClick={() => setOpen(false)}
+                className="flex items-center justify-center gap-1 px-4 py-3 text-sm text-emerald-400 hover:bg-gray-800 border-t border-gray-800 transition-colors"
+              >
+                See all results for &ldquo;{query}&rdquo; →
+              </Link>
+            </>
+          ) : (
+            !loading && (
+              <div className="px-4 py-8 text-center">
+                <p className="text-gray-500 text-sm">No active items or live auctions found for &ldquo;{query}&rdquo;</p>
+              </div>
+            )
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
