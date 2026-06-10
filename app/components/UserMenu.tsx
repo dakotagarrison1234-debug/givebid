@@ -116,15 +116,15 @@ export default function UserMenu() {
 
       {/* Drawer */}
       {open && (
-        <div className="fixed inset-0 z-[60] flex justify-end">
+        <>
           {/* Backdrop */}
           <div
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm"
             onClick={() => setOpen(false)}
           />
 
-          {/* Panel */}
-          <div className="relative w-72 max-w-[85vw] h-full bg-gray-950 border-l border-gray-800 flex flex-col shadow-2xl">
+          {/* Panel — fixed independently so height is always full viewport */}
+          <div className="fixed top-0 right-0 bottom-0 z-[61] w-72 max-w-[85vw] bg-gray-950 border-l border-gray-800 flex flex-col shadow-2xl">
             {/* User info header */}
             <div className="px-5 py-5 border-b border-gray-800 flex items-start justify-between gap-3">
               <div className="flex items-center gap-3 min-w-0">
@@ -212,7 +212,7 @@ export default function UserMenu() {
               </button>
             </div>
           </div>
-        </div>
+        </>
       )}
     </>
   );
