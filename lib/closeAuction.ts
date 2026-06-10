@@ -22,20 +22,31 @@ async function closeItem(item: ItemWithBidsAndOrg) {
     });
 
     if (process.env.GHL_AUCTION_WON_WEBHOOK && item.auction) {
+      const wonEmail = winnerProfile?.email || "";
+      const wonPhone = winnerProfile?.phone || "";
+      const wonName = winnerProfile?.name || "Winner";
+      const paymentUrl = `${process.env.NEXT_PUBLIC_APP_URL}/dashboard`;
       fetch(process.env.GHL_AUCTION_WON_WEBHOOK, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          // GHL contact lookup fields — must be top-level for GHL to find/create contact
+          email: wonEmail,
+          phone: wonPhone,
+          name: wonName,
+          firstName: wonName.split(" ")[0] || wonName,
+          lastName: wonName.split(" ").slice(1).join(" ") || "",
+          // Custom workflow variables
           event: "auction_won",
-          bidderEmail: winnerProfile?.email || winningBid.clerkUserId,
-          bidderPhone: winnerProfile?.phone || "",
-          bidderName: winnerProfile?.name || "Winner",
+          bidderEmail: wonEmail,
+          bidderPhone: wonPhone,
+          bidderName: wonName,
           itemTitle: item.title,
           itemId: item.id,
           winningAmount: winningBid.amount,
           auctionName: item.auction.title,
           orgName: item.auction.organization.name,
-          paymentUrl: `${process.env.NEXT_PUBLIC_APP_URL}/my-bids`,
+          paymentUrl,
         }),
       }).catch((err) => console.error("GHL won webhook failed:", err));
     }

@@ -106,16 +106,27 @@ export async function POST(request: NextRequest) {
 
     // GHL outbid alert
     if (previousActiveBid && previousActiveBid.clerkUserId !== userId && process.env.GHL_OUTBID_WEBHOOK) {
+      const outbidEmail = outbidProfile?.email || "";
+      const outbidPhone = outbidProfile?.phone || "";
+      const outbidName = outbidProfile?.name || "Bidder";
+      const itemUrl = `${process.env.NEXT_PUBLIC_APP_URL}/${item.organization?.slug}/${item.auction?.slug}/item/${item.id}`;
       fetch(process.env.GHL_OUTBID_WEBHOOK, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          // GHL contact lookup fields (must be top-level)
+          email: outbidEmail,
+          phone: outbidPhone,
+          name: outbidName,
+          firstName: outbidName.split(" ")[0] || outbidName,
+          lastName: outbidName.split(" ").slice(1).join(" ") || "",
+          // Custom workflow variables
           event: "outbid",
-          bidderEmail: outbidProfile?.email || previousActiveBid.clerkUserId,
-          bidderPhone: outbidProfile?.phone || "",
-          bidderName: outbidProfile?.name || "Bidder",
+          bidderEmail: outbidEmail,
+          bidderPhone: outbidPhone,
+          bidderName: outbidName,
           itemTitle: item.title,
-          itemUrl: `${process.env.NEXT_PUBLIC_APP_URL}/${item.organization?.slug}/${item.auction?.slug}/item/${item.id}`,
+          itemUrl,
           outbidAmount: previousActiveBid.amount,
           newBidAmount: amount,
           auctionName: item.auction?.title || "Auction",
@@ -126,15 +137,27 @@ export async function POST(request: NextRequest) {
 
     // GHL bid confirmation
     if (process.env.GHL_BID_CONFIRM_WEBHOOK) {
+      const confirmEmail = profile.email || "";
+      const confirmPhone = profile.phone || "";
+      const confirmName = profile.name || "Bidder";
+      const itemUrl = `${process.env.NEXT_PUBLIC_APP_URL}/${item.organization?.slug}/${item.auction?.slug}/item/${item.id}`;
       fetch(process.env.GHL_BID_CONFIRM_WEBHOOK, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          // GHL contact lookup fields (must be top-level)
+          email: confirmEmail,
+          phone: confirmPhone,
+          name: confirmName,
+          firstName: confirmName.split(" ")[0] || confirmName,
+          lastName: confirmName.split(" ").slice(1).join(" ") || "",
+          // Custom workflow variables
           event: "bid_confirmed",
-          bidderEmail: profile.email,
-          bidderPhone: profile.phone || "",
-          bidderName: profile.name || "Bidder",
+          bidderEmail: confirmEmail,
+          bidderPhone: confirmPhone,
+          bidderName: confirmName,
           itemTitle: item.title,
+          itemUrl,
           bidAmount: amount,
           auctionName: item.auction?.title || "Auction",
           orgName: item.organization?.name || "Organization",

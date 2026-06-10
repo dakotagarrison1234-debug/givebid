@@ -83,15 +83,25 @@ export async function POST(request: NextRequest) {
         const orgName = items[0].organization?.name || "Organization";
         const auctionName = items[0].auction?.title || "Auction";
         const itemSummary = items.map((i) => i.title).join(", ");
+        const receiptEmail = winnerProfile?.email || "";
+        const receiptPhone = winnerProfile?.phone || "";
+        const receiptName = winnerProfile?.name || "Winner";
 
         fetch(process.env.GHL_PAYMENT_RECEIPT_WEBHOOK, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
+            // GHL contact lookup fields — must be top-level for GHL to find/create contact
+            email: receiptEmail,
+            phone: receiptPhone,
+            name: receiptName,
+            firstName: receiptName.split(" ")[0] || receiptName,
+            lastName: receiptName.split(" ").slice(1).join(" ") || "",
+            // Custom workflow variables
             event: "payment_received",
-            bidderEmail: winnerProfile?.email || clerkUserId,
-            bidderPhone: winnerProfile?.phone || "",
-            bidderName: winnerProfile?.name || "Winner",
+            bidderEmail: receiptEmail,
+            bidderPhone: receiptPhone,
+            bidderName: receiptName,
             itemCount: items.length,
             itemSummary,
             totalAmountPaid: totalPaid,
