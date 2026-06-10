@@ -3,7 +3,6 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
 import LocalDate from "@/app/components/LocalDate";
-import SearchBar from "@/app/components/SearchBar";
 
 interface Props {
   params: Promise<{ orgSlug: string }>;
@@ -47,11 +46,8 @@ export default async function OrgPage({ params }: Props) {
   return (
     <main className="min-h-screen bg-gray-950 text-white">
       {/* Header */}
-      <header className="border-b border-gray-800 px-4 sm:px-6 py-4 flex items-center justify-between gap-3">
+      <header className="border-b border-gray-800 px-4 sm:px-6 py-3 flex items-center justify-between gap-3 bg-gray-950/95 backdrop-blur sticky top-0 z-40">
         <Link href="/" className="text-emerald-400 font-bold text-xl shrink-0">GiveBid</Link>
-        <div className="hidden sm:flex flex-1 max-w-sm">
-          <SearchBar placeholder="Search items or auctions…" />
-        </div>
         {!userId ? (
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             <Link href="/sign-in" className="text-gray-400 hover:text-white text-sm hidden sm:inline">Sign In</Link>
@@ -68,11 +64,6 @@ export default async function OrgPage({ params }: Props) {
           </div>
         )}
       </header>
-
-      {/* Mobile search */}
-      <div className="sm:hidden px-4 py-3 bg-gray-900 border-b border-gray-800">
-        <SearchBar placeholder="Search items or auctions…" />
-      </div>
 
       {/* Org hero */}
       <div className="bg-gray-900 border-b border-gray-800 px-4 sm:px-6 py-8 sm:py-12">
