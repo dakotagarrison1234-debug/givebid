@@ -1,5 +1,6 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { useUser, useClerk } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
@@ -47,7 +48,11 @@ export default function UserMenu() {
   const { signOut } = useClerk();
   const [open, setOpen] = useState(false);
   const [me, setMe] = useState<MeData | null>(null);
+  const [mounted, setMounted] = useState(false);
   const router = useRouter();
+
+  // Portal requires document — only available after mount
+  useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
     if (!isLoaded || !isSignedIn) return;
@@ -57,7 +62,7 @@ export default function UserMenu() {
       .catch(() => {});
   }, [isLoaded, isSignedIn]);
 
-  // Prevent body scroll when drawer open
+  // Lock body scroll when drawer open
   useEffect(() => {
     if (open) {
       document.body.style.overflow = "hidden";
@@ -99,6 +104,118 @@ export default function UserMenu() {
     );
   }
 
+  const drawer = (
+    <>
+      {/* Full-screen backdrop */}
+      <div
+        style={{ position: "fixed", inset: 0, zIndex: 9998, background: "rgba(0,0,0,0.65)" }}
+        onClick={() => setOpen(false)}
+      />
+
+      {/* Drawer panel — rendered via portal, anchored to viewport edges with inline style */}
+      <div
+        style={{
+          position: "fixed",
+          top: 0,
+          right: 0,
+          bottom: 0,
+          zIndex: 9999,
+          width: "288px",
+          maxWidth: "85vw",
+          display: "flex",
+          flexDirection: "column",
+          background: "#030712",
+          borderLeft: "1px solid #1f2937",
+          boxShadow: "-8px 0 32px rgba(0,0,0,0.5)",
+          overflowY: "hidden",
+        }}
+      >
+        {/* User info header */}
+        <div style={{ padding: "20px", borderBottom: "1px solid #1f2937", display: "flex", alignItems: "flex-start", gap: "12px", justifyContent: "space-between", flexShrink: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "12px", minWidth: 0 }}>
+            <div style={{ width: 44, height: 44, borderRadius: "50%", overflow: "hidden", background: "rgba(16,185,129,0.15)", border: "1px solid rgba(16,185,129,0.2)", display: "flex", alignItems: "center", justifyContent: "center", color: "#10b981", fontWeight: 700, fontSize: 16, flexShrink: 0 }}>
+              {user?.imageUrl ? (
+                <img src={user.imageUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              ) : initials}
+            </div>
+            <div style={{ minWidth: 0 }}>
+              <p style={{ color: "#fff", fontWeight: 600, fontSize: 14, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{displayName}</p>
+              <p style={{ color: "#6b7280", fontSize: 12, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{email}</p>
+              {me?.orgName && (
+                <p style={{ color: "#10b981", fontSize: 12, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginTop: 2 }}>
+                  {me.orgName}
+                  {me.role && <span style={{ color: "#4b5563" }}> · {me.role.toLowerCase()}</span>}
+                </p>
+              )}
+            </div>
+          </div>
+          <button
+            onClick={() => setOpen(false)}
+            style={{ color: "#4b5563", background: "none", border: "none", cursor: "pointer", padding: 0, flexShrink: 0 }}
+            aria-label="Close menu"
+          >
+            <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <line x1="3" y1="3" x2="15" y2="15" />
+              <line x1="15" y1="3" x2="3" y2="15" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Navigation — flex-1 with overflow scroll */}
+        <nav style={{ flex: 1, padding: "12px", overflowY: "auto", minHeight: 0 }}>
+          <NavLink href="/" icon="🏠" label="Browse Auctions" onClick={() => setOpen(false)} />
+          <NavLink href="/dashboard" icon="⭐" label="My Bids" onClick={() => setOpen(false)} />
+
+          {me?.orgId ? (
+            <NavLink
+              href="/admin/dashboard"
+              icon="⚙️"
+              label="Admin Dashboard"
+              sublabel={me.orgName ?? undefined}
+              onClick={() => setOpen(false)}
+            />
+          ) : (
+            <NavLink
+              href="/apply"
+              icon="🏢"
+              label="Host an Auction"
+              sublabel="Apply to create your org"
+              onClick={() => setOpen(false)}
+            />
+          )}
+
+          {me?.isSuperAdmin && (
+            <>
+              <div style={{ borderTop: "1px solid #1f2937", margin: "8px 0" }} />
+              <NavLink
+                href="/superadmin"
+                icon="⚡"
+                label="Super Admin"
+                onClick={() => setOpen(false)}
+                className="text-orange-400"
+              />
+            </>
+          )}
+        </nav>
+
+        {/* Sign out */}
+        <div style={{ padding: "12px 12px 16px", borderTop: "1px solid #1f2937", flexShrink: 0 }}>
+          <button
+            onClick={async () => {
+              setOpen(false);
+              await signOut();
+              router.push("/");
+            }}
+            style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", borderRadius: 12, color: "#f87171", background: "none", border: "none", cursor: "pointer", fontSize: 14 }}
+          >
+            <span style={{ width: 20, textAlign: "center", flexShrink: 0 }}>→</span>
+            <span>Sign Out</span>
+          </button>
+        </div>
+      </div>
+    </>
+  );
+
   return (
     <>
       {/* Avatar trigger button */}
@@ -109,111 +226,11 @@ export default function UserMenu() {
       >
         {user?.imageUrl ? (
           <img src={user.imageUrl} alt="" className="w-full h-full object-cover" />
-        ) : (
-          initials
-        )}
+        ) : initials}
       </button>
 
-      {/* Drawer */}
-      {open && (
-        <>
-          {/* Backdrop */}
-          <div
-            className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm"
-            onClick={() => setOpen(false)}
-          />
-
-          {/* Panel — fixed independently so height is always full viewport */}
-          <div className="fixed top-0 right-0 bottom-0 z-[61] w-72 max-w-[85vw] bg-gray-950 border-l border-gray-800 flex flex-col shadow-2xl">
-            {/* User info header */}
-            <div className="px-5 py-5 border-b border-gray-800 flex items-start justify-between gap-3">
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="w-11 h-11 rounded-full overflow-hidden bg-emerald-500/20 flex items-center justify-center text-emerald-400 font-bold text-base shrink-0 border border-emerald-500/20">
-                  {user?.imageUrl ? (
-                    <img src={user.imageUrl} alt="" className="w-full h-full object-cover" />
-                  ) : (
-                    initials
-                  )}
-                </div>
-                <div className="min-w-0">
-                  <p className="text-white font-semibold text-sm truncate">{displayName}</p>
-                  <p className="text-gray-500 text-xs truncate">{email}</p>
-                  {me?.orgName && (
-                    <p className="text-emerald-400 text-xs truncate mt-0.5">
-                      {me.orgName}
-                      {me.role && (
-                        <span className="text-gray-600 capitalize"> · {me.role.toLowerCase()}</span>
-                      )}
-                    </p>
-                  )}
-                </div>
-              </div>
-              <button
-                onClick={() => setOpen(false)}
-                className="text-gray-600 hover:text-white transition-colors shrink-0 mt-0.5"
-                aria-label="Close menu"
-              >
-                <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <line x1="3" y1="3" x2="15" y2="15" />
-                  <line x1="15" y1="3" x2="3" y2="15" />
-                </svg>
-              </button>
-            </div>
-
-            {/* Navigation */}
-            <nav className="flex-1 px-3 py-3 space-y-0.5 overflow-y-auto">
-              <NavLink href="/" icon="🏠" label="Browse Auctions" onClick={() => setOpen(false)} />
-              <NavLink href="/dashboard" icon="⭐" label="My Bids" onClick={() => setOpen(false)} />
-
-              {me?.orgId ? (
-                <NavLink
-                  href="/admin/dashboard"
-                  icon="⚙️"
-                  label="Admin Dashboard"
-                  sublabel={me.orgName ?? undefined}
-                  onClick={() => setOpen(false)}
-                />
-              ) : (
-                <NavLink
-                  href="/apply"
-                  icon="🏢"
-                  label="Host an Auction"
-                  sublabel="Apply to create your org"
-                  onClick={() => setOpen(false)}
-                />
-              )}
-
-              {me?.isSuperAdmin && (
-                <>
-                  <div className="border-t border-gray-800 my-2" />
-                  <NavLink
-                    href="/superadmin"
-                    icon="⚡"
-                    label="Super Admin"
-                    onClick={() => setOpen(false)}
-                    className="text-orange-400"
-                  />
-                </>
-              )}
-            </nav>
-
-            {/* Sign out */}
-            <div className="px-3 pb-4 pt-3 border-t border-gray-800">
-              <button
-                onClick={async () => {
-                  setOpen(false);
-                  await signOut();
-                  router.push("/");
-                }}
-                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors text-sm"
-              >
-                <span className="w-5 text-center text-base shrink-0">→</span>
-                <span>Sign Out</span>
-              </button>
-            </div>
-          </div>
-        </>
-      )}
+      {/* Portal: renders directly on document.body, bypasses all stacking contexts */}
+      {open && mounted && createPortal(drawer, document.body)}
     </>
   );
 }
