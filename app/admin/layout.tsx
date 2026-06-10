@@ -8,6 +8,7 @@ import { cookies } from "next/headers";
 import ActAsExitButton from "./ActAsExitButton";
 import OrgSwitcher from "./OrgSwitcher";
 import MobileNav from "./MobileNav";
+import OrgLogo from "@/app/components/OrgLogo";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const { userId } = await auth();
@@ -61,6 +62,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     { label: "Winners", href: "/admin/winners", icon: "✓" },
     { label: "Pickup", href: "/admin/pickup", icon: "📦" },
     ...(isOwnerOrAdmin ? [{ label: "Team", href: "/admin/staff", icon: "👥" }] : []),
+    ...(isOwnerOrAdmin ? [{ label: "Settings", href: "/admin/settings", icon: "⚙️" }] : []),
   ];
 
   return (
@@ -87,11 +89,13 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       <div className="flex flex-1 min-h-0">
         <aside className="hidden md:flex w-64 bg-gray-900 border-r border-gray-800 flex-col shrink-0">
           <div className="px-6 py-5 border-b border-gray-800">
-            <Link href="/admin/dashboard">
-              <span className="text-emerald-400 font-bold text-xl">GiveBid</span>
+            <Link href="/admin/dashboard" className="flex items-center gap-3 mb-1">
+              <OrgLogo name={org.name} logoUrl={org.logoUrl} size="sm" />
+              <div className="min-w-0">
+                <p className="text-white font-semibold text-sm truncate">{org.name}</p>
+                <span className="text-xs text-gray-600 capitalize">{membership.role.toLowerCase()}</span>
+              </div>
             </Link>
-            <p className="text-gray-500 text-xs mt-1 truncate">{org.name}</p>
-            <span className="text-xs text-gray-600 capitalize">{membership.role.toLowerCase()}</span>
           </div>
 
           {/* Org switcher for super admin */}

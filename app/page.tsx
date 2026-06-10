@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
 import HomeHeader from "./components/HomeHeader";
 import LocalDate from "./components/LocalDate";
+import OrgLogo from "./components/OrgLogo";
 
 export default async function HomePage() {
   const { userId } = await auth();
@@ -19,6 +20,7 @@ export default async function HomePage() {
       take: 9,
     }),
     prisma.organization.findMany({
+      where: { isActive: true },
       include: {
         auctions: {
           where: { status: "OPEN" },
@@ -198,8 +200,8 @@ export default async function HomePage() {
                 href={`/${org.slug}`}
                 className="bg-gray-900 border border-gray-800 hover:border-gray-600 rounded-xl p-4 transition-colors group"
               >
-                <div className="w-10 h-10 bg-emerald-500/20 rounded-xl flex items-center justify-center text-emerald-400 font-bold text-lg mb-3">
-                  {org.name[0].toUpperCase()}
+                <div className="mb-3">
+                  <OrgLogo name={org.name} logoUrl={org.logoUrl} size="sm" />
                 </div>
                 <div className="font-medium text-sm group-hover:text-emerald-400 transition-colors truncate leading-tight">
                   {org.name}

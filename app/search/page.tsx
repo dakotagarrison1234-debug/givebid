@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import HomeHeader from "@/app/components/HomeHeader";
 import SearchBar from "@/app/components/SearchBar";
 import LocalDate from "@/app/components/LocalDate";
+import OrgLogo from "@/app/components/OrgLogo";
 
 interface Props {
   searchParams: Promise<{ q?: string }>;
@@ -55,8 +56,12 @@ export default async function SearchPage({ searchParams }: Props) {
       },
     }),
     prisma.organization.findMany({
-      where: { name: { contains: query, mode: "insensitive" } },
-      include: {
+      where: { isActive: true, name: { contains: query, mode: "insensitive" } },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        logoUrl: true,
         _count: { select: { auctions: true } },
         auctions: { where: { status: "OPEN" }, select: { id: true } },
       },
@@ -175,8 +180,8 @@ export default async function SearchPage({ searchParams }: Props) {
                   href={`/${org.slug}`}
                   className="bg-gray-900 border border-gray-800 hover:border-gray-600 rounded-xl p-4 transition-colors group"
                 >
-                  <div className="w-10 h-10 bg-emerald-500/20 rounded-xl flex items-center justify-center text-emerald-400 font-bold text-lg mb-3">
-                    {org.name[0].toUpperCase()}
+                  <div className="mb-3">
+                    <OrgLogo name={org.name} logoUrl={org.logoUrl} size="sm" />
                   </div>
                   <div className="font-medium text-sm truncate group-hover:text-emerald-400 transition-colors">
                     {org.name}

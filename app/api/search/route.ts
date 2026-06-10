@@ -45,12 +45,17 @@ export async function GET(request: NextRequest) {
       take: 5,
     }),
 
-    // All orgs matching name
+    // Active orgs matching name
     prisma.organization.findMany({
       where: {
+        isActive: true,
         name: { contains: q, mode: "insensitive" },
       },
-      include: {
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        logoUrl: true,
         _count: { select: { auctions: true } },
         auctions: {
           where: { status: "OPEN" },

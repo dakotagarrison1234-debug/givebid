@@ -3,6 +3,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
 import LocalDate from "@/app/components/LocalDate";
+import OrgLogo from "@/app/components/OrgLogo";
 
 interface Props {
   params: Promise<{ orgSlug: string }>;
@@ -68,9 +69,7 @@ export default async function OrgPage({ params }: Props) {
       {/* Org hero */}
       <div className="bg-gray-900 border-b border-gray-800 px-4 sm:px-6 py-8 sm:py-12">
         <div className="max-w-4xl mx-auto flex items-center gap-4 sm:gap-6">
-          <div className="w-14 h-14 sm:w-20 sm:h-20 bg-emerald-500/20 rounded-2xl flex items-center justify-center text-2xl sm:text-3xl font-bold text-emerald-400 shrink-0">
-            {org.name[0].toUpperCase()}
-          </div>
+          <OrgLogo name={org.name} logoUrl={org.logoUrl} size="lg" />
           <div className="min-w-0">
             <h1 className="text-2xl sm:text-3xl font-bold truncate">{org.name}</h1>
             <p className="text-gray-400 text-sm mt-1 line-clamp-2">

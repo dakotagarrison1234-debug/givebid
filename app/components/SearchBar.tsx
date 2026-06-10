@@ -24,6 +24,7 @@ interface SearchOrg {
   id: string;
   name: string;
   slug: string;
+  logoUrl?: string | null;
   _count: { auctions: number };
   auctions: { id: string }[];
 }
@@ -227,9 +228,13 @@ export default function SearchBar({
                       onClick={clearAndClose}
                       className="flex items-center gap-3 px-4 py-3 hover:bg-gray-800 transition-colors"
                     >
-                      <div className="w-10 h-10 bg-gray-800 rounded-lg shrink-0 flex items-center justify-center text-white font-bold text-base">
-                        {org.name[0].toUpperCase()}
-                      </div>
+                      {org.logoUrl ? (
+                        <img src={org.logoUrl} alt={org.name} className="w-10 h-10 rounded-xl object-cover shrink-0" />
+                      ) : (
+                        <div className="w-10 h-10 bg-emerald-500/20 rounded-xl shrink-0 flex items-center justify-center text-emerald-400 font-bold text-base">
+                          {org.name[0].toUpperCase()}
+                        </div>
+                      )}
                       <div className="flex-1 min-w-0">
                         <div className="text-sm font-medium text-white truncate">{org.name}</div>
                         <div className="text-xs text-gray-500">
