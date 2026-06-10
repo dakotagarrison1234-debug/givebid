@@ -71,9 +71,11 @@ export async function POST(request: NextRequest) {
           });
         }
 
-        // Move item to PENDING_PICKUP
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await prisma.item.update({ where: { id: item.id }, data: { status: "PENDING_PICKUP" as any } });
+        // Move item to PENDING_PICKUP (only if currently SOLD — idempotent guard)
+        if (item.status === "SOLD") {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          await prisma.item.update({ where: { id: item.id }, data: { status: "PENDING_PICKUP" as any } });
+        }
       }
 
       // GHL payment receipt — one notification for the whole batch

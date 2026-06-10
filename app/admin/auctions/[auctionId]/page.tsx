@@ -30,7 +30,11 @@ export default async function ManageAuctionPage({ params }: Props) {
     );
   }
 
-  const totalRaised = auction.items.reduce((sum, item) => sum + item.currentBid, 0);
+  const SOLD_STATUSES = ["SOLD", "PENDING_PICKUP", "PICKED_UP"];
+  // For live auctions, show all current bid totals; for closed/settled show confirmed sold amounts
+  const totalRaised = (auction.status === "OPEN" || auction.status === "CLOSING")
+    ? auction.items.filter(i => i.status === "ACTIVE").reduce((sum, item) => sum + item.currentBid, 0)
+    : auction.items.filter(i => SOLD_STATUSES.includes(i.status)).reduce((sum, item) => sum + item.currentBid, 0);
   const totalBids = auction.items.reduce((sum, item) => sum + item.bids.length, 0);
   const now = new Date();
   const isScheduled = auction.status === "DRAFT" && auction.startAt > now;
@@ -45,6 +49,7 @@ export default async function ManageAuctionPage({ params }: Props) {
           <h1 className="text-lg sm:text-xl font-semibold truncate">{auction.title}</h1>
           <span className={`text-xs px-2 py-1 rounded-full shrink-0 ${
             auction.status === "OPEN" ? "bg-emerald-500/20 text-emerald-400"
+            : auction.status === "CLOSING" ? "bg-yellow-500/20 text-yellow-400"
             : auction.status === "CLOSED" || auction.status === "SETTLED" ? "bg-red-500/20 text-red-400"
             : isScheduled ? "bg-blue-500/20 text-blue-400"
             : "bg-gray-700 text-gray-400"
@@ -73,7 +78,10 @@ export default async function ManageAuctionPage({ params }: Props) {
         {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
           {[
-            { label: "Total Raised", value: `$${totalRaised.toLocaleString()}` },
+            {
+              label: (auction.status === "OPEN" || auction.status === "CLOSING") ? "Current Bid Total" : "Total Raised",
+              value: `$${totalRaised.toLocaleString()}`,
+            },
             { label: "Items", value: auction.items.length },
             { label: "Total Bids", value: totalBids },
             { label: "Active Items", value: auction.items.filter(i => i.status === "ACTIVE").length },

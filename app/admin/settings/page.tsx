@@ -179,7 +179,15 @@ export default function AdminSettingsPage() {
 
         <div className="mt-2">
           <p className="text-xs text-gray-600 mb-4">
-            Slug: <span className="font-mono text-gray-500">givebid.vercel.app/{org.slug}</span>
+            Public URL:{" "}
+            <a
+              href={`/${org.slug}`}
+              target="_blank"
+              rel="noreferrer"
+              className="font-mono text-emerald-500 hover:underline"
+            >
+              {typeof window !== "undefined" ? window.location.origin : ""}/{org.slug}
+            </a>
           </p>
         </div>
       </div>

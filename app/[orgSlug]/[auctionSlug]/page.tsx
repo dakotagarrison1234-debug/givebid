@@ -36,7 +36,15 @@ export default async function AuctionPage({ params }: Props) {
   }
 
   const isClosed = auction.status === "CLOSED" || auction.status === "SETTLED";
-  const totalRaised = auction.items.reduce((sum, item) => sum + item.currentBid, 0);
+  const isClosing = auction.status === "CLOSING";
+
+  // Only show items that are visible to bidders (not DRAFT)
+  const visibleItems = auction.items.filter(i => i.status !== "DRAFT");
+
+  const SOLD_STATUSES = ["SOLD", "PENDING_PICKUP", "PICKED_UP"];
+  const totalRaised = visibleItems
+    .filter(i => SOLD_STATUSES.includes(i.status))
+    .reduce((sum, item) => sum + item.currentBid, 0);
 
   return (
     <main className="min-h-screen bg-gray-950 text-white">
@@ -59,14 +67,20 @@ export default async function AuctionPage({ params }: Props) {
           <span className="text-gray-300 text-sm font-medium">This auction has closed — bidding is no longer available.</span>
         </div>
       )}
+      {isClosing && !isClosed && (
+        <div className="bg-yellow-500/10 border-b border-yellow-500/30 px-4 sm:px-6 py-3 flex items-center gap-3">
+          <span className="text-yellow-400 text-sm">⏳</span>
+          <span className="text-yellow-300 text-sm font-medium">This auction is closing soon — place your final bids now!</span>
+        </div>
+      )}
 
       <div className="bg-gray-900 border-b border-gray-800 px-4 sm:px-6 py-6 sm:py-8">
         <div className="max-w-6xl mx-auto flex items-start sm:items-center justify-between gap-4">
           <div className="min-w-0">
             <h1 className="text-2xl sm:text-3xl font-bold mb-2 truncate">{auction.title}</h1>
             <p className="text-gray-400 text-sm sm:text-base">
-              {auction.items.length} items ·{" "}
-              {isClosed ? "Closed" : "Closes"}{" "}
+              {visibleItems.length} items ·{" "}
+              {isClosed ? "Closed" : isClosing ? "Closing" : "Closes"}{" "}
               <LocalDate iso={auction.endAt.toISOString()} />
             </p>
           </div>
@@ -78,16 +92,18 @@ export default async function AuctionPage({ params }: Props) {
       </div>
 
       <section className="px-4 sm:px-6 py-8 sm:py-10 max-w-6xl mx-auto">
-        {auction.items.length === 0 ? (
+        {visibleItems.length === 0 ? (
           <div className="text-center py-20 text-gray-500">
             <p className="text-lg">No items in this auction yet</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {auction.items.map((item) => {
-              const isSold = item.status !== "ACTIVE";
-              const bidLabel = isClosed || isSold ? "Sold" : "Bid Now";
-              const bidClass = isClosed || isSold
+            {visibleItems.map((item) => {
+              const isItemSold = SOLD_STATUSES.includes(item.status);
+              const isItemUnsold = item.status === "UNSOLD";
+              const isItemClosed = isItemSold || isItemUnsold;
+              const bidLabel = isItemUnsold ? "Ended" : isItemSold ? "Sold" : isClosed ? "Closed" : "Bid Now";
+              const bidClass = isClosed || isItemClosed
                 ? "bg-gray-700 text-gray-400 text-sm px-4 py-2 rounded-lg"
                 : "bg-emerald-500 hover:bg-emerald-400 text-white text-sm px-4 py-2 rounded-lg";
 
@@ -96,7 +112,7 @@ export default async function AuctionPage({ params }: Props) {
                   key={item.id}
                   href={`/${orgSlug}/${auctionSlug}/item/${item.id}`}
                   className={`bg-gray-900 border rounded-xl overflow-hidden transition-colors ${
-                    isClosed || isSold
+                    isClosed || isItemClosed
                       ? "border-gray-800 opacity-80 hover:border-gray-700"
                       : "border-gray-800 hover:border-emerald-500"
                   }`}
@@ -111,9 +127,14 @@ export default async function AuctionPage({ params }: Props) {
                     ) : (
                       <span className="text-sm">No photo</span>
                     )}
-                    {(isClosed || isSold) && (
+                    {isItemSold && (
                       <div className="absolute top-2 right-2 bg-gray-900/80 text-gray-300 text-xs px-2 py-1 rounded-full font-medium">
                         Sold
+                      </div>
+                    )}
+                    {isItemUnsold && (
+                      <div className="absolute top-2 right-2 bg-gray-900/80 text-gray-500 text-xs px-2 py-1 rounded-full font-medium">
+                        Ended
                       </div>
                     )}
                   </div>
@@ -130,8 +151,8 @@ export default async function AuctionPage({ params }: Props) {
                     )}
                     <div className="flex items-center justify-between">
                       <div>
-                        <div className="text-xs text-gray-500">{isClosed || isSold ? "Winning bid" : "Current bid"}</div>
-                        <div className="text-emerald-400 font-bold text-lg">
+                        <div className="text-xs text-gray-500">{isItemSold ? "Winning bid" : isItemUnsold ? "Final bid" : "Current bid"}</div>
+                        <div className={`font-bold text-lg ${isItemUnsold ? "text-gray-500" : "text-emerald-400"}`}>
                           ${item.currentBid || item.startingBid}
                         </div>
                       </div>

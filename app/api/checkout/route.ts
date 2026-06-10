@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
       line_items: lineItems,
       mode: "payment",
       success_url: `${process.env.NEXT_PUBLIC_APP_URL}/payment/success`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/my-bids`,
+      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/payment/cancelled`,
       metadata: {
         batchId: batch.id,
         clerkUserId: userId,

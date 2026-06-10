@@ -79,8 +79,6 @@ export async function openScheduledAuctions(): Promise<{ openedAuctions: number 
       prisma.item.updateMany({ where: { auctionId: auction.id, status: "DRAFT" }, data: { status: "ACTIVE" } }),
     ]);
 
-    // Notify GHL that this auction just went live
-    fireAuctionStartedWebhook(auction);
   }
 
   // Also activate any DRAFT items that are already inside an OPEN auction
@@ -93,31 +91,6 @@ export async function openScheduledAuctions(): Promise<{ openedAuctions: number 
   return { openedAuctions: dueAuctions.length };
 }
 
-/** Fire GHL auction-started webhook (fire-and-forget). */
-export function fireAuctionStartedWebhook(auction: {
-  id: string;
-  title: string;
-  slug: string;
-  startAt: Date;
-  endAt: Date;
-  organization: { name: string; slug: string };
-}) {
-  if (!process.env.GHL_AUCTION_STARTED_WEBHOOK) return;
-  const auctionUrl = `${process.env.NEXT_PUBLIC_APP_URL}/${auction.organization.slug}/${auction.slug}`;
-  fetch(process.env.GHL_AUCTION_STARTED_WEBHOOK, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      event: "auction_started",
-      auctionId: auction.id,
-      auctionTitle: auction.title,
-      auctionUrl,
-      orgName: auction.organization.name,
-      startAt: auction.startAt.toISOString(),
-      endAt: auction.endAt.toISOString(),
-    }),
-  }).catch((err) => console.error("GHL auction started webhook failed:", err));
-}
 
 export async function closeExpiredItems(): Promise<{ closedItems: number; closedAuctions: number }> {
   const now = new Date();
@@ -127,7 +100,7 @@ export async function closeExpiredItems(): Promise<{ closedItems: number; closed
     where: {
       status: "ACTIVE",
       itemEndAt: { lte: now },
-      auction: { status: "OPEN" },
+      auction: { status: { in: ["OPEN", "CLOSING"] } },
     },
     include: {
       bids: { where: { status: "ACTIVE" }, orderBy: { amount: "desc" }, take: 1 },
@@ -140,7 +113,7 @@ export async function closeExpiredItems(): Promise<{ closedItems: number; closed
     where: {
       status: "ACTIVE",
       itemEndAt: null,
-      auction: { status: "OPEN", endAt: { lte: now } },
+      auction: { status: { in: ["OPEN", "CLOSING"] }, endAt: { lte: now } },
     },
     include: {
       bids: { where: { status: "ACTIVE" }, orderBy: { amount: "desc" }, take: 1 },
@@ -164,7 +137,7 @@ export async function closeExpiredItems(): Promise<{ closedItems: number; closed
     const remaining = await prisma.item.count({ where: { auctionId, status: "ACTIVE" } });
     if (remaining === 0) {
       const auction = await prisma.auction.findUnique({ where: { id: auctionId } });
-      if (auction?.status === "OPEN") {
+      if (auction?.status === "OPEN" || auction?.status === "CLOSING") {
         await prisma.auction.update({ where: { id: auctionId }, data: { status: "CLOSED" } });
         closedAuctions++;
       }
@@ -175,7 +148,7 @@ export async function closeExpiredItems(): Promise<{ closedItems: number; closed
   // (e.g. auction with all DRAFT items, or already fully settled)
   const emptyExpired = await prisma.auction.findMany({
     where: {
-      status: "OPEN",
+      status: { in: ["OPEN", "CLOSING"] },
       endAt: { lte: now },
       items: { none: { status: "ACTIVE" } },
     },

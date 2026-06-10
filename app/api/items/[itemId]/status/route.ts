@@ -25,7 +25,7 @@ export async function PATCH(request: NextRequest, { params }: Props) {
     // Verify org membership
     const item = await prisma.item.findUnique({
       where: { id: itemId },
-      select: { organizationId: true },
+      select: { organizationId: true, status: true },
     });
     if (!item) {
       return NextResponse.json({ error: "Item not found" }, { status: 404 });
@@ -33,6 +33,25 @@ export async function PATCH(request: NextRequest, { params }: Props) {
 
     if (!(await canAccessOrg(item.organizationId))) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    // State machine guard — prevent illegal backward transitions
+    // PICKED_UP is terminal. PENDING_PICKUP can only go to PICKED_UP.
+    // SOLD can only advance (PENDING_PICKUP). Nothing can go back to DRAFT/ACTIVE once sold.
+    const allowedTransitions: Record<string, string[]> = {
+      DRAFT:          ["ACTIVE", "UNSOLD"],
+      ACTIVE:         ["SOLD", "UNSOLD", "DRAFT"],
+      SOLD:           ["PENDING_PICKUP", "UNSOLD"],
+      UNSOLD:         ["ACTIVE"],        // allow re-activation for edge cases
+      PENDING_PICKUP: ["PICKED_UP"],
+      PICKED_UP:      [],                // terminal state
+    };
+    const allowed = allowedTransitions[item.status] ?? [];
+    if (!allowed.includes(status)) {
+      return NextResponse.json(
+        { error: `Cannot move item from ${item.status} to ${status}` },
+        { status: 422 }
+      );
     }
 
     const updated = await prisma.item.update({

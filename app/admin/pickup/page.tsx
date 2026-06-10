@@ -13,20 +13,22 @@ export default async function PickupPage() {
   });
   const orgItemIds = orgItems.map((i) => i.id);
 
-  const [wonBids, payments, profiles] = await Promise.all([
-    prisma.bid.findMany({
-      where: { status: "WON", itemId: { in: orgItemIds } },
-      include: { item: true },
-      orderBy: { placedAt: "desc" },
-    }),
-    prisma.payment.findMany({ where: { itemId: { in: orgItemIds } } }),
-    prisma.bidderProfile.findMany(),
-  ]);
+  const wonBids = await prisma.bid.findMany({
+    where: { status: "WON", itemId: { in: orgItemIds } },
+    include: { item: true },
+    orderBy: { placedAt: "desc" },
+  });
 
   const winnerIds = [...new Set(wonBids.map((b) => b.clerkUserId))];
-  const profileMap = new Map(
-    profiles.filter((p) => winnerIds.includes(p.clerkUserId)).map((p) => [p.clerkUserId, p])
-  );
+
+  const [payments, profiles] = await Promise.all([
+    prisma.payment.findMany({ where: { itemId: { in: orgItemIds } } }),
+    winnerIds.length
+      ? prisma.bidderProfile.findMany({ where: { clerkUserId: { in: winnerIds } } })
+      : Promise.resolve([]),
+  ]);
+
+  const profileMap = new Map(profiles.map((p) => [p.clerkUserId, p]));
   const paymentMap = new Map(payments.map((p) => [p.itemId, p]));
 
   // Group bids by bidder

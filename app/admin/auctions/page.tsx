@@ -55,6 +55,7 @@ export default async function AuctionsPage() {
                         <h3 className="font-semibold text-lg truncate">{auction.title}</h3>
                         <span className={`text-xs px-2 py-0.5 rounded-full shrink-0 ${
                           auction.status === "OPEN" ? "bg-emerald-500/20 text-emerald-400"
+                          : auction.status === "CLOSING" ? "bg-yellow-500/20 text-yellow-400"
                           : isScheduled ? "bg-blue-500/20 text-blue-400"
                           : auction.status === "DRAFT" ? "bg-gray-700 text-gray-400"
                           : "bg-red-500/20 text-red-400"

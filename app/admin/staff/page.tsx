@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import { useUser } from "@clerk/nextjs";
 
 interface Member {
   id: string;
@@ -17,6 +18,7 @@ interface Invite {
 }
 
 export default function StaffPage() {
+  const { user } = useUser();
   const [members, setMembers] = useState<Member[]>([]);
   const [invites, setInvites] = useState<Invite[]>([]);
   const [myRole, setMyRole] = useState<string | null>(null);
@@ -42,6 +44,29 @@ export default function StaffPage() {
   useEffect(() => { load(); }, []);
 
   const canInvite = myRole === "OWNER" || myRole === "ADMIN";
+  const canRemove = myRole === "OWNER";
+
+  const revokeInvite = async (inviteId: string, email: string) => {
+    if (!confirm(`Revoke invite for ${email}?`)) return;
+    const res = await fetch(`/api/orgs/invite/${inviteId}`, { method: "DELETE" });
+    const data = await res.json();
+    if (data.success) {
+      load();
+    } else {
+      alert("Error: " + (data.error || "Failed to revoke invite"));
+    }
+  };
+
+  const removeMember = async (memberId: string, name: string) => {
+    if (!confirm(`Remove ${name} from the team? They will lose access immediately.`)) return;
+    const res = await fetch(`/api/orgs/members/${memberId}`, { method: "DELETE" });
+    const data = await res.json();
+    if (data.success) {
+      load();
+    } else {
+      alert("Error: " + (data.error || "Failed to remove member"));
+    }
+  };
 
   const handleInvite = async () => {
     if (!email.trim()) { setError("Email is required."); return; }
@@ -102,23 +127,39 @@ export default function StaffPage() {
             Current Members ({members.length})
           </h2>
           <div className="bg-gray-900 border border-gray-800 rounded-xl divide-y divide-gray-800">
-            {members.map((member) => (
-              <div key={member.id} className="px-5 py-4 flex items-center justify-between">
-                <div>
-                  <div className="text-sm font-medium text-white">
-                    {member.displayName || (
-                      <span className="text-gray-500 font-mono text-xs">{member.clerkUserId.substring(0, 20)}…</span>
+            {members.map((member) => {
+              const isSelf = member.clerkUserId === user?.id;
+              const isOwner = member.role === "OWNER";
+              const canRemoveMember = canRemove && !isSelf && !isOwner;
+              return (
+                <div key={member.id} className="px-5 py-4 flex items-center justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm font-medium text-white flex items-center gap-2">
+                      {member.displayName || (
+                        <span className="text-gray-500 font-mono text-xs">{member.clerkUserId.substring(0, 20)}…</span>
+                      )}
+                      {isSelf && <span className="text-xs text-gray-600">(you)</span>}
+                    </div>
+                    {member.displayName && (
+                      <div className="text-xs text-gray-600 font-mono mt-0.5">{member.clerkUserId.substring(0, 16)}…</div>
                     )}
                   </div>
-                  {member.displayName && (
-                    <div className="text-xs text-gray-600 font-mono mt-0.5">{member.clerkUserId.substring(0, 16)}…</div>
-                  )}
+                  <div className="flex items-center gap-3 shrink-0">
+                    <span className={`text-xs font-semibold ${roleColor(member.role)}`}>
+                      {roleLabel(member.role)}
+                    </span>
+                    {canRemoveMember && (
+                      <button
+                        onClick={() => removeMember(member.id, member.displayName || member.clerkUserId.substring(0, 12))}
+                        className="text-xs text-red-400 hover:text-red-300 px-2 py-1 rounded border border-red-500/20 hover:border-red-500/40 transition-colors"
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
                 </div>
-                <span className={`text-xs font-semibold ${roleColor(member.role)}`}>
-                  {roleLabel(member.role)}
-                </span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </section>
 
@@ -130,14 +171,22 @@ export default function StaffPage() {
             </h2>
             <div className="bg-gray-900 border border-gray-800 rounded-xl divide-y divide-gray-800">
               {invites.map((invite) => (
-                <div key={invite.id} className="px-5 py-4 flex items-center justify-between">
-                  <div>
+                <div key={invite.id} className="px-5 py-4 flex items-center justify-between gap-3">
+                  <div className="min-w-0 flex-1">
                     <div className="text-sm">{invite.email}</div>
                     <div className="text-xs text-gray-600 mt-0.5">
                       Expires <span suppressHydrationWarning>{new Date(invite.expiresAt).toLocaleDateString()}</span>
+                      {" · "}{roleLabel(invite.role)}
                     </div>
                   </div>
-                  <span className="text-xs text-gray-500">{roleLabel(invite.role)}</span>
+                  {canInvite && (
+                    <button
+                      onClick={() => revokeInvite(invite.id, invite.email)}
+                      className="text-xs text-red-400 hover:text-red-300 px-2 py-1 rounded border border-red-500/20 hover:border-red-500/40 transition-colors shrink-0"
+                    >
+                      Revoke
+                    </button>
+                  )}
                 </div>
               ))}
             </div>

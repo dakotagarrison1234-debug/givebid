@@ -26,7 +26,12 @@ export default async function AdminDashboard() {
   const totalRaised = items
     .filter((i) => soldStatuses.includes(i.status))
     .reduce((sum, i) => sum + i.currentBid, 0);
-  const activeAuction = auctions.find((a) => a.status === "OPEN") || auctions[0];
+  // Prefer OPEN, then CLOSING, then DRAFT (scheduled), otherwise none
+  const activeAuction =
+    auctions.find((a) => a.status === "OPEN") ||
+    auctions.find((a) => a.status === "CLOSING") ||
+    auctions.find((a) => a.status === "DRAFT") ||
+    null;
   const uniqueBidders = new Set(allBids.map((b) => b.clerkUserId)).size;
   const recentBids = allBids.slice(0, 6);
 

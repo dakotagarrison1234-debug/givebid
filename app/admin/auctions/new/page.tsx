@@ -26,6 +26,10 @@ export default function NewAuctionPage() {
       alert("Please fill in title, start date, and end date");
       return;
     }
+    if (new Date(formData.endAt) <= new Date(formData.startAt)) {
+      alert("End date must be after start date");
+      return;
+    }
     if (!orgId) { alert("Organization not loaded. Please refresh."); return; }
     setSaving(true);
     try {
@@ -40,7 +44,8 @@ export default function NewAuctionPage() {
       });
       const data = await res.json();
       if (data.success) {
-        router.push("/admin/auctions");
+        // Go straight to the new auction's manage page
+        router.push(`/admin/auctions/${data.auction.id}`);
       } else {
         alert("Error: " + data.error);
       }

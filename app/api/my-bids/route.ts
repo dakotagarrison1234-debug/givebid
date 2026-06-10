@@ -62,7 +62,7 @@ export async function GET() {
     const itemPickup  = item.status === "PENDING_PICKUP";
     const itemDone    = item.status === "PICKED_UP";
     const itemUnsold  = item.status === "UNSOLD";
-    const auctionOpen = auction.status === "OPEN";
+    const auctionOpen = auction.status === "OPEN" || auction.status === "CLOSING";
 
     // ── ACTIVE: item is live and auction is open ──────────────────────────────
     if (itemActive && auctionOpen) {

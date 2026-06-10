@@ -25,7 +25,12 @@ function NewItemForm() {
       if (d.orgId) setOrgId(d.orgId);
     });
     fetch("/api/auctions").then(r => r.json()).then(d => {
-      if (d.auctions) setAuctions(d.auctions);
+      if (d.auctions) {
+        // Only show auctions that can accept new items (not closed/settled)
+        setAuctions(d.auctions.filter((a: { id: string; title: string; status: string }) =>
+          ["DRAFT", "OPEN", "CLOSING"].includes(a.status)
+        ));
+      }
     });
   }, []);
 

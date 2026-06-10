@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useUser, SignInButton } from "@clerk/nextjs";
@@ -40,6 +40,16 @@ export default function ItemPage() {
   const [placing, setPlacing] = useState(false);
   const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
   const [liveBids, setLiveBids] = useState<{ user: string; amount: number; time: string }[]>([]);
+  // Stable map: clerkUserId → "Bidder N" — persists across renders, never exposed to bidders
+  const bidderMapRef = useRef<Map<string, string>>(new Map());
+  const bidderCounterRef = useRef(0);
+  const assignBidder = (uid: string): string => {
+    if (!bidderMapRef.current.has(uid)) {
+      bidderCounterRef.current += 1;
+      bidderMapRef.current.set(uid, `Bidder ${bidderCounterRef.current}`);
+    }
+    return bidderMapRef.current.get(uid)!;
+  };
   // Tracks the current effective end time (updated by popcorn bids)
   const [effectiveEndAt, setEffectiveEndAt] = useState<string | null>(null);
   // True once the countdown fires onExpire
@@ -56,8 +66,13 @@ export default function ItemPage() {
           setEffectiveEndAt(end);
           // Already expired?
           if (end && new Date(end) <= new Date()) setBiddingEnded(true);
-          setLiveBids(d.item.bids.map((b: Item["bids"][0]) => ({
-            user: b.clerkUserId.substring(0, 6) + "***",
+          // Sort ascending so bidder numbers are assigned chronologically
+          const sorted = [...d.item.bids].sort(
+            (a: Item["bids"][0], b: Item["bids"][0]) =>
+              new Date(a.placedAt).getTime() - new Date(b.placedAt).getTime()
+          );
+          setLiveBids(sorted.reverse().map((b: Item["bids"][0]) => ({
+            user: assignBidder(b.clerkUserId),
             amount: b.amount,
             time: new Date(b.placedAt).toLocaleTimeString(),
           })));
@@ -75,7 +90,7 @@ export default function ItemPage() {
     channel.bind("new-bid", (data: { amount: number; userId: string; newEndAt?: string }) => {
       setItem(prev => prev ? { ...prev, currentBid: data.amount } : prev);
       setLiveBids(prev => [
-        { user: data.userId + "***", amount: data.amount, time: "just now" },
+        { user: assignBidder(data.userId), amount: data.amount, time: "just now" },
         ...prev,
       ]);
       // Popcorn: update effective end time and re-enable bidding if timer was at zero
@@ -297,7 +312,10 @@ export default function ItemPage() {
                   <input
                     type="number"
                     value={bidAmount}
+                    min={minBid}
+                    step="1"
                     onChange={e => setBidAmount(e.target.value)}
+                    onKeyDown={e => e.key === "Enter" && !placing && handleBid()}
                     placeholder={`Enter $${minBid} or more`}
                     className="flex-1 bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-emerald-500"
                   />

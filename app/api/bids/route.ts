@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
     if (item.status !== "ACTIVE") {
       return NextResponse.json({ error: "This item is not currently accepting bids" }, { status: 400 });
     }
-    if (!item.auction || item.auction.status !== "OPEN") {
+    if (!item.auction || (item.auction.status !== "OPEN" && item.auction.status !== "CLOSING")) {
       return NextResponse.json({ error: "This auction is not currently open" }, { status: 400 });
     }
 

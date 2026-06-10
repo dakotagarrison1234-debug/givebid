@@ -27,6 +27,12 @@ export default function PickupControls({ itemIds, mode, currentStatus }: Props) 
       : "Mark Picked Up ✓";
 
   const handleClick = async () => {
+    if (targetStatus === "PICKED_UP") {
+      const confirmMsg = mode === "all"
+        ? `Mark all ${itemIds.length} item(s) as picked up? This cannot be undone.`
+        : "Mark this item as picked up? This cannot be undone.";
+      if (!confirm(confirmMsg)) return;
+    }
     setLoading(true);
     try {
       await Promise.all(
