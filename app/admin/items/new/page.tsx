@@ -1,10 +1,13 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
-export default function NewItemPage() {
+function NewItemForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const preselectedAuctionId = searchParams.get("auctionId") || "";
+
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [photos, setPhotos] = useState<string[]>([]);
@@ -13,7 +16,8 @@ export default function NewItemPage() {
   const [formData, setFormData] = useState({
     title: "", description: "", condition: "GOOD", category: "",
     retailValue: "", startingBid: "", reservePrice: "", donorName: "",
-    taxDeductible: false, storageLocation: "", notes: "", auctionId: "",
+    taxDeductible: false, storageLocation: "", notes: "",
+    auctionId: preselectedAuctionId,
   });
 
   useEffect(() => {
@@ -62,7 +66,12 @@ export default function NewItemPage() {
       });
       const data = await res.json();
       if (data.success) {
-        router.push("/admin/items");
+        // Redirect back to the auction if we came from one
+        if (preselectedAuctionId) {
+          router.push(`/admin/auctions/${preselectedAuctionId}`);
+        } else {
+          router.push("/admin/items");
+        }
       } else {
         alert("Error saving item: " + data.error);
       }
@@ -74,7 +83,13 @@ export default function NewItemPage() {
     <>
       <header className="border-b border-gray-800 px-8 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Link href="/admin/items" className="text-gray-400 hover:text-white text-sm">← Items</Link>
+          {preselectedAuctionId ? (
+            <Link href={`/admin/auctions/${preselectedAuctionId}`} className="text-gray-400 hover:text-white text-sm">
+              ← Auction
+            </Link>
+          ) : (
+            <Link href="/admin/items" className="text-gray-400 hover:text-white text-sm">← Items</Link>
+          )}
           <span className="text-gray-600">/</span>
           <h1 className="text-xl font-semibold">Add New Item</h1>
         </div>
@@ -198,11 +213,18 @@ export default function NewItemPage() {
 
           <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
             <h2 className="font-semibold mb-4">Assign to Auction</h2>
-            <select name="auctionId" value={formData.auctionId} onChange={handleChange}
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-emerald-500">
-              <option value="">Save as draft</option>
-              {auctions.map((a) => <option key={a.id} value={a.id}>{a.title}</option>)}
-            </select>
+            {preselectedAuctionId ? (
+              <div className="w-full bg-gray-800/50 border border-gray-700 rounded-lg px-4 py-3 text-white flex items-center justify-between">
+                <span>{auctions.find(a => a.id === preselectedAuctionId)?.title ?? "Loading..."}</span>
+                <span className="text-xs text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-full">Pre-assigned</span>
+              </div>
+            ) : (
+              <select name="auctionId" value={formData.auctionId} onChange={handleChange}
+                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-emerald-500">
+                <option value="">Save as draft</option>
+                {auctions.map((a) => <option key={a.id} value={a.id}>{a.title}</option>)}
+              </select>
+            )}
           </div>
 
           <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
@@ -214,5 +236,13 @@ export default function NewItemPage() {
         </div>
       </div>
     </>
+  );
+}
+
+export default function NewItemPage() {
+  return (
+    <Suspense fallback={<div className="flex-1 flex items-center justify-center text-gray-500">Loading...</div>}>
+      <NewItemForm />
+    </Suspense>
   );
 }
