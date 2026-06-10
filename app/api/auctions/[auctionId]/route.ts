@@ -63,6 +63,19 @@ export async function PATCH(request: NextRequest, { params }: Props) {
         data: { status: "ACTIVE" },
       });
 
+      if (process.env.GHL_AUCTION_STARTED_WEBHOOK) {
+        const auctionUrl = `${process.env.NEXT_PUBLIC_APP_URL}/${auction.organization.slug}/${auction.slug}`;
+        fetch(process.env.GHL_AUCTION_STARTED_WEBHOOK, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            event: "auction_started",
+            auctionName: auction.title,
+            auctionUrl,
+            orgName: auction.organization.name,
+          }),
+        }).catch((e) => console.error("GHL auction-started webhook failed:", e));
+      }
     }
 
     return NextResponse.json({ success: true, auction: updated });

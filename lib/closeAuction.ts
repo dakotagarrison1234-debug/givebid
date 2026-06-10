@@ -85,6 +85,19 @@ export async function openScheduledAuctions(): Promise<{ openedAuctions: number 
       prisma.item.updateMany({ where: { auctionId: auction.id, status: "DRAFT" }, data: { status: "ACTIVE" } }),
     ]);
 
+    if (process.env.GHL_AUCTION_STARTED_WEBHOOK) {
+      const auctionUrl = `${process.env.NEXT_PUBLIC_APP_URL}/${auction.organization.slug}/${auction.slug}`;
+      fetch(process.env.GHL_AUCTION_STARTED_WEBHOOK, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          event: "auction_started",
+          auctionName: auction.title,
+          auctionUrl,
+          orgName: auction.organization.name,
+        }),
+      }).catch((e) => console.error("GHL auction-started (cron) webhook failed:", e));
+    }
   }
 
   // Also activate any DRAFT items that are already inside an OPEN auction

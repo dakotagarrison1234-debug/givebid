@@ -55,6 +55,7 @@ Your `.env.local` runs locally but Vercel needs its own copy. Check that all of 
 | `GHL_OUTBID_WEBHOOK` | GHL outbid alert |
 | `GHL_BID_CONFIRM_WEBHOOK` | GHL bid confirmation |
 | `GHL_AUCTION_WON_WEBHOOK` | GHL winner notification |
+| `GHL_AUCTION_STARTED_WEBHOOK` | GHL auction opened notification |
 | `GHL_PAYMENT_RECEIPT_WEBHOOK` | GHL payment receipt |
 | `SUPER_ADMIN_IDS` | Your Clerk user ID |
 | `CRON_SECRET` | Vercel cron auth token |
