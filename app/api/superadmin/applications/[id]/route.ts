@@ -51,6 +51,7 @@ export async function PATCH(request: NextRequest, { params }: Props) {
           name: application.orgName,
           slug: finalSlug,
           description: application.description,
+          isActive: true,
           members: {
             create: { clerkUserId: application.clerkUserId, role: "OWNER" },
           },
