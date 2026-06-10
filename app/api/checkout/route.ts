@@ -39,13 +39,15 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Filter to items that: have a winning bid, haven't been paid, and aren't already picked up
+    // Filter to items that: have a winning bid and haven't been paid.
+    // Use the Payment record as the authoritative source — NOT item.status.
+    // Admins can move items to PENDING_PICKUP (staging) before payment, so relying
+    // on item.status here causes "No unpaid winning bids found" for staged-but-unpaid items.
     const payableItems = items.filter(
       (item) =>
         item.bids.length > 0 &&
         item.payments.length === 0 && // Prevent double-charge
-        item.status !== "PENDING_PICKUP" &&
-        item.status !== "PICKED_UP"
+        item.status !== "PICKED_UP"   // Already picked up — no longer payable
     );
 
     if (payableItems.length === 0) {
