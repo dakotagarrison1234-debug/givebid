@@ -11,6 +11,9 @@ const isPublicRoute = createRouteMatcher([
   "/join(.*)",
   "/dashboard(.*)",
   "/payment(.*)",
+  "/search(.*)",
+  "/api/search(.*)",
+  "/:orgSlug",
   "/:orgSlug/:auctionSlug(.*)",
 ]);
 
