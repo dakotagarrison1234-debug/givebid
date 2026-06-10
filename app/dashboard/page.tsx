@@ -22,7 +22,7 @@ interface BidBase {
 }
 interface WinningBid extends BidBase { myBid: number; currentBid: number; itemEndAt: string | null; }
 interface LosingBid extends BidBase { myBid: number; currentBid: number; itemEndAt: string | null; }
-interface PastBid extends BidBase { myBid: number; finalBid: number; outcome: "won" | "lost" | "unsold"; paid: boolean; pickedUp?: boolean; }
+interface PastBid extends BidBase { myBid: number; finalBid: number; outcome: "won" | "lost" | "unsold"; paid: boolean; pickedUp?: boolean; storageLocation?: string | null; }
 interface UnpaidWin extends BidBase { amountOwed: number; }
 interface Profile { name: string | null; email: string | null; phone: string | null; }
 interface DashboardData { profile: Profile | null; winning: WinningBid[]; losing: LosingBid[]; past: PastBid[]; unpaidWins: UnpaidWin[]; }
@@ -226,6 +226,38 @@ export default function BidderDashboard() {
           {/* ── Overview ── */}
           {tab === "overview" && (
             <div className="space-y-6 max-w-3xl">
+
+              {/* Ready for pickup callout */}
+              {(() => {
+                const awaitingPickup = past.filter(b => b.outcome === "won" && b.paid && !b.pickedUp);
+                if (awaitingPickup.length === 0) return null;
+                return (
+                  <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl px-4 py-4">
+                    <div className="font-semibold text-emerald-300 text-sm mb-1">
+                      {awaitingPickup.length} item{awaitingPickup.length !== 1 ? "s" : ""} ready for pickup
+                    </div>
+                    <div className="text-gray-400 text-xs mb-3">
+                      Payment confirmed. Contact the organization to arrange collection.
+                    </div>
+                    <div className="space-y-2">
+                      {awaitingPickup.map((b) => (
+                        <div key={b.itemId} className="flex items-center gap-3">
+                          <Photo url={b.photo} title={b.itemTitle} />
+                          <div className="min-w-0">
+                            <div className="text-sm font-medium truncate">{b.itemTitle}</div>
+                            <div className="text-xs text-gray-500 truncate">{b.auctionTitle} · {b.orgName}</div>
+                            {b.storageLocation && (
+                              <div className="text-xs text-gray-600 mt-0.5">Location: {b.storageLocation}</div>
+                            )}
+                          </div>
+                          <div className="shrink-0 text-emerald-400 font-bold text-sm ml-auto">${b.finalBid.toLocaleString()}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
+
               <div className="grid grid-cols-3 gap-2 sm:gap-4">
                 <div className="bg-gray-900 border border-gray-800 rounded-xl p-3 sm:p-5">
                   <div className="text-gray-500 text-xs sm:text-sm mb-1">Winning</div>
@@ -396,12 +428,26 @@ export default function BidderDashboard() {
                         <div className={`font-bold ${b.outcome === "won" ? "text-emerald-400" : "text-gray-500"}`}>
                           ${b.myBid.toLocaleString()}
                         </div>
-                        <div className={`text-xs mt-0.5 ${b.outcome === "won" ? "text-emerald-600" : "text-gray-600"}`}>
+                        <div className={`text-xs mt-0.5 ${
+                          b.outcome === "won"
+                            ? b.pickedUp ? "text-gray-500" : "text-emerald-600"
+                            : "text-gray-600"
+                        }`}>
                           {b.outcome === "won"
-                            ? b.pickedUp ? "Won · Picked up ✓" : b.paid ? "Won · Paid ✓" : "Won"
-                            : b.outcome === "unsold" ? "Went unsold"
+                            ? b.pickedUp
+                              ? "Picked up"
+                              : b.paid
+                              ? "Paid — awaiting pickup"
+                              : "Won"
+                            : b.outcome === "unsold"
+                            ? "Went unsold"
                             : `Lost · $${b.finalBid.toLocaleString()}`}
                         </div>
+                        {b.outcome === "won" && b.paid && !b.pickedUp && b.storageLocation && (
+                          <div className="text-xs text-gray-600 mt-0.5">
+                            Pickup location: {b.storageLocation}
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}

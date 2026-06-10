@@ -66,6 +66,7 @@ export async function GET() {
       itemId: item.id,
       itemTitle: item.title,
       itemStatus: item.status,
+      storageLocation: item.storageLocation ?? null,
       photo,
       auctionTitle: auction.title,
       auctionSlug: auction.slug,
