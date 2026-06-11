@@ -1,18 +1,11 @@
 import { auth } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { canAccessOrg } from "@/lib/auth";
+import { canAccessOrg, getUserOrg } from "@/lib/auth";
 
-// GET /api/admin/settings — return current org details
+// GET /api/admin/settings — return current org details (respects act-as cookie)
 export async function GET() {
-  const { userId } = await auth();
-  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const membership = await prisma.orgMember.findFirst({
-    where: { clerkUserId: userId },
-    include: { organization: true },
-  });
-
+  const membership = await getUserOrg();
   if (!membership) return NextResponse.json({ error: "No organization found" }, { status: 404 });
 
   return NextResponse.json({ org: membership.organization });
