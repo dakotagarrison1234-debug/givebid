@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
         application_fee_amount: appFeeAmount,
         metadata: { clerkUserId: userId, orgId: org.id, itemId, isRetry: "true" },
       },
-      { stripeAccount: org.stripeAccountId }
+      { stripeAccount: org.stripeAccountId ?? undefined }
     );
 
     if (
