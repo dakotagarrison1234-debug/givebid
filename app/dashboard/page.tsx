@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import Pusher from "pusher-js";
 import UserMenu from "@/app/components/UserMenu";
+import CardSetupModal from "@/app/components/CardSetupModal";
 
 type Tab = "overview" | "winning" | "losing" | "past" | "profile";
 
@@ -23,7 +24,7 @@ interface BidBase {
 interface WinningBid extends BidBase { myBid: number; currentBid: number; itemEndAt: string | null; }
 interface LosingBid extends BidBase { myBid: number; currentBid: number; itemEndAt: string | null; }
 interface PastBid extends BidBase { myBid: number; finalBid: number; outcome: "won" | "lost" | "unsold"; paid: boolean; pickedUp?: boolean; storageLocation?: string | null; }
-interface UnpaidWin extends BidBase { amountOwed: number; paymentFailed?: boolean; }
+interface UnpaidWin extends BidBase { amountOwed: number; paymentFailed?: boolean; orgId?: string; orgStripeAccountId?: string | null; }
 interface Profile { name: string | null; email: string | null; phone: string | null; }
 interface DashboardData { profile: Profile | null; winning: WinningBid[]; losing: LosingBid[]; past: PastBid[]; unpaidWins: UnpaidWin[]; }
 
@@ -109,6 +110,7 @@ export default function BidderDashboard() {
   const [profileMsg, setProfileMsg] = useState<{ text: string; ok: boolean } | null>(null);
   const [retryingItemId, setRetryingItemId] = useState<string | null>(null);
   const [retryMsg, setRetryMsg] = useState<{ text: string; ok: boolean } | null>(null);
+  const [cardModal, setCardModal] = useState<{ orgId: string; stripeAccountId: string } | null>(null);
 
   const load = useCallback(() => {
     fetch("/api/my-bids").then((r) => r.json()).then((d: DashboardData) => {
@@ -576,13 +578,23 @@ export default function BidderDashboard() {
                       <div className="text-right shrink-0 flex flex-col items-end gap-1.5">
                         <div className="text-emerald-400 font-extrabold">${b.amountOwed.toLocaleString()}</div>
                         {b.paymentFailed ? (
-                          <button
-                            onClick={() => retryPayment(b.itemId)}
-                            disabled={retryingItemId === b.itemId}
-                            className="text-xs bg-red-500 hover:bg-red-400 disabled:opacity-50 text-white font-semibold px-3 py-1.5 rounded-lg transition-colors"
-                          >
-                            {retryingItemId === b.itemId ? "Retrying…" : "Retry Payment"}
-                          </button>
+                          <>
+                            <button
+                              onClick={() => retryPayment(b.itemId)}
+                              disabled={retryingItemId === b.itemId}
+                              className="text-xs bg-red-500 hover:bg-red-400 disabled:opacity-50 text-white font-semibold px-3 py-1.5 rounded-lg transition-colors"
+                            >
+                              {retryingItemId === b.itemId ? "Retrying…" : "Retry Payment"}
+                            </button>
+                            {b.orgId && b.orgStripeAccountId && (
+                              <button
+                                onClick={() => setCardModal({ orgId: b.orgId!, stripeAccountId: b.orgStripeAccountId! })}
+                                className="text-xs text-gray-400 hover:text-white border border-gray-700 hover:border-gray-500 px-3 py-1.5 rounded-lg transition-colors"
+                              >
+                                Update Card
+                              </button>
+                            )}
+                          </>
                         ) : (
                           <div className="text-xs text-orange-400 font-semibold">Payment due</div>
                         )}
@@ -691,6 +703,19 @@ export default function BidderDashboard() {
 
         </div>
       </div>
+
+      {/* Card update modal */}
+      {cardModal && (
+        <CardSetupModal
+          orgId={cardModal.orgId}
+          stripeAccountId={cardModal.stripeAccountId}
+          onSuccess={() => {
+            setCardModal(null);
+            setRetryMsg({ text: "Card updated. You can now retry the payment.", ok: true });
+          }}
+          onClose={() => setCardModal(null)}
+        />
+      )}
 
       {/* ── Mobile bottom tab bar ── */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-gray-900/95 backdrop-blur-md border-t border-gray-800/60 flex z-50 safe-area-pb">

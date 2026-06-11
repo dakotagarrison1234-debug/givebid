@@ -64,6 +64,8 @@ export default function ItemPage() {
   // Card-on-file gate
   // null = not yet checked, true = has card, false = no card
   const [hasCard, setHasCard] = useState<boolean | null>(null);
+  const [cardLast4, setCardLast4] = useState<string | null>(null);
+  const [cardBrand, setCardBrand] = useState<string | null>(null);
   const [showCardModal, setShowCardModal] = useState(false);
 
   // Stable bidder anonymization map
@@ -133,13 +135,21 @@ export default function ItemPage() {
   }, [itemId, refreshProxyStatus]);
 
   // Check if the signed-in user has a card on file for this org
-  useEffect(() => {
+  const refreshCardStatus = useCallback(() => {
     if (!isSignedIn || !item?.org?.id) return;
     fetch(`/api/orgs/${item.org.id}/stripe/payment-method`)
       .then((r) => r.json())
-      .then((d) => setHasCard(d.hasCard === true))
+      .then((d) => {
+        setHasCard(d.hasCard === true);
+        setCardLast4(d.last4 ?? null);
+        setCardBrand(d.brand ?? null);
+      })
       .catch(() => setHasCard(null)); // null = unknown, don't block bidding
   }, [isSignedIn, item?.org?.id]);
+
+  useEffect(() => {
+    refreshCardStatus();
+  }, [refreshCardStatus]);
 
   // Pusher real-time updates
   useEffect(() => {
@@ -536,6 +546,29 @@ export default function ItemPage() {
                     {placing ? "Placing…" : "Place Bid"}
                   </button>
                 </div>
+                {/* Payment method indicator */}
+                {item.org?.stripeChargesEnabled && hasCard !== null && (
+                  <div className="flex items-center justify-between mt-3 px-1">
+                    <div className="flex items-center gap-1.5 text-xs text-gray-500">
+                      <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 20 20" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round">
+                        <rect x="2" y="5" width="16" height="12" rx="2" />
+                        <path d="M2 9h16" />
+                      </svg>
+                      {hasCard
+                        ? cardBrand
+                          ? <span className="text-gray-400">{cardBrand.charAt(0).toUpperCase() + cardBrand.slice(1)} ···· {cardLast4}</span>
+                          : <span className="text-gray-400">Card on file</span>
+                        : <span className="text-yellow-500">No card — required to bid</span>
+                      }
+                    </div>
+                    <button
+                      onClick={() => setShowCardModal(true)}
+                      className="text-xs text-emerald-400 hover:text-emerald-300 font-medium transition-colors"
+                    >
+                      {hasCard ? "Update card" : "Add card"}
+                    </button>
+                  </div>
+                )}
               </>
             )}
           </div>
@@ -670,6 +703,7 @@ export default function ItemPage() {
           onSuccess={() => {
             setShowCardModal(false);
             setHasCard(true);
+            refreshCardStatus();
             setMessage({
               text: "Card saved! Click Place Bid to confirm your bid.",
               type: "success",

@@ -15,7 +15,7 @@ export async function GET() {
         item: {
           include: {
             photos: { where: { isPrimary: true }, take: 1 },
-            auction: { include: { organization: { select: { name: true, slug: true } } } },
+            auction: { include: { organization: { select: { name: true, slug: true, id: true, stripeAccountId: true } } } },
           },
         },
       },
@@ -117,6 +117,8 @@ export async function GET() {
             ...base,
             amountOwed: Number(item.currentBid),
             paymentFailed: failedItemIds.has(item.id),
+            orgId: auction.organization.id,
+            orgStripeAccountId: auction.organization.stripeAccountId,
           });
         } else {
           // Confirmed paid (Payment.status = PAID) or already picked up
@@ -163,6 +165,8 @@ export async function GET() {
             ...base,
             amountOwed: Number(item.currentBid),
             paymentFailed: failedItemIds.has(item.id),
+            orgId: auction.organization.id,
+            orgStripeAccountId: auction.organization.stripeAccountId,
           });
         } else {
           past.push({
