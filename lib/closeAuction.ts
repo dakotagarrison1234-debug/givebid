@@ -1,10 +1,11 @@
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 
 type ItemWithBidsAndOrg = {
   id: string;
   title: string;
   auctionId: string | null;
-  bids: { id: string; clerkUserId: string; amount: number }[];
+  bids: { id: string; clerkUserId: string; amount: Prisma.Decimal }[];
   auction: { id: string; title: string; organization: { name: string; slug: string } } | null;
 };
 
@@ -31,7 +32,7 @@ async function closeItem(
       prisma.item.update({ where: { id: item.id }, data: { status: "SOLD" } }),
       prisma.proxyBid.updateMany({ where: { itemId: item.id, isActive: true }, data: { isActive: false } }),
     ]);
-    return { clerkUserId: winningBid.clerkUserId, amount: winningBid.amount };
+    return { clerkUserId: winningBid.clerkUserId, amount: Number(winningBid.amount) };
   } else {
     await prisma.$transaction([
       prisma.item.update({ where: { id: item.id }, data: { status: "UNSOLD" } }),
@@ -221,7 +222,7 @@ export async function closeExpiredItems(): Promise<{ closedItems: number; closed
           items: [],
         });
       }
-      winnerMap.get(bid.clerkUserId)!.items.push({ title: bid.item.title, amount: bid.amount });
+      winnerMap.get(bid.clerkUserId)!.items.push({ title: bid.item.title, amount: Number(bid.amount) });
     }
     await notifyWinners(winnerMap);
   }

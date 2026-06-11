@@ -80,7 +80,7 @@ export default async function WinnersPage() {
                     return (
                       <tr key={bid.id} className="border-b border-gray-800 last:border-0 hover:bg-gray-800/50">
                         <td className="px-6 py-4 font-medium">{bid.item.title}</td>
-                        <td className="px-6 py-4 text-emerald-400 font-bold">${bid.amount}</td>
+                        <td className="px-6 py-4 text-emerald-400 font-bold">${Number(bid.amount).toLocaleString()}</td>
                         <td className="px-6 py-4 text-gray-300 text-sm">
                           {displayName(bid.clerkUserId)}
                         </td>
@@ -139,7 +139,7 @@ export default async function WinnersPage() {
                     <tr key={bid.id} className="border-b border-gray-800 last:border-0 hover:bg-gray-800/50">
                       <td className="px-6 py-4 font-medium">{bid.item.title}</td>
                       <td className="px-6 py-4 text-gray-400 text-sm">{bid.item.auction?.title || "—"}</td>
-                      <td className="px-6 py-4 text-emerald-400 font-bold">${bid.amount}</td>
+                      <td className="px-6 py-4 text-emerald-400 font-bold">${Number(bid.amount).toLocaleString()}</td>
                       <td className="px-6 py-4 text-gray-300 text-sm">{displayName(bid.clerkUserId)}</td>
                     </tr>
                   ))}

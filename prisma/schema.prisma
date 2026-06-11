@@ -8,20 +8,31 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+enum OrgStatus {
+  APPROVED
+  LIVE
+  REJECTED
+}
+
 model Organization {
-  id              String      @id @default(cuid())
-  name            String
-  slug            String      @unique
-  description     String?
-  logoUrl         String?
-  stripeAccountId String?
-  isActive        Boolean     @default(true)
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
-  auctions        Auction[]
-  items           Item[]
-  members         OrgMember[]
-  invites         OrgInvite[]
+  id                     String      @id @default(cuid())
+  name                   String
+  slug                   String      @unique
+  description            String?
+  logoUrl                String?
+  status                 OrgStatus   @default(APPROVED)
+  stripeAccountId        String?     @unique
+  stripeChargesEnabled   Boolean     @default(false)
+  stripePayoutsEnabled   Boolean     @default(false)
+  stripeDetailsSubmitted Boolean     @default(false)
+  platformFeePercent     Decimal     @default(10) @db.Decimal(5, 2)
+  isActive               Boolean     @default(true)
+  createdAt              DateTime    @default(now())
+  updatedAt              DateTime    @updatedAt
+  auctions               Auction[]
+  items                  Item[]
+  members                OrgMember[]
+  invites                OrgInvite[]
 }
 
 model OrgMember {
@@ -71,10 +82,10 @@ enum AuctionStatus {
   description     String?
   condition       Condition    @default(GOOD)
   category        String?
-  retailValue     Float?
-  startingBid     Float        @default(0)
-  reservePrice    Float?
-  currentBid      Float        @default(0)
+  retailValue     Decimal?     @db.Decimal(10, 2)
+  startingBid     Decimal      @default(0) @db.Decimal(10, 2)
+  reservePrice    Decimal?     @db.Decimal(10, 2)
+  currentBid      Decimal      @default(0) @db.Decimal(10, 2)
   donorName       String?
   taxDeductible   Boolean      @default(false)
   storageLocation String?
@@ -120,7 +131,7 @@ model Bid {
   id          String    @id @default(cuid())
   itemId      String
   clerkUserId String
-  amount      Float
+  amount      Decimal   @db.Decimal(10, 2)
   status      BidStatus @default(ACTIVE)
   isProxy     Boolean   @default(false)
   placedAt    DateTime  @default(now())
@@ -131,7 +142,7 @@ model ProxyBid {
   id          String   @id @default(cuid())
   itemId      String
   clerkUserId String
-  maxAmount   Float
+  maxAmount   Decimal  @db.Decimal(10, 2)
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -152,7 +163,7 @@ model Payment {
   id                    String        @id @default(cuid())
   clerkUserId           String
   itemId                String
-  amount                Float
+  amount                Decimal       @db.Decimal(10, 2)
   stripePaymentIntentId String?
   status                PaymentStatus @default(PENDING)
   createdAt             DateTime      @default(now())

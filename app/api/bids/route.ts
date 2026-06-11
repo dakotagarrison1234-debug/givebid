@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Use the real increment table (not hardcoded +5)
-    const minBid = item.currentBid > 0 ? getNextValidBid(item.currentBid) : item.startingBid;
+    const minBid = Number(item.currentBid) > 0 ? getNextValidBid(Number(item.currentBid)) : Number(item.startingBid);
     if (amount < minBid) {
       return NextResponse.json({ error: `Minimum bid is $${minBid}` }, { status: 400 });
     }

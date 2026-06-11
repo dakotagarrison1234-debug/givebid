@@ -51,6 +51,16 @@ export async function PATCH(request: NextRequest, { params }: Props) {
       );
     }
 
+    // Stripe gate — org must have charges enabled before going live
+    if (auction.status === "DRAFT" && status === "OPEN") {
+      if (!auction.organization.stripeChargesEnabled) {
+        return NextResponse.json(
+          { error: "Connect Stripe before publishing an auction. Go to Settings → Payments." },
+          { status: 422 }
+        );
+      }
+    }
+
     const updated = await prisma.auction.update({
       where: { id: auctionId },
       data: { status },

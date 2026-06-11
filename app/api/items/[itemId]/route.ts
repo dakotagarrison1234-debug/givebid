@@ -21,19 +21,37 @@ export async function GET(
 
     // Staff see everything; public gets sensitive fields stripped + bidder IDs anonymized
     const isStaff = await canAccessOrg(item.organizationId);
-    if (isStaff) return NextResponse.json({ item });
+    if (isStaff) {
+      const staffItem = {
+        ...item,
+        retailValue: item.retailValue != null ? Number(item.retailValue) : null,
+        startingBid: Number(item.startingBid),
+        reservePrice: item.reservePrice != null ? Number(item.reservePrice) : null,
+        currentBid: Number(item.currentBid),
+        bids: item.bids.map((b) => ({ ...b, amount: Number(b.amount) })),
+      };
+      return NextResponse.json({ item: staffItem });
+    }
 
     const { reservePrice, storageLocation, notes, ...publicItemFields } = item;
     void reservePrice; void storageLocation; void notes; // intentionally stripped
     const publicBids = item.bids.map((b) => ({
       id: b.id,
-      amount: b.amount,
+      amount: Number(b.amount),
       bidder: b.clerkUserId.substring(0, 8),
       placedAt: b.placedAt,
       isProxy: b.isProxy,
       status: b.status,
     }));
-    return NextResponse.json({ item: { ...publicItemFields, bids: publicBids } });
+    return NextResponse.json({
+      item: {
+        ...publicItemFields,
+        retailValue: publicItemFields.retailValue != null ? Number(publicItemFields.retailValue) : null,
+        startingBid: Number(publicItemFields.startingBid),
+        currentBid: Number(publicItemFields.currentBid),
+        bids: publicBids,
+      },
+    });
   } catch (error) {
     console.error("Error fetching item:", error);
     return NextResponse.json({ error: "Failed to fetch item" }, { status: 500 });

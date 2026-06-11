@@ -34,7 +34,7 @@ export default async function AdminDashboard() {
   const soldStatuses = ["SOLD", "PENDING_PICKUP", "PICKED_UP"];
   const totalRaised = items
     .filter((i) => soldStatuses.includes(i.status))
-    .reduce((sum, i) => sum + i.currentBid, 0);
+    .reduce((sum, i) => sum + Number(i.currentBid), 0);
   // Prefer OPEN, then CLOSING, then DRAFT (scheduled), otherwise none
   const activeAuction =
     auctions.find((a) => a.status === "OPEN") ||
@@ -105,7 +105,7 @@ export default async function AdminDashboard() {
                       </div>
                     </div>
                     <span className="text-emerald-400 font-semibold shrink-0">
-                      ${bid.amount.toLocaleString()}
+                      ${Number(bid.amount).toLocaleString()}
                     </span>
                   </div>
                 );
@@ -144,7 +144,7 @@ export default async function AdminDashboard() {
                   <span className="text-emerald-400 font-semibold">
                     ${activeAuction.items
                       .filter((i) => soldStatuses.includes(i.status))
-                      .reduce((s, i) => s + i.currentBid, 0)
+                      .reduce((s, i) => s + Number(i.currentBid), 0)
                       .toLocaleString()}
                   </span>
                 </div>

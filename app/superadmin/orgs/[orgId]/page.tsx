@@ -32,5 +32,19 @@ export default async function OrgDetailPage({ params }: Props) {
 
   if (!org) notFound();
 
-  return <OrgCommandCenter org={org} />;
+  // Serialize Decimal fields before passing to client component
+  const serializedOrg = {
+    ...org,
+    auctions: org.auctions.map((a) => ({
+      ...a,
+      items: a.items.map((i) => ({ ...i, currentBid: Number(i.currentBid) })),
+    })),
+    items: org.items.map((i) => ({
+      ...i,
+      currentBid: Number(i.currentBid),
+      startingBid: Number(i.startingBid),
+    })),
+  };
+
+  return <OrgCommandCenter org={serializedOrg} />;
 }

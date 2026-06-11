@@ -293,7 +293,7 @@ export default function OrgCommandCenter({ org: initial }: { org: Org }) {
                       const active = auction.items.filter(i => i.status === "ACTIVE").length;
                       const sold = auction.items.filter(i => i.status === "SOLD").length;
                       const draft = auction.items.filter(i => i.status === "DRAFT").length;
-                      const totalBid = auction.items.reduce((s, i) => s + i.currentBid, 0);
+                      const totalBid = auction.items.reduce((s, i) => s + Number(i.currentBid), 0);
                       return <>
                         <span>{auction.items.length} items</span>
                         {active > 0 && <span className="text-emerald-400">{active} active</span>}
@@ -327,7 +327,7 @@ export default function OrgCommandCenter({ org: initial }: { org: Org }) {
                 <div className="flex-1 min-w-0">
                   <div className="font-medium truncate">{item.title}</div>
                   <div className="text-gray-500 text-xs mt-0.5">
-                    ${item.currentBid} current bid · ${item.startingBid} start
+                    ${Number(item.currentBid)} current bid · ${Number(item.startingBid)} start
                     {item.auction && <span> · {item.auction.title}</span>}
                   </div>
                 </div>

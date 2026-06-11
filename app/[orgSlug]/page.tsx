@@ -39,7 +39,7 @@ export default async function OrgPage({ params }: Props) {
 
   const totalRaised = org.auctions.flatMap(a => a.items)
     .filter(i => SOLD.includes(i.status))
-    .reduce((sum, i) => sum + i.currentBid, 0);
+    .reduce((sum, i) => sum + Number(i.currentBid), 0);
 
   const totalItems = org.auctions.flatMap(a => a.items).length;
 
@@ -89,7 +89,7 @@ export default async function OrgPage({ params }: Props) {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {liveAuctions.map((auction) => {
-                const raised = auction.items.reduce((sum, i) => sum + i.currentBid, 0);
+                const raised = auction.items.reduce((sum, i) => sum + Number(i.currentBid), 0);
                 const activeItems = auction.items.filter(i => i.status === "ACTIVE").length;
                 return (
                   <Link
@@ -132,7 +132,7 @@ export default async function OrgPage({ params }: Props) {
               {pastAuctions.map((auction) => {
                 const raised = auction.items
                   .filter(i => SOLD.includes(i.status))
-                  .reduce((sum, i) => sum + i.currentBid, 0);
+                  .reduce((sum, i) => sum + Number(i.currentBid), 0);
                 return (
                   <Link
                     key={auction.id}

@@ -66,5 +66,9 @@ export async function GET(request: NextRequest) {
     }),
   ]);
 
-  return NextResponse.json({ items, auctions, orgs });
+  return NextResponse.json({
+    items: items.map((i) => ({ ...i, currentBid: Number(i.currentBid), startingBid: Number(i.startingBid) })),
+    auctions,
+    orgs,
+  });
 }

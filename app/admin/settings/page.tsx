@@ -115,7 +115,7 @@ export default function AdminSettingsPage() {
   }
 
   return (
-    <div className="max-w-xl px-4 sm:px-0">
+    <div className="max-w-xl">
       <h1 className="text-xl font-bold mb-6">Organization Settings</h1>
 
       {/* Logo section */}

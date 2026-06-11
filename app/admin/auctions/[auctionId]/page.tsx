@@ -46,8 +46,8 @@ export default async function ManageAuctionPage({ params }: Props) {
   const SOLD_STATUSES = ["SOLD", "PENDING_PICKUP", "PICKED_UP"];
   // For live auctions, show all current bid totals; for closed/settled show confirmed sold amounts
   const totalRaised = (auction.status === "OPEN" || auction.status === "CLOSING")
-    ? auction.items.filter(i => i.status === "ACTIVE").reduce((sum, item) => sum + item.currentBid, 0)
-    : auction.items.filter(i => SOLD_STATUSES.includes(i.status)).reduce((sum, item) => sum + item.currentBid, 0);
+    ? auction.items.filter(i => i.status === "ACTIVE").reduce((sum, item) => sum + Number(item.currentBid), 0)
+    : auction.items.filter(i => SOLD_STATUSES.includes(i.status)).reduce((sum, item) => sum + Number(item.currentBid), 0);
   const totalBids = auction.items.reduce((sum, item) => sum + item.bids.length, 0);
   const now = new Date();
   const isScheduled = auction.status === "DRAFT" && auction.startAt > now;
@@ -199,8 +199,8 @@ export default async function ManageAuctionPage({ params }: Props) {
                             <div className="text-xs font-mono text-emerald-600 mt-0.5 flex items-center gap-0.5"><IcoPin />{item.storageLocation}</div>
                           )}
                         </td>
-                        <td className="px-4 py-3 text-gray-400 text-sm">${item.startingBid}</td>
-                        <td className="px-4 py-3 text-emerald-400 font-semibold text-sm">${item.currentBid}</td>
+                        <td className="px-4 py-3 text-gray-400 text-sm">${Number(item.startingBid)}</td>
+                        <td className="px-4 py-3 text-emerald-400 font-semibold text-sm">${Number(item.currentBid)}</td>
                         <td className="px-4 py-3 text-gray-400 text-sm">{item.bids.length}</td>
                         <td className="px-4 py-3">
                           <span className={`text-xs px-2 py-1 rounded-full ${

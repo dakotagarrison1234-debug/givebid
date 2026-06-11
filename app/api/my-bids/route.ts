@@ -88,15 +88,15 @@ export async function GET() {
       if (bid.status === "ACTIVE") {
         winning.push({
           ...base,
-          myBid: bid.amount,
-          currentBid: item.currentBid,
+          myBid: Number(bid.amount),
+          currentBid: Number(item.currentBid),
           itemEndAt: item.itemEndAt,
         });
       } else if (bid.status === "OUTBID") {
         losing.push({
           ...base,
-          myBid: bid.amount,
-          currentBid: item.currentBid,
+          myBid: Number(bid.amount),
+          currentBid: Number(item.currentBid),
           itemEndAt: item.itemEndAt,
         });
       }
@@ -110,13 +110,13 @@ export async function GET() {
 
         if (!isPaid && !itemDone) {
           // No confirmed payment record — still owed, regardless of item.status
-          unpaidWins.push({ ...base, amountOwed: item.currentBid });
+          unpaidWins.push({ ...base, amountOwed: Number(item.currentBid) });
         } else {
           // Confirmed paid (Payment.status = PAID) or already picked up
           past.push({
             ...base,
-            myBid: bid.amount,
-            finalBid: item.currentBid,
+            myBid: Number(bid.amount),
+            finalBid: Number(item.currentBid),
             outcome: "won" as const,
             paid: true,
             pickedUp: itemDone,
@@ -126,8 +126,8 @@ export async function GET() {
         // I placed a bid but didn't win this item
         past.push({
           ...base,
-          myBid: bid.amount,
-          finalBid: item.currentBid,
+          myBid: Number(bid.amount),
+          finalBid: Number(item.currentBid),
           outcome: "lost" as const,
           paid: false,
         });
@@ -139,8 +139,8 @@ export async function GET() {
     if (itemUnsold) {
       past.push({
         ...base,
-        myBid: bid.amount,
-        finalBid: item.currentBid,
+        myBid: Number(bid.amount),
+        finalBid: Number(item.currentBid),
         outcome: "unsold" as const,
         paid: false,
       });
@@ -152,12 +152,12 @@ export async function GET() {
       if (bid.status === "WON") {
         const isPaid = paidItemIds.has(item.id);
         if (!isPaid) {
-          unpaidWins.push({ ...base, amountOwed: item.currentBid });
+          unpaidWins.push({ ...base, amountOwed: Number(item.currentBid) });
         } else {
           past.push({
             ...base,
-            myBid: bid.amount,
-            finalBid: item.currentBid,
+            myBid: Number(bid.amount),
+            finalBid: Number(item.currentBid),
             outcome: "won" as const,
             paid: true,
             pickedUp: false,
@@ -166,8 +166,8 @@ export async function GET() {
       } else {
         past.push({
           ...base,
-          myBid: bid.amount,
-          finalBid: item.currentBid,
+          myBid: Number(bid.amount),
+          finalBid: Number(item.currentBid),
           outcome: "lost" as const,
           paid: false,
         });

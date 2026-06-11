@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Proxy max must be >= the next valid bid (or startingBid if no bids yet)
-    const minProxy = item.currentBid > 0 ? getNextValidBid(item.currentBid) : (item.startingBid > 0 ? item.startingBid : 1);
+    const minProxy = Number(item.currentBid) > 0 ? getNextValidBid(Number(item.currentBid)) : (Number(item.startingBid) > 0 ? Number(item.startingBid) : 1);
     if (amount < minProxy) {
       return NextResponse.json(
         { error: `Proxy max must be at least $${minProxy.toLocaleString()}` },

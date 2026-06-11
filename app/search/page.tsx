@@ -133,7 +133,7 @@ export default async function SearchPage({ searchParams }: Props) {
                     )}
                   </div>
                   <div className="text-emerald-400 font-extrabold text-lg shrink-0">
-                    ${(item.currentBid || 0).toLocaleString()}
+                    ${(Number(item.currentBid) || 0).toLocaleString()}
                   </div>
                 </Link>
               ))}
@@ -149,7 +149,7 @@ export default async function SearchPage({ searchParams }: Props) {
             </h2>
             <div className="space-y-2.5">
               {auctions.map(auction => {
-                const raised = auction.items.reduce((sum, i) => sum + i.currentBid, 0);
+                const raised = auction.items.reduce((sum, i) => sum + Number(i.currentBid), 0);
                 return (
                   <Link
                     key={auction.id}

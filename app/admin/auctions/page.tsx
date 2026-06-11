@@ -39,7 +39,7 @@ export default async function AuctionsPage() {
             {auctions.map((auction) => {
               const raised = auction.items
                 .filter(i => SOLD_STATUSES.includes(i.status))
-                .reduce((sum, i) => sum + i.currentBid, 0);
+                .reduce((sum, i) => sum + Number(i.currentBid), 0);
               const totalBids = auction.items.reduce((sum, i) => sum + i.bids.length, 0);
               const isScheduled = auction.status === "DRAFT" && auction.startAt > new Date();
 

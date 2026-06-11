@@ -103,7 +103,7 @@ export default async function PickupPage() {
             const pickedUp = bids.filter((b) => (b.item.status as string) === "PICKED_UP").length;
             const allDone = pickedUp === bids.length;
             const paidCount = bids.filter((b) => paymentMap.get(b.itemId)?.status === "PAID").length;
-            const totalOwed = bids.reduce((sum, b) => sum + b.amount, 0);
+            const totalOwed = bids.reduce((sum, b) => sum + Number(b.amount), 0);
 
             // Items still needing action (not yet PICKED_UP)
             const pendingItemIds = bids
@@ -205,7 +205,7 @@ export default async function PickupPage() {
                         {/* Right side: amount + payment + action */}
                         <div className="flex items-center gap-2 sm:gap-3 shrink-0">
                           <span className="text-sm font-bold text-white hidden sm:block">
-                            ${bid.amount}
+                            ${Number(bid.amount)}
                           </span>
                           {payment?.status === "PAID" ? (
                             <span className="text-xs bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full">

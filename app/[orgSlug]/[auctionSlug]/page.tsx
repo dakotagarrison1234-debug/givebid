@@ -61,7 +61,7 @@ export default async function AuctionPage({ params }: Props) {
   const SOLD_STATUSES = ["SOLD", "PENDING_PICKUP", "PICKED_UP"];
   const totalRaised = visibleItems
     .filter(i => SOLD_STATUSES.includes(i.status))
-    .reduce((sum, item) => sum + item.currentBid, 0);
+    .reduce((sum, item) => sum + Number(item.currentBid), 0);
 
   return (
     <main className="min-h-screen bg-gray-950 text-white">
@@ -198,7 +198,7 @@ export default async function AuctionPage({ params }: Props) {
                       {item.title}
                     </h3>
                     {item.retailValue && (
-                      <p className="text-gray-600 text-xs mb-3">Retail: ${item.retailValue.toLocaleString()}</p>
+                      <p className="text-gray-600 text-xs mb-3">Retail: ${Number(item.retailValue).toLocaleString()}</p>
                     )}
                     <div className="flex items-center justify-between mt-3">
                       <div>
@@ -206,7 +206,7 @@ export default async function AuctionPage({ params }: Props) {
                           {isItemSold ? "Winning bid" : isItemUnsold ? "Final bid" : "Current bid"}
                         </div>
                         <div className={`font-extrabold text-xl ${isItemUnsold ? "text-gray-500" : "text-emerald-400"}`}>
-                          ${(item.currentBid || item.startingBid).toLocaleString()}
+                          ${(Number(item.currentBid) || Number(item.startingBid)).toLocaleString()}
                         </div>
                       </div>
                       <span className={bidClass}>{bidLabel}</span>

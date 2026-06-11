@@ -148,7 +148,7 @@ export default function SearchBar({
                         <div className="text-sm font-medium text-white truncate">{item.title}</div>
                         <div className="text-xs text-gray-500 truncate">{item.organization.name}</div>
                       </div>
-                      <div className="text-emerald-400 text-sm font-semibold shrink-0">${(item.currentBid || 0).toLocaleString()}</div>
+                      <div className="text-emerald-400 text-sm font-semibold shrink-0">${(Number(item.currentBid) || 0).toLocaleString()}</div>
                     </Link>
                   ))}
                 </div>

@@ -8,7 +8,13 @@ export async function GET() {
   const membership = await getUserOrg();
   if (!membership) return NextResponse.json({ error: "No organization found" }, { status: 404 });
 
-  return NextResponse.json({ org: membership.organization });
+  const o = membership.organization;
+  return NextResponse.json({
+    org: {
+      ...o,
+      platformFeePercent: Number(o.platformFeePercent),
+    },
+  });
 }
 
 // PATCH /api/admin/settings — update org name, description, logoUrl

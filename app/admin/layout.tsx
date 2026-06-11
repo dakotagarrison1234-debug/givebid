@@ -22,6 +22,7 @@ import ActAsExitButton from "./ActAsExitButton";
 import OrgSwitcher from "./OrgSwitcher";
 import MobileNav from "./MobileNav";
 import OrgLogo from "@/app/components/OrgLogo";
+import StripeOnboardingGate from "./StripeOnboardingGate";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const { userId } = await auth();
@@ -165,6 +166,14 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         </aside>
 
         <div className="flex-1 flex flex-col min-w-0">
+          {/* Stripe onboarding gate — shown to org owners/admins who haven't connected Stripe */}
+          {!superAdmin && isOwnerOrAdmin && (
+            <StripeOnboardingGate
+              orgId={org.id}
+              hasStripeAccount={!!org.stripeAccountId}
+              chargesEnabled={org.stripeChargesEnabled}
+            />
+          )}
           {children}
         </div>
       </div>

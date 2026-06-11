@@ -34,7 +34,7 @@ export async function GET(
     ]);
 
     return NextResponse.json({
-      userProxy: userProxy?.isActive ? { maxAmount: userProxy.maxAmount } : null,
+      userProxy: userProxy?.isActive ? { maxAmount: Number(userProxy.maxAmount) } : null,
       hasActiveProxy: activeProxyCount > 0,
       isWinning: !!userId && topBid?.clerkUserId === userId,
     });

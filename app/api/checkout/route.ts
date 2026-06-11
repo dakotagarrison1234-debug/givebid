@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
           name: item.title,
           description: item.description || undefined,
         },
-        unit_amount: Math.round(item.bids[0].amount * 100),
+        unit_amount: Math.round(Number(item.bids[0].amount) * 100),
       },
       quantity: 1,
     }));

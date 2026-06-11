@@ -15,6 +15,7 @@
  */
 
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import { getIncrement, getNextValidBid } from "@/lib/bidIncrements";
 import Pusher from "pusher";
 
@@ -31,8 +32,8 @@ const POPCORN_EXTENSION_MS = 150_000;
 
 type ItemContext = {
   id: string;
-  currentBid: number;
-  startingBid: number;
+  currentBid: Prisma.Decimal;
+  startingBid: Prisma.Decimal;
   itemEndAt: Date | null;
   title: string;
   auction: {
@@ -52,7 +53,7 @@ type ItemContext = {
 type ProxyRecord = {
   id: string;
   clerkUserId: string;
-  maxAmount: number;
+  maxAmount: Prisma.Decimal;
   createdAt: Date;
 };
 
@@ -210,8 +211,8 @@ export async function resolveProxiesAfterBid(
   const nextBid = getNextValidBid(manualBidAmount);
 
   // Deactivate proxies that are beaten and can't make a valid next bid
-  const beaten = proxies.filter((p: ProxyRecord) => p.maxAmount < nextBid);
-  const counters = proxies.filter((p: ProxyRecord) => p.maxAmount >= nextBid);
+  const beaten = proxies.filter((p: ProxyRecord) => Number(p.maxAmount) < nextBid);
+  const counters = proxies.filter((p: ProxyRecord) => Number(p.maxAmount) >= nextBid);
 
   if (beaten.length > 0) {
     await prisma.proxyBid.updateMany({
@@ -238,7 +239,7 @@ export async function resolveProxiesAfterBid(
   if (!item) return { proxyFired: false, hasActiveProxy: counters.length > 0 };
 
   // Proxy fires: bids exactly 1 increment above the manual bid (capped at proxy max)
-  const proxyBidAmount = Math.min(bestProxy.maxAmount, nextBid);
+  const proxyBidAmount = Math.min(Number(bestProxy.maxAmount), nextBid);
 
   try {
     const result = await placeProxyBid(item, bestProxy, proxyBidAmount, manualBidderId);
@@ -285,7 +286,7 @@ export async function resolveNewProxy(
 
   const winner = proxies[0];
   const loser = proxies[1] ?? null;
-  const currentBid = item.currentBid;
+  const currentBid = Number(item.currentBid);
   const currentBidder = item.bids[0]?.clerkUserId ?? null;
 
   // If the winner already holds the current bid and no one is competing, nothing to do.
@@ -300,8 +301,8 @@ export async function resolveNewProxy(
   if (loser) {
     // Two proxies compete — winner pays 1 increment above the loser's max
     winningAmount = Math.min(
-      winner.maxAmount,
-      loser.maxAmount + getIncrement(loser.maxAmount)
+      Number(winner.maxAmount),
+      Number(loser.maxAmount) + getIncrement(Number(loser.maxAmount))
     );
     displacedBidderId = loser.clerkUserId;
 
@@ -313,12 +314,12 @@ export async function resolveNewProxy(
   } else {
     // Only one proxy — bid the minimum needed to take the lead
     if (currentBid > 0) {
-      winningAmount = Math.min(winner.maxAmount, getNextValidBid(currentBid));
+      winningAmount = Math.min(Number(winner.maxAmount), getNextValidBid(currentBid));
       // Displaced bidder is whoever currently holds the top bid (could be null)
       displacedBidderId = winner.clerkUserId !== currentBidder ? currentBidder : null;
     } else {
       // No bids yet — bid the starting price (or 1 if startingBid is 0)
-      winningAmount = item.startingBid > 0 ? item.startingBid : 1;
+      winningAmount = Number(item.startingBid) > 0 ? Number(item.startingBid) : 1;
       displacedBidderId = null;
     }
   }

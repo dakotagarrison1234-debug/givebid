@@ -352,7 +352,7 @@ export default async function HomePage() {
         {activeAuctions.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {activeAuctions.map((auction) => {
-              const raised = auction.items.reduce((sum, i) => sum + i.currentBid, 0);
+              const raised = auction.items.reduce((sum, i) => sum + Number(i.currentBid), 0);
               const activeItems = auction.items.filter(i => i.status === "ACTIVE").length;
               return (
                 <Link
