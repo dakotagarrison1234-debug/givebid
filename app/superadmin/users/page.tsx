@@ -10,6 +10,7 @@ interface User {
   createdAt: string;
   bidCount: number;
   paidTotal: number;
+  unpaidTotal: number;
   failedPayments: number;
 }
 
@@ -77,6 +78,7 @@ export default function SuperAdminUsersPage() {
                   <th className="text-left px-4 py-3 hidden sm:table-cell">Phone</th>
                   <th className="text-right px-4 py-3">Bids</th>
                   <th className="text-right px-4 py-3 hidden sm:table-cell">Paid</th>
+                  <th className="text-right px-4 py-3 hidden sm:table-cell">Unpaid</th>
                   <th className="text-right px-4 py-3">Failed</th>
                   <th className="text-right px-5 py-3">Joined</th>
                 </tr>
@@ -97,6 +99,13 @@ export default function SuperAdminUsersPage() {
                     <td className="px-4 py-3 text-right text-gray-300">{u.bidCount}</td>
                     <td className="px-4 py-3 text-right text-emerald-400 font-medium hidden sm:table-cell">
                       {u.paidTotal > 0 ? `$${u.paidTotal.toLocaleString()}` : "—"}
+                    </td>
+                    <td className="px-4 py-3 text-right hidden sm:table-cell">
+                      {u.unpaidTotal > 0 ? (
+                        <span className="text-orange-400 font-semibold">${u.unpaidTotal.toLocaleString()}</span>
+                      ) : (
+                        <span className="text-gray-600">—</span>
+                      )}
                     </td>
                     <td className="px-4 py-3 text-right">
                       {u.failedPayments > 0 ? (

@@ -50,6 +50,9 @@ export async function GET(request: NextRequest) {
     failedPayments: (paymentsByUser.get(p.clerkUserId) || []).filter(
       (x) => x.status === "FAILED"
     ).length,
+    unpaidTotal: (paymentsByUser.get(p.clerkUserId) || [])
+      .filter((x) => x.status === "PENDING" || x.status === "FAILED")
+      .reduce((s, x) => s + Number(x.amount), 0),
   }));
 
   return NextResponse.json({ users });
