@@ -82,20 +82,20 @@ export async function POST(request: NextRequest) {
       newItemEndAt = new Date(Date.now() + POPCORN_EXTENSION_MS);
     }
 
-    // Record the manual bid atomically
+    // Record the manual bid atomically with optimistic-lock guard
     const bid = await prisma.$transaction(async (tx) => {
-      await tx.bid.updateMany({ where: { itemId, status: "ACTIVE" }, data: { status: "OUTBID" } });
-      const newBid = await tx.bid.create({
-        data: { itemId, clerkUserId: userId, amount, status: "ACTIVE", isProxy: false },
-      });
-      await tx.item.update({
-        where: { id: itemId },
+      const guard = await tx.item.updateMany({
+        where: { id: itemId, currentBid: { lt: amount } },
         data: {
           currentBid: amount,
           ...(newItemEndAt ? { itemEndAt: newItemEndAt } : {}),
         },
       });
-      return newBid;
+      if (guard.count === 0) throw new Error("STALE_BID");
+      await tx.bid.updateMany({ where: { itemId, status: "ACTIVE" }, data: { status: "OUTBID" } });
+      return tx.bid.create({
+        data: { itemId, clerkUserId: userId, amount, status: "ACTIVE", isProxy: false },
+      });
     });
 
     // After the manual bid is saved, check if any proxy should fire back
@@ -193,6 +193,9 @@ export async function POST(request: NextRequest) {
       currentBid: finalAmount,
     });
   } catch (error) {
+    if ((error as Error).message === "STALE_BID") {
+      return NextResponse.json({ error: "Another bid just beat yours — refresh and try again" }, { status: 409 });
+    }
     console.error("Bid error:", error);
     return NextResponse.json({ error: "Failed to place bid" }, { status: 500 });
   }

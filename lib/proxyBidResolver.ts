@@ -85,13 +85,21 @@ async function placeProxyBid(
     prisma.bidderProfile.findUnique({ where: { clerkUserId: proxy.clerkUserId } }),
   ]);
 
-  // Atomic: mark existing ACTIVE bid OUTBID, create proxy auto-bid, update item
+  // Atomic: optimistic-lock guard + mark existing ACTIVE bid OUTBID + create proxy auto-bid
   const newBid = await prisma.$transaction(async (tx) => {
+    const guard = await tx.item.updateMany({
+      where: { id: item.id, currentBid: { lt: amount } },
+      data: {
+        currentBid: amount,
+        ...(newItemEndAt ? { itemEndAt: newItemEndAt } : {}),
+      },
+    });
+    if (guard.count === 0) throw new Error("STALE_BID");
     await tx.bid.updateMany({
       where: { itemId: item.id, status: "ACTIVE" },
       data: { status: "OUTBID" },
     });
-    const bid = await tx.bid.create({
+    return tx.bid.create({
       data: {
         itemId: item.id,
         clerkUserId: proxy.clerkUserId,
@@ -100,14 +108,6 @@ async function placeProxyBid(
         isProxy: true,
       },
     });
-    await tx.item.update({
-      where: { id: item.id },
-      data: {
-        currentBid: amount,
-        ...(newItemEndAt ? { itemEndAt: newItemEndAt } : {}),
-      },
-    });
-    return bid;
   });
 
   // Pusher: broadcast the auto-bid
@@ -240,10 +240,16 @@ export async function resolveProxiesAfterBid(
   // Proxy fires: bids exactly 1 increment above the manual bid (capped at proxy max)
   const proxyBidAmount = Math.min(bestProxy.maxAmount, nextBid);
 
-  const result = await placeProxyBid(item, bestProxy, proxyBidAmount, manualBidderId);
-
-  // After firing, the proxy is still active (it just bid)
-  return { proxyFired: true, hasActiveProxy: true, ...result };
+  try {
+    const result = await placeProxyBid(item, bestProxy, proxyBidAmount, manualBidderId);
+    return { proxyFired: true, hasActiveProxy: true, ...result };
+  } catch (e) {
+    if ((e as Error).message === "STALE_BID") {
+      // Race condition — another bid landed first; proxy is still active but didn't fire this time
+      return { proxyFired: false, hasActiveProxy: true };
+    }
+    throw e;
+  }
 }
 
 /**
@@ -320,9 +326,15 @@ export async function resolveNewProxy(
   // Guard: should never happen with proper API validation, but be safe
   if (winningAmount <= currentBid) return { proxyFired: false };
 
-  const result = await placeProxyBid(item, winner, winningAmount, displacedBidderId);
-
-  return { proxyFired: true, ...result };
+  try {
+    const result = await placeProxyBid(item, winner, winningAmount, displacedBidderId);
+    return { proxyFired: true, ...result };
+  } catch (e) {
+    if ((e as Error).message === "STALE_BID") {
+      return { proxyFired: false };
+    }
+    throw e;
+  }
 }
 
 /**

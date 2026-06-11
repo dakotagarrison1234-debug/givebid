@@ -23,7 +23,7 @@ interface Item {
   status: string;
   itemEndAt: string | null;
   photos: { url: string; isPrimary: boolean }[];
-  bids: { id: string; amount: number; clerkUserId: string; placedAt: string; isProxy?: boolean }[];
+  bids: { id: string; amount: number; clerkUserId?: string; bidder?: string; placedAt: string; isProxy?: boolean }[];
   auction: { title: string; endAt: string; status: string } | null;
 }
 
@@ -91,7 +91,7 @@ export default function ItemPage() {
           );
           // Fix #1: only show last 5 bids
           setLiveBids(sorted.reverse().slice(0, 5).map((b: Item["bids"][0]) => ({
-            user: assignBidder(b.clerkUserId),
+            user: assignBidder(b.bidder ?? b.clerkUserId ?? ""),
             amount: b.amount,
             time: new Date(b.placedAt).toLocaleTimeString(),
             isProxy: b.isProxy ?? false,

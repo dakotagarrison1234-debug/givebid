@@ -1,7 +1,7 @@
-import { auth } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { getUserOrg } from "@/lib/auth";
 
 const s3 = new S3Client({
   region: "auto",
@@ -12,15 +12,20 @@ const s3 = new S3Client({
   },
 });
 
+const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+
 export async function POST(request: NextRequest) {
   try {
-    const { userId } = await auth();
-
-    if (!userId) {
+    const membership = await getUserOrg();
+    if (!membership) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { fileName, fileType } = await request.json();
+
+    if (!ALLOWED_TYPES.includes(fileType)) {
+      return NextResponse.json({ error: "File type not allowed" }, { status: 400 });
+    }
 
     const key = `items/${Date.now()}-${fileName.replace(/\s+/g, "-")}`;
 
@@ -31,8 +36,7 @@ export async function POST(request: NextRequest) {
     });
 
     const signedUrl = await getSignedUrl(s3, command, { expiresIn: 3600 });
-
-const publicUrl = `${process.env.CLOUDFLARE_R2_PUBLIC_URL}/${key}`;
+    const publicUrl = `${process.env.CLOUDFLARE_R2_PUBLIC_URL}/${key}`;
 
     return NextResponse.json({ signedUrl, publicUrl });
   } catch (error) {

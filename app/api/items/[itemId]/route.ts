@@ -18,7 +18,22 @@ export async function GET(
       },
     });
     if (!item) return NextResponse.json({ error: "Item not found" }, { status: 404 });
-    return NextResponse.json({ item });
+
+    // Staff see everything; public gets sensitive fields stripped + bidder IDs anonymized
+    const isStaff = await canAccessOrg(item.organizationId);
+    if (isStaff) return NextResponse.json({ item });
+
+    const { reservePrice, storageLocation, notes, ...publicItemFields } = item;
+    void reservePrice; void storageLocation; void notes; // intentionally stripped
+    const publicBids = item.bids.map((b) => ({
+      id: b.id,
+      amount: b.amount,
+      bidder: b.clerkUserId.substring(0, 8),
+      placedAt: b.placedAt,
+      isProxy: b.isProxy,
+      status: b.status,
+    }));
+    return NextResponse.json({ item: { ...publicItemFields, bids: publicBids } });
   } catch (error) {
     console.error("Error fetching item:", error);
     return NextResponse.json({ error: "Failed to fetch item" }, { status: 500 });
