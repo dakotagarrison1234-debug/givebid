@@ -43,7 +43,7 @@ model OrgMember {
   organizationId String
   role           OrgRole      @default(STAFF)
   createdAt      DateTime     @default(now())
-  organization   Organization @relation(fields: [organizationId], references: [id])
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@unique([clerkUserId, organizationId])
 }
@@ -63,7 +63,7 @@ enum OrgRole {
   slug           String
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
-  organization   Organization  @relation(fields: [organizationId], references: [id])
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   items          Item[]
 
   @@unique([organizationId, slug])
@@ -96,8 +96,8 @@ enum AuctionStatus {
   itemEndAt       DateTime?
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt
-  organization    Organization @relation(fields: [organizationId], references: [id])
-  auction         Auction?     @relation(fields: [auctionId], references: [id])
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  auction         Auction?     @relation(fields: [auctionId], references: [id], onDelete: SetNull)
   photos          ItemPhoto[]
   bids            Bid[]
   payments        Payment[]
@@ -126,7 +126,7 @@ enum ItemStatus {
   order     Int      @default(0)
   isPrimary Boolean  @default(false)
   createdAt DateTime @default(now())
-  item      Item     @relation(fields: [itemId], references: [id])
+  item      Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
 }
 
 model Bid {
@@ -148,7 +148,7 @@ model ProxyBid {
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  item        Item     @relation(fields: [itemId], references: [id])
+  item        Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
 
   @@unique([itemId, clerkUserId])
   @@index([itemId, isActive])
@@ -173,7 +173,7 @@ model Payment {
   autoChargeAttemptedAt DateTime?
   failureReason         String?
   createdAt             DateTime      @default(now())
-  item                  Item          @relation(fields: [itemId], references: [id])
+  item                  Item          @relation(fields: [itemId], references: [id], onDelete: Cascade)
 }
 
 model BidderStripeCustomer {
@@ -184,7 +184,7 @@ model BidderStripeCustomer {
   defaultPaymentMethodId String?
   createdAt              DateTime     @default(now())
   updatedAt              DateTime     @updatedAt
-  organization           Organization @relation(fields: [organizationId], references: [id])
+  organization           Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@unique([clerkUserId, organizationId])
   @@index([clerkUserId])
@@ -242,7 +242,7 @@ model OrgInvite {
   accepted       Boolean      @default(false)
   createdAt      DateTime     @default(now())
   expiresAt      DateTime
-  organization   Organization @relation(fields: [organizationId], references: [id])
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@index([email])
   @@index([token])

@@ -61,10 +61,12 @@ export async function DELETE(_req: NextRequest, { params }: Props) {
   const members = await prisma.orgMember.findMany({ where: { organizationId: orgId }, select: { clerkUserId: true } });
   const memberIds = members.map((m) => m.clerkUserId);
 
-  // Delete in dependency order
+  // Delete in dependency order (cascades handle most of this now, but explicit is safer)
   await prisma.$transaction([
     prisma.orgInvite.deleteMany({ where: { organizationId: orgId } }),
     prisma.orgMember.deleteMany({ where: { organizationId: orgId } }),
+    prisma.bidderStripeCustomer.deleteMany({ where: { organizationId: orgId } }),
+    prisma.proxyBid.deleteMany({ where: { item: { organizationId: orgId } } }),
     prisma.itemPhoto.deleteMany({ where: { item: { organizationId: orgId } } }),
     prisma.bid.deleteMany({ where: { item: { organizationId: orgId } } }),
     prisma.payment.deleteMany({ where: { item: { organizationId: orgId } } }),
