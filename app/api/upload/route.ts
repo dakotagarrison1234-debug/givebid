@@ -12,7 +12,16 @@ const s3 = new S3Client({
   },
 });
 
-const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+const ALLOWED_TYPES = [
+  "image/jpeg",
+  "image/jpg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+  "image/heic",
+  "image/heif",
+  "image/avif",
+];
 
 export async function POST(request: NextRequest) {
   try {
