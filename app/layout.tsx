@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "GiveBid — Nonprofit Auctions",
+  title: "PurposeBid — Charity Auctions",
   description: "Auction platform for churches, schools, and nonprofits",
 };
 

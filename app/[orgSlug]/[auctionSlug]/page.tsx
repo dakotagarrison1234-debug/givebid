@@ -69,7 +69,7 @@ export default async function AuctionPage({ params }: Props) {
       <header className="border-b border-gray-800/60 px-4 sm:px-6 py-3.5 flex items-center justify-between gap-3 bg-gray-950/95 backdrop-blur-md sticky top-0 z-40">
         <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 overflow-hidden text-sm">
           <Link href="/" className="text-lg font-extrabold tracking-tight bg-gradient-to-r from-emerald-400 to-emerald-300 bg-clip-text text-transparent shrink-0">
-            GiveBid
+            PurposeBid
           </Link>
           <span className="text-gray-700 hidden sm:inline">/</span>
           <Link href={`/${orgSlug}`} className="text-gray-500 hover:text-white capitalize hidden sm:inline truncate max-w-[120px] transition-colors">

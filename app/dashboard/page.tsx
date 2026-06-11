@@ -208,7 +208,7 @@ export default function BidderDashboard() {
       <aside className="hidden md:flex w-60 bg-gray-900/80 border-r border-gray-800/60 flex-col shrink-0">
         <div className="px-5 py-5 border-b border-gray-800/60">
           <Link href="/" className="text-xl font-extrabold tracking-tight bg-gradient-to-r from-emerald-400 to-emerald-300 bg-clip-text text-transparent">
-            GiveBid
+            PurposeBid
           </Link>
           <p className="text-gray-600 text-xs mt-0.5">Bidder Portal</p>
         </div>
@@ -263,7 +263,7 @@ export default function BidderDashboard() {
         {/* Mobile top bar */}
         <header className="md:hidden flex items-center justify-between px-4 py-3 border-b border-gray-800/60 bg-gray-900/80">
           <Link href="/" className="text-lg font-extrabold tracking-tight bg-gradient-to-r from-emerald-400 to-emerald-300 bg-clip-text text-transparent">
-            GiveBid
+            PurposeBid
           </Link>
           <div className="flex items-center gap-2">
             {unpaidWins.length > 0 && (

@@ -22,7 +22,7 @@ export default function ApplyPendingPage() {
   return (
     <main className="min-h-screen bg-gray-950 text-white flex items-center justify-center px-4">
       <div className="max-w-md w-full text-center">
-        <Link href="/" className="text-emerald-400 font-bold text-xl block mb-8">GiveBid</Link>
+        <Link href="/" className="text-emerald-400 font-bold text-xl block mb-8">PurposeBid</Link>
 
         {status === "PENDING" || status === null ? (
           <>

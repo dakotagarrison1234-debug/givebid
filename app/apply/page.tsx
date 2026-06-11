@@ -84,7 +84,7 @@ export default function ApplyPage() {
   return (
     <main className="min-h-screen bg-gray-950 text-white flex items-center justify-center px-4 py-12">
       <div className="max-w-lg w-full">
-        <Link href="/" className="text-emerald-400 font-bold text-xl block mb-8">GiveBid</Link>
+        <Link href="/" className="text-emerald-400 font-bold text-xl block mb-8">PurposeBid</Link>
 
         <h1 className="text-3xl font-bold mb-2">Apply to Host Auctions</h1>
         <p className="text-gray-400 mb-8">

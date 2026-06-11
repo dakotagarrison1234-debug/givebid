@@ -16,7 +16,7 @@ STRIPE_WEBHOOK_SECRET=PASTE_FROM_STRIPE_DASHBOARD_AFTER_CREATING_WEBHOOK
 Steps:
 1. Go to [Stripe Dashboard → Developers → Webhooks](https://dashboard.stripe.com/webhooks)
 2. Click **"Add endpoint"**
-3. URL: `https://givebid.vercel.app/api/webhooks/stripe`
+3. URL: `https://purposebid.com/api/webhooks/stripe`
 4. Select event: `checkout.session.completed`
 5. Copy the **Signing Secret** (starts with `whsec_`)
 6. Go to [Vercel → givebid → Settings → Environment Variables](https://vercel.com/givebid)
@@ -42,7 +42,7 @@ Your `.env.local` runs locally but Vercel needs its own copy. Check that all of 
 | `CLOUDFLARE_R2_ENDPOINT` | Photo uploads |
 | `CLOUDFLARE_R2_ACCESS_KEY_ID` | Photo uploads |
 | `CLOUDFLARE_R2_SECRET_ACCESS_KEY` | Photo uploads |
-| `CLOUDFLARE_R2_BUCKET` | `givebid-photos` |
+| `CLOUDFLARE_R2_BUCKET` | `purposebid-photos` |
 | `CLOUDFLARE_R2_PUBLIC_URL` | Public photo URL |
 | `PUSHER_APP_ID` | Real-time bidding |
 | `NEXT_PUBLIC_PUSHER_KEY` | Real-time bidding (public) |
@@ -51,7 +51,7 @@ Your `.env.local` runs locally but Vercel needs its own copy. Check that all of 
 | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Stripe (public) |
 | `STRIPE_SECRET_KEY` | Stripe (secret) |
 | `STRIPE_WEBHOOK_SECRET` | ⚠️ See item #1 above |
-| `NEXT_PUBLIC_APP_URL` | `https://givebid.vercel.app` |
+| `NEXT_PUBLIC_APP_URL` | `https://purposebid.com` |
 | `GHL_OUTBID_WEBHOOK` | GHL outbid alert |
 | `GHL_BID_CONFIRM_WEBHOOK` | GHL bid confirmation |
 | `GHL_AUCTION_WON_WEBHOOK` | GHL winner notification |
@@ -96,7 +96,7 @@ If bidders want to manage their payment methods or see receipts, enable the Stri
 Go to `/admin/settings` and upload your org logo. It appears in the admin sidebar.
 
 ### 7. Set a Custom Domain (Optional)
-Currently the site is at `givebid.vercel.app`. If you want a custom domain like `auction.givebid.com`:
+Currently the site is at `purposebid.com`. If you want a custom domain like `auction.givebid.com`:
 1. Go to Vercel → your project → Settings → Domains
 2. Add your domain
 3. Update `NEXT_PUBLIC_APP_URL` env var to match

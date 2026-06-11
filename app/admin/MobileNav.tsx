@@ -27,7 +27,7 @@ export default function MobileNav({ navItems, orgName, role, superAdmin, showSup
     <>
       {/* Mobile top bar */}
       <div className="md:hidden flex items-center justify-between px-4 py-3 bg-gray-900 border-b border-gray-800">
-        <Link href="/admin/dashboard" className="text-emerald-400 font-bold text-lg">GiveBid</Link>
+        <Link href="/admin/dashboard" className="text-emerald-400 font-bold text-lg">PurposeBid</Link>
         <button onClick={() => setOpen(true)} className="text-gray-400 hover:text-white p-1" aria-label="Open menu">
           <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
             <line x1="3" y1="6" x2="21" y2="6" />
@@ -46,7 +46,7 @@ export default function MobileNav({ navItems, orgName, role, superAdmin, showSup
           <div className="relative w-72 bg-gray-900 flex flex-col h-full shadow-2xl">
             <div className="px-6 py-5 border-b border-gray-800 flex items-center justify-between">
               <div>
-                <span className="text-emerald-400 font-bold text-xl">GiveBid</span>
+                <span className="text-emerald-400 font-bold text-xl">PurposeBid</span>
                 <p className="text-gray-300 text-sm mt-0.5 font-medium truncate">{orgName}</p>
                 <span className="text-xs text-emerald-600 capitalize">{role}</span>
               </div>

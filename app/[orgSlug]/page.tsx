@@ -48,7 +48,7 @@ export default async function OrgPage({ params }: Props) {
       {/* Header */}
       <header className="border-b border-gray-800/60 px-4 sm:px-6 py-3.5 flex items-center justify-between gap-3 bg-gray-950/95 backdrop-blur-md sticky top-0 z-40">
         <Link href="/" className="text-xl font-extrabold tracking-tight bg-gradient-to-r from-emerald-400 to-emerald-300 bg-clip-text text-transparent shrink-0">
-          GiveBid
+          PurposeBid
         </Link>
         <UserMenu />
       </header>

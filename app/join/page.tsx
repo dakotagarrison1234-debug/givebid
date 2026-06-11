@@ -54,7 +54,7 @@ function JoinPageInner() {
   return (
     <main className="min-h-screen bg-gray-950 text-white flex items-center justify-center px-4">
       <div className="max-w-md w-full text-center">
-        <Link href="/" className="text-emerald-400 font-bold text-xl block mb-8">GiveBid</Link>
+        <Link href="/" className="text-emerald-400 font-bold text-xl block mb-8">PurposeBid</Link>
 
         {!token ? (
           <>
@@ -71,7 +71,7 @@ function JoinPageInner() {
           <>
             <h1 className="text-2xl font-bold mb-3">You&apos;ve Been Invited</h1>
             <p className="text-gray-400 mb-8">
-              You&apos;ve been invited to join an organization on GiveBid. Accept below to access the dashboard.
+              You&apos;ve been invited to join an organization on PurposeBid. Accept below to access the dashboard.
             </p>
 
             {status === "error" && (

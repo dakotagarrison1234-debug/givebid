@@ -11,7 +11,7 @@ export default async function SuperAdminLayout({ children }: { children: React.R
       <aside className="hidden md:flex w-56 bg-gray-900/80 border-r border-gray-800/60 flex-col shrink-0">
         <div className="px-6 py-5 border-b border-gray-800/60">
           <Link href="/" className="text-xl font-extrabold tracking-tight bg-gradient-to-r from-emerald-400 to-emerald-300 bg-clip-text text-transparent">
-            GiveBid
+            PurposeBid
           </Link>
           <p className="text-xs text-orange-400 mt-1 font-bold tracking-wide">SUPER ADMIN</p>
         </div>
@@ -38,7 +38,7 @@ export default async function SuperAdminLayout({ children }: { children: React.R
       <header className="md:hidden flex items-center justify-between px-4 py-3 bg-gray-900/80 border-b border-gray-800/60 sticky top-0 z-40">
         <div>
           <Link href="/" className="text-lg font-extrabold tracking-tight bg-gradient-to-r from-emerald-400 to-emerald-300 bg-clip-text text-transparent">
-            GiveBid
+            PurposeBid
           </Link>
           <span className="ml-2 text-xs text-orange-400 font-bold">SUPER ADMIN</span>
         </div>
