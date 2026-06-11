@@ -89,6 +89,15 @@ async function chargeWinners(
       },
     });
 
+    // Idempotency guard — skip if any Payment already exists for these items
+    const existingPayment = await prisma.payment.findFirst({
+      where: { itemId: { in: itemIds } },
+    });
+    if (existingPayment) {
+      console.log(`Auto-charge: payment already exists for items ${itemIds.join(",")} — skipping`);
+      continue;
+    }
+
     if (!bidderCustomer?.defaultPaymentMethodId) {
       // No card on file — mark all items as FAILED so bidder sees them on dashboard
       console.warn(`Auto-charge: no card on file for ${clerkUserId} in org ${org.id}`);
@@ -446,10 +455,11 @@ export async function closeAuction(auctionId: string): Promise<{ winnersCount: n
     }
   }
 
+  // Mark CLOSED first so the cron can't pick it up simultaneously and double-charge
+  await prisma.auction.update({ where: { id: auctionId }, data: { status: "CLOSED" } });
   // Auto-charge winners BEFORE sending GHL notifications
   await chargeWinners(winnerMap, auction.organization, auctionId);
   await notifyWinners(winnerMap);
-  await prisma.auction.update({ where: { id: auctionId }, data: { status: "CLOSED" } });
 
   return { winnersCount: winnerMap.size };
 }
