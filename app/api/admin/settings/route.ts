@@ -13,6 +13,7 @@ export async function GET() {
     org: {
       ...o,
       platformFeePercent: Number(o.platformFeePercent),
+      taxPercent: Number(o.taxPercent),
     },
   });
 }
@@ -23,12 +24,20 @@ export async function PATCH(request: NextRequest) {
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await request.json();
-  const { name, description, logoUrl, orgId } = body;
+  const { name, description, logoUrl, orgId, taxPercent } = body;
 
   if (!orgId) return NextResponse.json({ error: "orgId required" }, { status: 400 });
 
   if (!(await canAccessOrg(orgId))) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  // Validate taxPercent if provided
+  if (taxPercent !== undefined) {
+    const tax = parseFloat(taxPercent);
+    if (isNaN(tax) || tax < 0 || tax > 100) {
+      return NextResponse.json({ error: "Tax percent must be between 0 and 100" }, { status: 400 });
+    }
   }
 
   const updated = await prisma.organization.update({
@@ -37,6 +46,7 @@ export async function PATCH(request: NextRequest) {
       ...(name !== undefined && { name: name.trim() }),
       ...(description !== undefined && { description: description.trim() || null }),
       ...(logoUrl !== undefined && { logoUrl }),
+      ...(taxPercent !== undefined && { taxPercent: parseFloat(taxPercent) }),
     },
   });
 

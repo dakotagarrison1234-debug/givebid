@@ -7,6 +7,7 @@ import UserMenu from "@/app/components/UserMenu";
 import Pusher from "pusher-js";
 import Countdown from "@/app/components/Countdown";
 import { getNextValidBid, getProxySuggestions } from "@/lib/bidIncrements";
+import CardSetupModal from "@/app/components/CardSetupModal";
 
 interface Item {
   id: string;
@@ -25,6 +26,7 @@ interface Item {
   photos: { url: string; isPrimary: boolean }[];
   bids: { id: string; amount: number; clerkUserId?: string; bidder?: string; placedAt: string; isProxy?: boolean }[];
   auction: { title: string; endAt: string; status: string } | null;
+  org?: { id: string; stripeAccountId: string | null; stripeChargesEnabled: boolean } | null;
 }
 
 type LiveBid = { user: string; amount: number; time: string; isProxy?: boolean };
@@ -58,6 +60,11 @@ export default function ItemPage() {
   const [isWinning, setIsWinning] = useState(false);
 
   const [liveBids, setLiveBids] = useState<LiveBid[]>([]);
+
+  // Card-on-file gate
+  // null = not yet checked, true = has card, false = no card
+  const [hasCard, setHasCard] = useState<boolean | null>(null);
+  const [showCardModal, setShowCardModal] = useState(false);
 
   // Stable bidder anonymization map
   const bidderMapRef = useRef<Map<string, string>>(new Map());
@@ -125,6 +132,15 @@ export default function ItemPage() {
     refreshProxyStatus();
   }, [itemId, refreshProxyStatus]);
 
+  // Check if the signed-in user has a card on file for this org
+  useEffect(() => {
+    if (!isSignedIn || !item?.org?.id) return;
+    fetch(`/api/orgs/${item.org.id}/stripe/payment-method`)
+      .then((r) => r.json())
+      .then((d) => setHasCard(d.hasCard === true))
+      .catch(() => setHasCard(null)); // null = unknown, don't block bidding
+  }, [isSignedIn, item?.org?.id]);
+
   // Pusher real-time updates
   useEffect(() => {
     if (!itemId) return;
@@ -189,6 +205,13 @@ export default function ItemPage() {
       setMessage({ text: `Minimum bid is $${minBid.toLocaleString()}`, type: "error" });
       return;
     }
+
+    // Card gate — show modal if no card on file
+    if (hasCard === false) {
+      setShowCardModal(true);
+      return;
+    }
+
     setPlacing(true);
     setMessage(null);
     try {
@@ -211,6 +234,8 @@ export default function ItemPage() {
         }
       } else if (data.requiresRegistration) {
         router.push("/register");
+      } else if (data.requiresPaymentMethod) {
+        setShowCardModal(true);
       } else {
         setMessage({ text: data.error, type: "error" });
       }
@@ -234,6 +259,13 @@ export default function ItemPage() {
       setProxyMessage({ text: `Proxy max must be at least $${minProxy.toLocaleString()}`, type: "error" });
       return;
     }
+
+    // Card gate — show modal if no card on file
+    if (hasCard === false) {
+      setShowCardModal(true);
+      return;
+    }
+
     setProxyPlacing(true);
     setProxyMessage(null);
     try {
@@ -260,6 +292,8 @@ export default function ItemPage() {
         }
       } else if (data.requiresRegistration) {
         router.push("/register");
+      } else if (data.requiresPaymentMethod) {
+        setShowCardModal(true);
       } else {
         setProxyMessage({ text: data.error, type: "error" });
       }
@@ -628,6 +662,22 @@ export default function ItemPage() {
           )}
         </div>
       </div>
+      {/* Card setup modal — shown when user tries to bid without a card on file */}
+      {showCardModal && item.org?.stripeAccountId && (
+        <CardSetupModal
+          orgId={item.org.id}
+          stripeAccountId={item.org.stripeAccountId}
+          onSuccess={() => {
+            setShowCardModal(false);
+            setHasCard(true);
+            setMessage({
+              text: "Card saved! Click Place Bid to confirm your bid.",
+              type: "success",
+            });
+          }}
+          onClose={() => setShowCardModal(false)}
+        />
+      )}
     </main>
   );
 }

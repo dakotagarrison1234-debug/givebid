@@ -1,5 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
+import Stripe from "stripe";
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
 type ItemWithBidsAndOrg = {
   id: string;
@@ -13,7 +16,14 @@ type WinnerEntry = {
   clerkUserId: string;
   auctionName: string;
   orgName: string;
-  items: { title: string; amount: number }[];
+  items: { id: string; title: string; amount: number }[];
+};
+
+type OrgForCharging = {
+  id: string;
+  stripeAccountId: string | null;
+  platformFeePercent: Prisma.Decimal;
+  taxPercent: Prisma.Decimal;
 };
 
 /**
@@ -39,6 +49,146 @@ async function closeItem(
       prisma.proxyBid.updateMany({ where: { itemId: item.id, isActive: true }, data: { isActive: false } }),
     ]);
     return null;
+  }
+}
+
+/**
+ * Auto-charges every winner in a closed auction exactly once.
+ *
+ * One PaymentIntent per winner per auction — covers all their won items.
+ * Uses off_session: true so no 3DS prompt is required (the card was saved
+ * with usage: "off_session" during setup).
+ *
+ * application_fee_amount = platform fee on bid amount (not including tax).
+ * Tax = org.taxPercent of bid amount, added on top of the bid total.
+ *
+ * On success:  creates Payment records (status=PAID) + sets items to PENDING_PICKUP.
+ * On failure:  creates Payment records (status=FAILED) + logs the reason.
+ *              Winners will see a retry option on their dashboard.
+ */
+async function chargeWinners(
+  winnerMap: Map<string, WinnerEntry>,
+  org: OrgForCharging,
+  auctionId: string
+): Promise<void> {
+  if (!org.stripeAccountId || winnerMap.size === 0) return;
+
+  const platformFeePercent = Number(org.platformFeePercent);
+  const taxPercent = Number(org.taxPercent);
+
+  for (const [clerkUserId, winner] of winnerMap) {
+    const itemIds = winner.items.map((i) => i.id);
+
+    // Look up the bidder's saved card on this connected account
+    const bidderCustomer = await prisma.bidderStripeCustomer.findUnique({
+      where: {
+        clerkUserId_organizationId: {
+          clerkUserId,
+          organizationId: org.id,
+        },
+      },
+    });
+
+    if (!bidderCustomer?.defaultPaymentMethodId) {
+      // No card on file — mark all items as FAILED so bidder sees them on dashboard
+      console.warn(`Auto-charge: no card on file for ${clerkUserId} in org ${org.id}`);
+      const now = new Date();
+      for (const item of winner.items) {
+        await prisma.payment.create({
+          data: {
+            clerkUserId,
+            itemId: item.id,
+            amount: item.amount,
+            status: "FAILED",
+            autoChargeAttemptedAt: now,
+            failureReason: "No payment card on file",
+          },
+        });
+      }
+      continue;
+    }
+
+    // Calculate totals (all in cents for Stripe)
+    const totalBidAmount = winner.items.reduce((s, i) => s + i.amount, 0);
+    const taxAmountCents = Math.round(totalBidAmount * taxPercent / 100 * 100);
+    const chargeAmountCents = Math.round(totalBidAmount * 100) + taxAmountCents;
+    const appFeeAmountCents = Math.round(totalBidAmount * platformFeePercent / 100 * 100);
+
+    const now = new Date();
+
+    try {
+      const paymentIntent = await stripe.paymentIntents.create(
+        {
+          amount: chargeAmountCents,
+          currency: "usd",
+          customer: bidderCustomer.stripeCustomerId,
+          payment_method: bidderCustomer.defaultPaymentMethodId,
+          off_session: true,
+          confirm: true,
+          application_fee_amount: appFeeAmountCents,
+          metadata: {
+            clerkUserId,
+            orgId: org.id,
+            auctionId,
+            itemIds: itemIds.slice(0, 5).join(","), // Stripe metadata 500-char limit
+          },
+        },
+        { stripeAccount: org.stripeAccountId }
+      );
+
+      // Charge succeeded — create PAID Payment records + move items to PENDING_PICKUP
+      const perItemFee = appFeeAmountCents / 100 / winner.items.length;
+      const perItemTax = taxAmountCents / 100 / winner.items.length;
+
+      for (const item of winner.items) {
+        await prisma.payment.create({
+          data: {
+            clerkUserId,
+            itemId: item.id,
+            amount: item.amount,
+            applicationFeeAmount: perItemFee,
+            taxAmount: perItemTax,
+            stripePaymentIntentId: paymentIntent.id,
+            status: "PAID",
+            autoChargeAttemptedAt: now,
+          },
+        });
+        await prisma.item.update({
+          where: { id: item.id },
+          data: { status: "PENDING_PICKUP" },
+        });
+      }
+
+      console.log(
+        `Auto-charge: $${(chargeAmountCents / 100).toFixed(2)} charged to ${clerkUserId} ` +
+          `(PI: ${paymentIntent.id})`
+      );
+    } catch (err: unknown) {
+      // Charge failed — mark all items FAILED so bidder sees them on dashboard
+      let failureReason = "Charge failed";
+      if (
+        typeof err === "object" &&
+        err !== null &&
+        "message" in err &&
+        typeof (err as { message: unknown }).message === "string"
+      ) {
+        failureReason = (err as { message: string }).message;
+      }
+      console.error(`Auto-charge FAILED for ${clerkUserId}:`, failureReason);
+
+      for (const item of winner.items) {
+        await prisma.payment.create({
+          data: {
+            clerkUserId,
+            itemId: item.id,
+            amount: item.amount,
+            status: "FAILED",
+            autoChargeAttemptedAt: now,
+            failureReason,
+          },
+        });
+      }
+    }
   }
 }
 
@@ -136,10 +286,8 @@ export async function openScheduledAuctions(): Promise<{ openedAuctions: number 
  * Find and close all ACTIVE items whose effective end time has passed,
  * then close any OPEN auctions that have no remaining ACTIVE items.
  *
- * Notifications fire ONLY when an auction fully closes (all items settled) —
- * not when individual items close. This means bidders get exactly one email
- * per auction regardless of popcorn extensions, and never before the last
- * item in their auction has finished.
+ * Auto-charges all winners when each auction fully closes.
+ * GHL notifications fire AFTER charges are attempted.
  *
  * Called by the cron job every minute.
  */
@@ -200,17 +348,28 @@ export async function closeExpiredItems(): Promise<{ closedItems: number; closed
 
     const auction = await prisma.auction.findUnique({
       where: { id: auctionId },
-      include: { organization: true },
+      include: {
+        organization: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            stripeAccountId: true,
+            platformFeePercent: true,
+            taxPercent: true,
+          },
+        },
+      },
     });
     if (!auction || (auction.status !== "OPEN" && auction.status !== "CLOSING")) continue;
 
     await prisma.auction.update({ where: { id: auctionId }, data: { status: "CLOSED" } });
     closedAuctions++;
 
-    // All items settled — build winner map from WON bids and send one email per bidder
+    // Build winner map from WON bids
     const wonBids = await prisma.bid.findMany({
       where: { item: { auctionId }, status: "WON" },
-      include: { item: { select: { title: true } } },
+      include: { item: { select: { id: true, title: true } } },
     });
     const winnerMap = new Map<string, WinnerEntry>();
     for (const bid of wonBids) {
@@ -222,8 +381,15 @@ export async function closeExpiredItems(): Promise<{ closedItems: number; closed
           items: [],
         });
       }
-      winnerMap.get(bid.clerkUserId)!.items.push({ title: bid.item.title, amount: Number(bid.amount) });
+      winnerMap.get(bid.clerkUserId)!.items.push({
+        id: bid.item.id,
+        title: bid.item.title,
+        amount: Number(bid.amount),
+      });
     }
+
+    // Auto-charge winners BEFORE sending GHL notifications
+    await chargeWinners(winnerMap, auction.organization, auctionId);
     await notifyWinners(winnerMap);
   }
 
@@ -232,13 +398,22 @@ export async function closeExpiredItems(): Promise<{ closedItems: number; closed
 
 /**
  * Manually close a specific auction (used by the admin "Close Auction" button).
- * Sends ONE "you won" email per bidder covering all their wins.
+ * Auto-charges all winners and sends ONE "you won" email per bidder.
  */
 export async function closeAuction(auctionId: string): Promise<{ winnersCount: number }> {
   const auction = await prisma.auction.findUnique({
     where: { id: auctionId },
     include: {
-      organization: true,
+      organization: {
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          stripeAccountId: true,
+          platformFeePercent: true,
+          taxPercent: true,
+        },
+      },
       items: {
         where: { status: "ACTIVE" },
         include: {
@@ -267,10 +442,12 @@ export async function closeAuction(auctionId: string): Promise<{ winnersCount: n
           items: [],
         });
       }
-      winnerMap.get(key)!.items.push({ title: item.title, amount: result.amount });
+      winnerMap.get(key)!.items.push({ id: item.id, title: item.title, amount: result.amount });
     }
   }
 
+  // Auto-charge winners BEFORE sending GHL notifications
+  await chargeWinners(winnerMap, auction.organization, auctionId);
   await notifyWinners(winnerMap);
   await prisma.auction.update({ where: { id: auctionId }, data: { status: "CLOSED" } });
 

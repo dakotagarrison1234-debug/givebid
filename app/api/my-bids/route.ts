@@ -50,11 +50,14 @@ export async function GET() {
   const paidItemIds = new Set(
     payments.filter((p) => p.status === "PAID").map((p) => p.itemId)
   );
+  const failedItemIds = new Set(
+    payments.filter((p) => p.status === "FAILED").map((p) => p.itemId)
+  );
 
   const winning = [];    // Active bids I'm currently leading in an open auction
   const losing = [];     // Bids I've been outbid on in a still-open auction
   const past = [];       // Completed items I won (paid) or lost
-  const unpaidWins = []; // Items I won but haven't paid yet
+  const unpaidWins = []; // Items I won but haven't paid yet (including failed charges)
 
   for (const bid of latestBids) {
     const item = bid.item;
@@ -109,8 +112,12 @@ export async function GET() {
         const isPaid = paidItemIds.has(item.id);
 
         if (!isPaid && !itemDone) {
-          // No confirmed payment record — still owed, regardless of item.status
-          unpaidWins.push({ ...base, amountOwed: Number(item.currentBid) });
+          // No confirmed payment — still owed (includes failed auto-charge)
+          unpaidWins.push({
+            ...base,
+            amountOwed: Number(item.currentBid),
+            paymentFailed: failedItemIds.has(item.id),
+          });
         } else {
           // Confirmed paid (Payment.status = PAID) or already picked up
           past.push({
@@ -152,7 +159,11 @@ export async function GET() {
       if (bid.status === "WON") {
         const isPaid = paidItemIds.has(item.id);
         if (!isPaid) {
-          unpaidWins.push({ ...base, amountOwed: Number(item.currentBid) });
+          unpaidWins.push({
+            ...base,
+            amountOwed: Number(item.currentBid),
+            paymentFailed: failedItemIds.has(item.id),
+          });
         } else {
           past.push({
             ...base,

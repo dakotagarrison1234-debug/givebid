@@ -23,7 +23,7 @@ interface BidBase {
 interface WinningBid extends BidBase { myBid: number; currentBid: number; itemEndAt: string | null; }
 interface LosingBid extends BidBase { myBid: number; currentBid: number; itemEndAt: string | null; }
 interface PastBid extends BidBase { myBid: number; finalBid: number; outcome: "won" | "lost" | "unsold"; paid: boolean; pickedUp?: boolean; storageLocation?: string | null; }
-interface UnpaidWin extends BidBase { amountOwed: number; }
+interface UnpaidWin extends BidBase { amountOwed: number; paymentFailed?: boolean; }
 interface Profile { name: string | null; email: string | null; phone: string | null; }
 interface DashboardData { profile: Profile | null; winning: WinningBid[]; losing: LosingBid[]; past: PastBid[]; unpaidWins: UnpaidWin[]; }
 
@@ -107,7 +107,8 @@ export default function BidderDashboard() {
   const [editPhone, setEditPhone] = useState("");
   const [savingProfile, setSavingProfile] = useState(false);
   const [profileMsg, setProfileMsg] = useState<{ text: string; ok: boolean } | null>(null);
-  const [paying, setPaying] = useState(false);
+  const [retryingItemId, setRetryingItemId] = useState<string | null>(null);
+  const [retryMsg, setRetryMsg] = useState<{ text: string; ok: boolean } | null>(null);
 
   const load = useCallback(() => {
     fetch("/api/my-bids").then((r) => r.json()).then((d: DashboardData) => {
@@ -163,19 +164,27 @@ export default function BidderDashboard() {
     finally { setSavingProfile(false); }
   };
 
-  const payAll = async () => {
-    if (!data?.unpaidWins.length) return;
-    setPaying(true);
+  const retryPayment = async (itemId: string) => {
+    setRetryingItemId(itemId);
+    setRetryMsg(null);
     try {
-      const res = await fetch("/api/checkout", {
+      const res = await fetch("/api/retry-payment", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ itemIds: data.unpaidWins.map((i) => i.itemId) }),
+        body: JSON.stringify({ itemId }),
       });
       const d = await res.json();
-      if (d.url) { window.location.href = d.url; }
-      else { alert(d.error || "Failed to start checkout"); setPaying(false); }
-    } catch { alert("Something went wrong"); setPaying(false); }
+      if (d.success) {
+        setRetryMsg({ text: "Payment successful! Your item is ready for pickup.", ok: true });
+        load(); // Refresh to move item from unpaidWins to past
+      } else {
+        setRetryMsg({ text: d.error || "Payment failed. Please update your card in Settings.", ok: false });
+      }
+    } catch {
+      setRetryMsg({ text: "Something went wrong. Please try again.", ok: false });
+    } finally {
+      setRetryingItemId(null);
+    }
   };
 
   if (!isLoaded || loading) {
@@ -192,6 +201,8 @@ export default function BidderDashboard() {
 
   const { winning, losing, past, unpaidWins } = data;
   const totalOwed = unpaidWins.reduce((s, i) => s + i.amountOwed, 0);
+  const failedWins = unpaidWins.filter((w) => w.paymentFailed);
+  const pendingWins = unpaidWins.filter((w) => !w.paymentFailed);
 
   const navItems: { id: Tab; label: string; shortLabel: string; count?: number; icon: React.ReactNode }[] = [
     { id: "overview", label: "Overview",      shortLabel: "Overview", icon: <IcoGrid /> },
@@ -275,20 +286,31 @@ export default function BidderDashboard() {
           </div>
         </header>
 
-        {/* Pay banner */}
-        {unpaidWins.length > 0 && (
-          <div className="bg-orange-500/8 border-b border-orange-500/20 px-4 sm:px-8 py-3 flex flex-col sm:flex-row sm:items-center gap-3">
-            <div className="text-sm">
-              <span className="text-orange-300 font-bold">{unpaidWins.length} unpaid win{unpaidWins.length !== 1 ? "s" : ""}</span>
-              <span className="text-gray-400"> · ${totalOwed.toLocaleString()} total due</span>
+        {/* Failed charge banner */}
+        {failedWins.length > 0 && (
+          <div className="bg-red-500/8 border-b border-red-500/20 px-4 sm:px-8 py-3">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-1">
+              <div className="text-sm">
+                <span className="text-red-300 font-bold">Payment failed</span>
+                <span className="text-gray-400"> — we couldn&apos;t charge your card for {failedWins.length} item{failedWins.length !== 1 ? "s" : ""}.</span>
+              </div>
             </div>
-            <button
-              onClick={payAll}
-              disabled={paying}
-              className="bg-orange-500 hover:bg-orange-400 disabled:opacity-50 text-white text-sm font-bold px-5 py-2 rounded-xl sm:ml-auto w-full sm:w-auto transition-colors"
-            >
-              {paying ? "Redirecting…" : `Pay $${totalOwed.toLocaleString()} Now`}
-            </button>
+            {retryMsg && (
+              <p className={`text-sm mt-1 ${retryMsg.ok ? "text-emerald-400" : "text-red-400"}`}>
+                {retryMsg.text}
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Pending wins banner (no card — legacy fallback) */}
+        {pendingWins.length > 0 && (
+          <div className="bg-orange-500/8 border-b border-orange-500/20 px-4 sm:px-8 py-3">
+            <div className="text-sm">
+              <span className="text-orange-300 font-bold">{pendingWins.length} win{pendingWins.length !== 1 ? "s" : ""} pending payment</span>
+              <span className="text-gray-400"> · ${pendingWins.reduce((s, i) => s + i.amountOwed, 0).toLocaleString()} total</span>
+            </div>
+            <p className="text-xs text-gray-500 mt-1">Your auction organizer will process payment.</p>
           </div>
         )}
 
@@ -537,15 +559,33 @@ export default function BidderDashboard() {
               ) : (
                 <div className="space-y-2.5">
                   {unpaidWins.map((b) => (
-                    <div key={b.itemId} className="flex items-center gap-4 bg-gray-900 border border-orange-500/25 rounded-2xl px-4 sm:px-6 py-4">
+                    <div
+                      key={b.itemId}
+                      className={`flex items-center gap-4 bg-gray-900 border rounded-2xl px-4 sm:px-6 py-4 ${
+                        b.paymentFailed ? "border-red-500/25" : "border-orange-500/25"
+                      }`}
+                    >
                       <Photo url={b.photo} title={b.itemTitle} />
                       <div className="flex-1 min-w-0">
                         <div className="font-bold truncate">{b.itemTitle}</div>
                         <div className="text-gray-500 text-xs sm:text-sm mt-0.5 truncate">{b.auctionTitle} · {b.orgName}</div>
+                        {b.paymentFailed && (
+                          <div className="text-xs text-red-400 mt-1">Card was declined. Update your card and retry.</div>
+                        )}
                       </div>
-                      <div className="text-right shrink-0">
+                      <div className="text-right shrink-0 flex flex-col items-end gap-1.5">
                         <div className="text-emerald-400 font-extrabold">${b.amountOwed.toLocaleString()}</div>
-                        <div className="text-xs text-orange-400 mt-0.5 font-semibold">Payment due</div>
+                        {b.paymentFailed ? (
+                          <button
+                            onClick={() => retryPayment(b.itemId)}
+                            disabled={retryingItemId === b.itemId}
+                            className="text-xs bg-red-500 hover:bg-red-400 disabled:opacity-50 text-white font-semibold px-3 py-1.5 rounded-lg transition-colors"
+                          >
+                            {retryingItemId === b.itemId ? "Retrying…" : "Retry Payment"}
+                          </button>
+                        ) : (
+                          <div className="text-xs text-orange-400 font-semibold">Payment due</div>
+                        )}
                       </div>
                     </div>
                   ))}

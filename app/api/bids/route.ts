@@ -64,6 +64,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Require a card on file (server-side gate — client gate is in the item page)
+    const bidderCustomer = await prisma.bidderStripeCustomer.findUnique({
+      where: {
+        clerkUserId_organizationId: {
+          clerkUserId: userId,
+          organizationId: item.organizationId,
+        },
+      },
+      select: { defaultPaymentMethodId: true },
+    });
+    if (!bidderCustomer?.defaultPaymentMethodId) {
+      return NextResponse.json(
+        { error: "A payment card is required to place bids", requiresPaymentMethod: true },
+        { status: 403 }
+      );
+    }
+
     // Use the real increment table (not hardcoded +5)
     const minBid = Number(item.currentBid) > 0 ? getNextValidBid(Number(item.currentBid)) : Number(item.startingBid);
     if (amount < minBid) {

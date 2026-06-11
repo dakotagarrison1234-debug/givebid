@@ -60,6 +60,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Require a card on file
+    const bidderCustomer = await prisma.bidderStripeCustomer.findUnique({
+      where: {
+        clerkUserId_organizationId: {
+          clerkUserId: userId,
+          organizationId: item.organizationId,
+        },
+      },
+      select: { defaultPaymentMethodId: true },
+    });
+    if (!bidderCustomer?.defaultPaymentMethodId) {
+      return NextResponse.json(
+        { error: "A payment card is required to place proxy bids", requiresPaymentMethod: true },
+        { status: 403 }
+      );
+    }
+
     // Proxy max must be >= the next valid bid (or startingBid if no bids yet)
     const minProxy = Number(item.currentBid) > 0 ? getNextValidBid(Number(item.currentBid)) : (Number(item.startingBid) > 0 ? Number(item.startingBid) : 1);
     if (amount < minProxy) {

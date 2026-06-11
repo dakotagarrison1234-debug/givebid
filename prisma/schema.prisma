@@ -26,6 +26,7 @@ model Organization {
   stripePayoutsEnabled   Boolean     @default(false)
   stripeDetailsSubmitted Boolean     @default(false)
   platformFeePercent     Decimal     @default(10) @db.Decimal(5, 2)
+  taxPercent             Decimal     @default(0) @db.Decimal(5, 2)
   isActive               Boolean     @default(true)
   createdAt              DateTime    @default(now())
   updatedAt              DateTime    @updatedAt
@@ -33,6 +34,7 @@ model Organization {
   items                  Item[]
   members                OrgMember[]
   invites                OrgInvite[]
+  bidderCustomers        BidderStripeCustomer[]
 }
 
 model OrgMember {
@@ -164,10 +166,28 @@ model Payment {
   clerkUserId           String
   itemId                String
   amount                Decimal       @db.Decimal(10, 2)
+  applicationFeeAmount  Decimal?      @db.Decimal(10, 2)
+  taxAmount             Decimal?      @db.Decimal(10, 2)
   stripePaymentIntentId String?
   status                PaymentStatus @default(PENDING)
+  autoChargeAttemptedAt DateTime?
+  failureReason         String?
   createdAt             DateTime      @default(now())
   item                  Item          @relation(fields: [itemId], references: [id])
+}
+
+model BidderStripeCustomer {
+  id                     String       @id @default(cuid())
+  clerkUserId            String
+  organizationId         String
+  stripeCustomerId       String
+  defaultPaymentMethodId String?
+  createdAt              DateTime     @default(now())
+  updatedAt              DateTime     @updatedAt
+  organization           Organization @relation(fields: [organizationId], references: [id])
+
+  @@unique([clerkUserId, organizationId])
+  @@index([clerkUserId])
 }
 
 enum PaymentStatus {

@@ -15,6 +15,9 @@ export async function GET(
         photos: true,
         bids: { orderBy: { placedAt: "desc" } },
         auction: { select: { title: true, endAt: true, status: true } },
+        organization: {
+          select: { id: true, stripeAccountId: true, stripeChargesEnabled: true },
+        },
       },
     });
     if (!item) return NextResponse.json({ error: "Item not found" }, { status: 404 });
@@ -29,12 +32,18 @@ export async function GET(
         reservePrice: item.reservePrice != null ? Number(item.reservePrice) : null,
         currentBid: Number(item.currentBid),
         bids: item.bids.map((b) => ({ ...b, amount: Number(b.amount) })),
+        // Include org Stripe info for staff too (needed if admin is also bidding)
+        org: {
+          id: item.organization.id,
+          stripeAccountId: item.organization.stripeAccountId,
+          stripeChargesEnabled: item.organization.stripeChargesEnabled,
+        },
       };
       return NextResponse.json({ item: staffItem });
     }
 
-    const { reservePrice, storageLocation, notes, ...publicItemFields } = item;
-    void reservePrice; void storageLocation; void notes; // intentionally stripped
+    const { reservePrice, storageLocation, notes, organization, ...publicItemFields } = item;
+    void reservePrice; void storageLocation; void notes; void organization; // intentionally stripped
     const publicBids = item.bids.map((b) => ({
       id: b.id,
       amount: Number(b.amount),
@@ -50,6 +59,13 @@ export async function GET(
         startingBid: Number(publicItemFields.startingBid),
         currentBid: Number(publicItemFields.currentBid),
         bids: publicBids,
+        // Expose the org's Stripe info — stripeAccountId is needed by Stripe Elements
+        // to initialize on the correct connected account. This is safe to expose publicly.
+        org: {
+          id: item.organization.id,
+          stripeAccountId: item.organization.stripeAccountId,
+          stripeChargesEnabled: item.organization.stripeChargesEnabled,
+        },
       },
     });
   } catch (error) {
