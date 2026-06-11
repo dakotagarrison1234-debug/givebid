@@ -13,16 +13,32 @@ interface MeData {
   isSuperAdmin?: boolean;
 }
 
+function IcoHome() {
+  return <svg width="16" height="16" fill="none" viewBox="0 0 16 16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M2 7L8 2l6 5v7a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V7z"/><path d="M6 14V9h4v5"/></svg>;
+}
+function IcoGavel() {
+  return <svg width="16" height="16" fill="none" viewBox="0 0 16 16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M10 2L6 6l4 4 4-4-4-4zM2 14l5-5"/><path d="M6 10l-4 4"/></svg>;
+}
+function IcoSettings() {
+  return <svg width="16" height="16" fill="none" viewBox="0 0 16 16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="8" cy="8" r="2.5"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41"/></svg>;
+}
+function IcoBuilding() {
+  return <svg width="16" height="16" fill="none" viewBox="0 0 16 16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="4" width="12" height="10" rx="1"/><path d="M5 14V9h6v5"/><path d="M5 7h2M9 7h2"/></svg>;
+}
+function IcoBolt() {
+  return <svg width="16" height="16" fill="none" viewBox="0 0 16 16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M9 2L4 9h4l-1 5 6-7H9l1-5z"/></svg>;
+}
+
 function NavLink({
   href,
-  icon,
+  iconEl,
   label,
   sublabel,
   onClick,
   className = "",
 }: {
   href: string;
-  icon: string;
+  iconEl: React.ReactNode;
   label: string;
   sublabel?: string;
   onClick: () => void;
@@ -34,7 +50,7 @@ function NavLink({
       onClick={onClick}
       className={`flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gray-800 transition-colors text-sm group ${className}`}
     >
-      <span className="w-5 text-center text-base shrink-0">{icon}</span>
+      <span className="w-5 flex items-center justify-center shrink-0 text-gray-500 group-hover:text-gray-300">{iconEl}</span>
       <span className="flex-1 min-w-0">
         <span className="block text-gray-300 group-hover:text-white">{label}</span>
         {sublabel && <span className="block text-xs text-gray-600 truncate mt-0.5">{sublabel}</span>}
@@ -163,13 +179,13 @@ export default function UserMenu() {
 
         {/* Navigation — flex-1 with overflow scroll */}
         <nav style={{ flex: 1, padding: "12px", overflowY: "auto", minHeight: 0 }}>
-          <NavLink href="/" icon="🏠" label="Browse Auctions" onClick={() => setOpen(false)} />
-          <NavLink href="/dashboard" icon="⭐" label="My Bids" onClick={() => setOpen(false)} />
+          <NavLink href="/" iconEl={<IcoHome />} label="Browse Auctions" onClick={() => setOpen(false)} />
+          <NavLink href="/dashboard" iconEl={<IcoGavel />} label="My Bids" onClick={() => setOpen(false)} />
 
           {me?.orgId ? (
             <NavLink
               href="/admin/dashboard"
-              icon="⚙️"
+              iconEl={<IcoSettings />}
               label="Admin Dashboard"
               sublabel={me.orgName ?? undefined}
               onClick={() => setOpen(false)}
@@ -177,7 +193,7 @@ export default function UserMenu() {
           ) : (
             <NavLink
               href="/apply"
-              icon="🏢"
+              iconEl={<IcoBuilding />}
               label="Host an Auction"
               sublabel="Apply to create your org"
               onClick={() => setOpen(false)}
@@ -189,7 +205,7 @@ export default function UserMenu() {
               <div style={{ borderTop: "1px solid #1f2937", margin: "8px 0" }} />
               <NavLink
                 href="/superadmin"
-                icon="⚡"
+                iconEl={<IcoBolt />}
                 label="Super Admin"
                 onClick={() => setOpen(false)}
                 className="text-orange-400"

@@ -10,7 +10,7 @@ interface Props {
 const transitions: Record<string, { label: string; next: string; color: string }> = {
   SOLD: { label: "Ready for Pickup →", next: "PENDING_PICKUP", color: "bg-yellow-500 hover:bg-yellow-400 text-black" },
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  PENDING_PICKUP: { label: "Mark Picked Up ✓", next: "PICKED_UP" as any, color: "bg-purple-500 hover:bg-purple-400 text-white" },
+  PENDING_PICKUP: { label: "Mark Picked Up", next: "PICKED_UP" as any, color: "bg-purple-500 hover:bg-purple-400 text-white" },
 };
 
 export default function ItemStatusButton({ itemId, currentStatus }: Props) {

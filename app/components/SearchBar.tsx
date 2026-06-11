@@ -56,22 +56,14 @@ export default function SearchBar({
   const router = useRouter();
 
   const search = useCallback(async (q: string) => {
-    if (q.length < 2) {
-      setResults(null);
-      setOpen(false);
-      return;
-    }
+    if (q.length < 2) { setResults(null); setOpen(false); return; }
     setLoading(true);
     try {
       const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
       const data: SearchResults = await res.json();
       setResults(data);
       setOpen(true);
-    } catch {
-      // ignore network errors
-    } finally {
-      setLoading(false);
-    }
+    } catch { /* ignore */ } finally { setLoading(false); }
   }, []);
 
   useEffect(() => {
@@ -80,47 +72,35 @@ export default function SearchBar({
     return () => clearTimeout(debounceRef.current);
   }, [query, search]);
 
-  // Close on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) setOpen(false);
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  const hasResults =
-    results &&
-    (results.items.length + results.auctions.length + results.orgs.length) > 0;
+  const hasResults = results && (results.items.length + results.auctions.length + results.orgs.length) > 0;
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Escape") {
-      setOpen(false);
-      inputRef.current?.blur();
-    }
-    if (e.key === "Enter" && query.length >= 2) {
-      setOpen(false);
-      router.push(`/search?q=${encodeURIComponent(query)}`);
-    }
+    if (e.key === "Escape") { setOpen(false); inputRef.current?.blur(); }
+    if (e.key === "Enter" && query.length >= 2) { setOpen(false); router.push(`/search?q=${encodeURIComponent(query)}`); }
   };
 
-  const clearAndClose = () => {
-    setOpen(false);
-    setQuery("");
-  };
+  const clearAndClose = () => { setOpen(false); setQuery(""); };
 
-  const inputClass =
-    size === "large"
-      ? "w-full bg-gray-800 border border-gray-700 rounded-xl pl-12 pr-4 py-4 text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500 text-base"
-      : "w-full bg-gray-800 border border-gray-700 rounded-xl pl-11 pr-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500 text-sm";
+  const inputClass = size === "large"
+    ? "w-full bg-gray-800 border border-gray-700 rounded-xl pl-12 pr-4 py-4 text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500 text-base"
+    : "w-full bg-gray-800 border border-gray-700 rounded-xl pl-11 pr-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500 text-sm";
 
   return (
     <div ref={containerRef} className="relative w-full">
       <div className="relative">
-        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none select-none">
-          🔍
+        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none">
+          <svg width="16" height="16" fill="none" viewBox="0 0 16 16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="7" cy="7" r="4.5"/>
+            <path d="M10.5 10.5 13 13"/>
+          </svg>
         </span>
         <input
           ref={inputRef}
@@ -134,76 +114,56 @@ export default function SearchBar({
           autoComplete="off"
         />
         {loading && (
-          <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 text-xs animate-pulse">
-            searching…
-          </span>
+          <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 text-xs animate-pulse">searching…</span>
         )}
         {!loading && query && (
-          <button
-            onClick={() => { setQuery(""); setOpen(false); }}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-600 hover:text-gray-400 text-lg leading-none"
-          >
+          <button onClick={() => { setQuery(""); setOpen(false); }}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-600 hover:text-gray-400 text-lg leading-none">
             ×
           </button>
         )}
       </div>
 
-      {/* Dropdown */}
       {open && query.length >= 2 && (
         <div className="absolute top-full mt-2 w-full bg-gray-900 border border-gray-700 rounded-xl shadow-2xl z-50 overflow-hidden max-h-[70vh] overflow-y-auto">
           {hasResults ? (
             <>
-              {/* Items */}
               {results!.items.length > 0 && (
                 <div>
-                  <div className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-800">
-                    Items
-                  </div>
+                  <div className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-800">Items</div>
                   {results!.items.map(item => (
-                    <Link
-                      key={item.id}
-                      href={`/${item.organization.slug}/${item.auction?.slug}/item/${item.id}`}
-                      onClick={clearAndClose}
-                      className="flex items-center gap-3 px-4 py-3 hover:bg-gray-800 transition-colors"
-                    >
+                    <Link key={item.id} href={`/${item.organization.slug}/${item.auction?.slug}/item/${item.id}`} onClick={clearAndClose}
+                      className="flex items-center gap-3 px-4 py-3 hover:bg-gray-800 transition-colors">
                       {item.photos[0] ? (
-                        <img
-                          src={item.photos[0].url}
-                          alt=""
-                          className="w-10 h-10 object-cover rounded-lg shrink-0"
-                        />
+                        <img src={item.photos[0].url} alt="" className="w-10 h-10 object-cover rounded-lg shrink-0"/>
                       ) : (
-                        <div className="w-10 h-10 bg-gray-800 rounded-lg shrink-0 flex items-center justify-center text-gray-600 text-xs">
-                          ?
+                        <div className="w-10 h-10 bg-gray-800 rounded-lg shrink-0 flex items-center justify-center text-gray-600">
+                          <svg width="14" height="14" fill="none" viewBox="0 0 14 14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                            <rect x="1.5" y="2.5" width="11" height="9" rx="1.5"/>
+                            <circle cx="7" cy="6.5" r="2"/>
+                          </svg>
                         </div>
                       )}
                       <div className="flex-1 min-w-0">
                         <div className="text-sm font-medium text-white truncate">{item.title}</div>
                         <div className="text-xs text-gray-500 truncate">{item.organization.name}</div>
                       </div>
-                      <div className="text-emerald-400 text-sm font-semibold shrink-0">
-                        ${(item.currentBid || 0).toLocaleString()}
-                      </div>
+                      <div className="text-emerald-400 text-sm font-semibold shrink-0">${(item.currentBid || 0).toLocaleString()}</div>
                     </Link>
                   ))}
                 </div>
               )}
 
-              {/* Auctions */}
               {results!.auctions.length > 0 && (
                 <div>
-                  <div className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-800 border-t border-t-gray-800">
-                    Live Auctions
-                  </div>
+                  <div className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-800 border-t border-t-gray-800">Live Auctions</div>
                   {results!.auctions.map(auction => (
-                    <Link
-                      key={auction.id}
-                      href={`/${auction.organization.slug}/${auction.slug}`}
-                      onClick={clearAndClose}
-                      className="flex items-center gap-3 px-4 py-3 hover:bg-gray-800 transition-colors"
-                    >
-                      <div className="w-10 h-10 bg-emerald-500/20 rounded-lg shrink-0 flex items-center justify-center text-emerald-400 text-base">
-                        ◷
+                    <Link key={auction.id} href={`/${auction.organization.slug}/${auction.slug}`} onClick={clearAndClose}
+                      className="flex items-center gap-3 px-4 py-3 hover:bg-gray-800 transition-colors">
+                      <div className="w-10 h-10 bg-emerald-500/20 rounded-lg shrink-0 flex items-center justify-center text-emerald-400">
+                        <svg width="16" height="16" fill="none" viewBox="0 0 16 16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                          <circle cx="8" cy="8" r="6"/><path d="M8 5v3.5l2 1.5"/>
+                        </svg>
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="text-sm font-medium text-white truncate">{auction.title}</div>
@@ -215,21 +175,14 @@ export default function SearchBar({
                 </div>
               )}
 
-              {/* Orgs */}
               {results!.orgs.length > 0 && (
                 <div>
-                  <div className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-800 border-t border-t-gray-800">
-                    Organizations
-                  </div>
+                  <div className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-800 border-t border-t-gray-800">Organizations</div>
                   {results!.orgs.map(org => (
-                    <Link
-                      key={org.id}
-                      href={`/${org.slug}`}
-                      onClick={clearAndClose}
-                      className="flex items-center gap-3 px-4 py-3 hover:bg-gray-800 transition-colors"
-                    >
+                    <Link key={org.id} href={`/${org.slug}`} onClick={clearAndClose}
+                      className="flex items-center gap-3 px-4 py-3 hover:bg-gray-800 transition-colors">
                       {org.logoUrl ? (
-                        <img src={org.logoUrl} alt={org.name} className="w-10 h-10 rounded-xl object-cover shrink-0" />
+                        <img src={org.logoUrl} alt={org.name} className="w-10 h-10 rounded-xl object-cover shrink-0"/>
                       ) : (
                         <div className="w-10 h-10 bg-emerald-500/20 rounded-xl shrink-0 flex items-center justify-center text-emerald-400 font-bold text-base">
                           {org.name[0].toUpperCase()}
@@ -240,8 +193,7 @@ export default function SearchBar({
                         <div className="text-xs text-gray-500">
                           {org.auctions.length > 0
                             ? <span className="text-emerald-500">{org.auctions.length} live now</span>
-                            : `${org._count.auctions} auctions total`
-                          }
+                            : `${org._count.auctions} auctions total`}
                         </div>
                       </div>
                     </Link>
@@ -249,12 +201,8 @@ export default function SearchBar({
                 </div>
               )}
 
-              {/* See all results link */}
-              <Link
-                href={`/search?q=${encodeURIComponent(query)}`}
-                onClick={() => setOpen(false)}
-                className="flex items-center justify-center gap-1 px-4 py-3 text-sm text-emerald-400 hover:bg-gray-800 border-t border-gray-800 transition-colors"
-              >
+              <Link href={`/search?q=${encodeURIComponent(query)}`} onClick={() => setOpen(false)}
+                className="flex items-center justify-center gap-1 px-4 py-3 text-sm text-emerald-400 hover:bg-gray-800 border-t border-gray-800 transition-colors">
                 See all results for &ldquo;{query}&rdquo; →
               </Link>
             </>

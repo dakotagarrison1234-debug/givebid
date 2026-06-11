@@ -24,7 +24,7 @@ export default function PickupControls({ itemIds, mode, currentStatus }: Props) 
       ? `Mark All Picked Up (${itemIds.length})`
       : currentStatus === "SOLD"
       ? "Stage for Pickup →"
-      : "Mark Picked Up ✓";
+      : "Mark Picked Up";
 
   const handleClick = async () => {
     if (targetStatus === "PICKED_UP") {

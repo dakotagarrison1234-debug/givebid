@@ -3,6 +3,19 @@ import { prisma } from "@/lib/prisma";
 import { requireUserOrg } from "@/lib/auth";
 import PickupControls from "@/app/components/PickupControls";
 
+function IcoPickedUp() {
+  return <svg width="16" height="16" fill="none" viewBox="0 0 16 16" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M2.5 8l4 4 7-7"/></svg>;
+}
+function IcoPending() {
+  return <svg width="16" height="16" fill="none" viewBox="0 0 16 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="8" cy="8" r="5"/><circle cx="8" cy="8" r="2" fill="currentColor" stroke="none"/></svg>;
+}
+function IcoOpen() {
+  return <svg width="16" height="16" fill="none" viewBox="0 0 16 16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><circle cx="8" cy="8" r="5.5"/></svg>;
+}
+function IcoPin() {
+  return <svg width="11" height="11" fill="none" viewBox="0 0 12 12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><circle cx="6" cy="5" r="1.8"/><path d="M6 1C3.79 1 2 2.79 2 5c0 3 4 7 4 7s4-4 4-7c0-2.21-1.79-4-4-4z"/></svg>;
+}
+
 export default async function PickupPage() {
   const membership = await requireUserOrg();
   const orgId = membership.organization.id;
@@ -116,8 +129,8 @@ export default async function PickupPage() {
                         {profile?.name ?? "Unknown Bidder"}
                       </span>
                       {allDone ? (
-                        <span className="text-xs bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full">
-                          ✓ All picked up
+                        <span className="text-xs bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full inline-flex items-center gap-1">
+                          <IcoPickedUp /> All picked up
                         </span>
                       ) : (
                         <span className="text-xs bg-yellow-500/20 text-yellow-400 px-2 py-0.5 rounded-full">
@@ -132,7 +145,7 @@ export default async function PickupPage() {
                     <div className="flex flex-wrap gap-x-4 gap-y-0.5 mt-1 text-xs text-gray-500">
                       <span>
                         {paidCount === bids.length ? (
-                          <span className="text-emerald-400">✓ Fully paid</span>
+                          <span className="text-emerald-400 inline-flex items-center gap-0.5"><IcoPickedUp />Fully paid</span>
                         ) : (
                           <span className="text-yellow-400">{paidCount}/{bids.length} items paid</span>
                         )}
@@ -168,7 +181,7 @@ export default async function PickupPage() {
                             isPickedUp ? "text-emerald-400" : isPendingPickup ? "text-yellow-400" : "text-gray-600"
                           }`}
                         >
-                          {isPickedUp ? "✓" : isPendingPickup ? "◉" : "○"}
+                          {isPickedUp ? <IcoPickedUp /> : isPendingPickup ? <IcoPending /> : <IcoOpen />}
                         </span>
 
                         {/* Item info */}
@@ -181,8 +194,8 @@ export default async function PickupPage() {
                             {bid.item.title}
                           </div>
                           {bid.item.storageLocation ? (
-                            <div className="text-xs font-mono text-emerald-400 mt-0.5">
-                              📍 {bid.item.storageLocation}
+                            <div className="text-xs font-mono text-emerald-400 mt-0.5 flex items-center gap-0.5">
+                              <IcoPin />{bid.item.storageLocation}
                             </div>
                           ) : (
                             <div className="text-xs text-gray-600 mt-0.5">No location set</div>

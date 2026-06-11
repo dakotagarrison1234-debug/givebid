@@ -191,7 +191,7 @@ export default function EditItemPage() {
             <input type="file" accept="image/*" multiple id="photo-upload" className="hidden" onChange={handlePhotoUpload} />
             <label htmlFor="photo-upload"
               className="border-2 border-dashed border-gray-700 rounded-xl p-6 text-center hover:border-emerald-500 transition-colors cursor-pointer block">
-              <div className="text-gray-500 mb-1">📷</div>
+              <div className="text-gray-500 mb-1 flex justify-center"><svg width="22" height="22" fill="none" viewBox="0 0 22 22" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="5" width="18" height="14" rx="2"/><circle cx="11" cy="12" r="3.5"/><path d="M8 5l1.5-2.5h3L14 5"/></svg></div>
               <div className="text-gray-400 text-sm">{uploading ? "Uploading..." : "Click to add photos"}</div>
             </label>
           </div>

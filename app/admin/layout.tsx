@@ -3,6 +3,19 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import UserMenu from "@/app/components/UserMenu";
 import { prisma } from "@/lib/prisma";
+
+function AdminNavIcon({ name }: { name: string }) {
+  const s = { width: 16, height: 16, fill: "none", viewBox: "0 0 16 16", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
+  if (name === "grid") return <svg {...s}><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/></svg>;
+  if (name === "gavel") return <svg {...s}><path d="M10 2L6 6l4 4 4-4-4-4zM2 14l5-5"/><path d="M6 10l-4 4"/></svg>;
+  if (name === "trophy") return <svg {...s}><path d="M4 3H2V6a4 4 0 0 0 3.5 3.97M12 3h2V6a4 4 0 0 1-3.5 3.97M4 3h8v5a4 4 0 0 1-8 0V3zM6 14h4M8 12v2"/></svg>;
+  if (name === "package") return <svg {...s}><path d="M8 2L2 5v6l6 3 6-3V5L8 2z"/><path d="M2 5l6 3 6-3M8 8v7M5 3.5l6 3"/></svg>;
+  if (name === "users") return <svg {...s}><circle cx="6" cy="5" r="2.5"/><path d="M1 14c0-3 2-4.5 5-4.5s5 1.5 5 4.5"/><circle cx="12" cy="5" r="2"/><path d="M12 10c2 0 3 1 3 3.5"/></svg>;
+  if (name === "settings") return <svg {...s}><circle cx="8" cy="8" r="2.5"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41"/></svg>;
+  if (name === "mybids") return <svg {...s}><path d="M8 2v4l3 3"/><circle cx="8" cy="8" r="6"/></svg>;
+  if (name === "bolt") return <svg {...s}><path d="M9 2L4 9h4l-1 5 6-7H9l1-5z"/></svg>;
+  return null;
+}
 import { isSuperAdmin } from "@/lib/auth";
 import { cookies } from "next/headers";
 import ActAsExitButton from "./ActAsExitButton";
@@ -57,12 +70,12 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     : [];
 
   const navItems = [
-    { label: "Overview", href: "/admin/dashboard", icon: "▦" },
-    { label: "Auctions", href: "/admin/auctions", icon: "◷" },
-    { label: "Winners", href: "/admin/winners", icon: "✓" },
-    { label: "Pickup", href: "/admin/pickup", icon: "📦" },
-    ...(isOwnerOrAdmin ? [{ label: "Team", href: "/admin/staff", icon: "👥" }] : []),
-    ...(isOwnerOrAdmin ? [{ label: "Settings", href: "/admin/settings", icon: "⚙️" }] : []),
+    { label: "Overview", href: "/admin/dashboard", icon: "grid" },
+    { label: "Auctions", href: "/admin/auctions", icon: "gavel" },
+    { label: "Winners", href: "/admin/winners", icon: "trophy" },
+    { label: "Pickup", href: "/admin/pickup", icon: "package" },
+    ...(isOwnerOrAdmin ? [{ label: "Team", href: "/admin/staff", icon: "users" }] : []),
+    ...(isOwnerOrAdmin ? [{ label: "Settings", href: "/admin/settings", icon: "settings" }] : []),
   ];
 
   return (
@@ -71,7 +84,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       {actingAsOrg && (
         <div className="bg-orange-500/20 border-b border-orange-500/40 px-4 sm:px-6 py-2 flex items-center justify-between text-xs sm:text-sm gap-2">
           <span className="text-orange-300 truncate">
-            ⚡ Acting as <span className="font-semibold text-orange-200">{actingAsOrg.name}</span>
+            Acting as <span className="font-semibold text-orange-200">{actingAsOrg.name}</span>
           </span>
           <ActAsExitButton />
         </div>
@@ -112,7 +125,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
                 href={item.href}
                 className="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
               >
-                <span>{item.icon}</span>
+                <span className="w-5 flex items-center justify-center shrink-0">
+                  <AdminNavIcon name={item.icon} />
+                </span>
                 <span>{item.label}</span>
               </Link>
             ))}
@@ -121,7 +136,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
                 href="/dashboard"
                 className="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
               >
-                <span>↑</span>
+                <span className="w-5 flex items-center justify-center shrink-0">
+                  <AdminNavIcon name="mybids" />
+                </span>
                 <span>My Bids</span>
               </Link>
             </div>
@@ -133,7 +150,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
                 href="/superadmin"
                 className="flex items-center gap-3 px-4 py-3 rounded-xl text-orange-400 hover:text-orange-300 hover:bg-orange-500/10 transition-colors text-sm"
               >
-                <span>⚡</span>
+                <span className="w-5 flex items-center justify-center shrink-0">
+                  <AdminNavIcon name="bolt" />
+                </span>
                 <span>Super Admin</span>
               </Link>
             </div>

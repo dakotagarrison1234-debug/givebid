@@ -17,7 +17,7 @@ export default function OrgSwitcher({ orgs, currentOrgId }: { orgs: Org[]; curre
 
   return (
     <div className="mb-2">
-      <label className="text-xs text-orange-400 uppercase tracking-wider mb-1 block">⚡ Viewing Org</label>
+      <label className="text-xs text-orange-400 uppercase tracking-wider mb-1 block">Viewing Org</label>
       <select
         value={currentOrgId}
         onChange={handleChange}

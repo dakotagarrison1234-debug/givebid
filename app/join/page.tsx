@@ -63,7 +63,14 @@ function JoinPageInner() {
           </>
         ) : status === "success" ? (
           <>
-            <div className="text-5xl mb-4">🎉</div>
+            <div className="flex justify-center mb-5">
+              <svg width="56" height="56" viewBox="0 0 56 56" fill="none">
+                <circle cx="28" cy="28" r="26" stroke="#374151" strokeWidth="1.5"/>
+                <circle cx="28" cy="28" r="18" stroke="#10b981" strokeWidth="1.2" strokeOpacity="0.4"/>
+                <circle cx="28" cy="28" r="12" fill="rgba(16,185,129,0.12)" stroke="#10b981" strokeWidth="1.5"/>
+                <path d="M21 28l5 5 9-9" stroke="#10b981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
             <h1 className="text-2xl font-bold mb-2">You&apos;re in!</h1>
             <p className="text-gray-400">Redirecting to your dashboard...</p>
           </>

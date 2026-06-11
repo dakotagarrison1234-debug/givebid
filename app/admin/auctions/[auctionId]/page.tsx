@@ -4,6 +4,19 @@ import { prisma } from "@/lib/prisma";
 import AuctionStatusButtons from "@/app/components/AuctionStatusButtons";
 import LocalDate from "@/app/components/LocalDate";
 
+function IcoWarning() {
+  return <svg width="14" height="14" fill="none" viewBox="0 0 14 14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M7 2L1.5 12h11L7 2z"/><path d="M7 6v3M7 10.5v.5"/></svg>;
+}
+function IcoCheck() {
+  return <svg width="12" height="12" fill="none" viewBox="0 0 12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 6l3 3 5-5"/></svg>;
+}
+function IcoPin() {
+  return <svg width="11" height="11" fill="none" viewBox="0 0 12 12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="6" cy="5" r="2"/><path d="M6 1C3.79 1 2 2.79 2 5c0 3 4 7 4 7s4-4 4-7c0-2.21-1.79-4-4-4z"/></svg>;
+}
+function IcoBox() {
+  return <svg width="40" height="40" fill="none" viewBox="0 0 40 40" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 5L5 12.5v15L20 35l15-7.5v-15L20 5z"/><path d="M5 12.5l15 7.5 15-7.5M20 20v15"/><path d="M12.5 8.75L27.5 16.25"/></svg>;
+}
+
 interface Props {
   params: Promise<{ auctionId: string }>;
 }
@@ -58,7 +71,7 @@ export default async function ManageAuctionPage({ params }: Props) {
           </span>
           {isPastStart && (
             <span className="text-xs text-yellow-400 bg-yellow-500/10 px-2 py-1 rounded-full shrink-0">
-              ⚠ opens on next cron run
+              <span className="inline-flex items-center gap-1"><IcoWarning /> opens on next cron run</span>
             </span>
           )}
         </div>
@@ -101,7 +114,7 @@ export default async function ManageAuctionPage({ params }: Props) {
               <LocalDate iso={auction.startAt.toISOString()} />
             </span>
             {(auction.status === "OPEN" || auction.status === "CLOSED" || auction.status === "SETTLED") && (
-              <span className="text-emerald-500 text-xs">✓ opened</span>
+              <span className="text-emerald-500 text-xs inline-flex items-center gap-0.5"><IcoCheck /> opened</span>
             )}
           </div>
           <div className="hidden sm:block text-gray-700">→</div>
@@ -111,7 +124,7 @@ export default async function ManageAuctionPage({ params }: Props) {
               <LocalDate iso={auction.endAt.toISOString()} />
             </span>
             {(auction.status === "CLOSED" || auction.status === "SETTLED") && (
-              <span className="text-red-400 text-xs">✓ closed</span>
+              <span className="text-red-400 text-xs inline-flex items-center gap-0.5"><IcoCheck /> closed</span>
             )}
           </div>
           {auction.status === "DRAFT" && (
@@ -137,7 +150,7 @@ export default async function ManageAuctionPage({ params }: Props) {
 
           {auction.items.length === 0 ? (
             <div className="px-6 py-16 text-center">
-              <div className="text-4xl mb-4">📦</div>
+              <div className="flex justify-center mb-4 text-gray-600"><IcoBox /></div>
               <p className="text-gray-400 font-medium mb-1">No items yet</p>
               <p className="text-gray-600 text-sm mb-6">Add items to this auction so bidders can start bidding.</p>
               <Link
@@ -183,7 +196,7 @@ export default async function ManageAuctionPage({ params }: Props) {
                           <div className="font-medium text-sm">{item.title}</div>
                           {item.category && <div className="text-xs text-gray-600">{item.category}</div>}
                           {item.storageLocation && (
-                            <div className="text-xs font-mono text-emerald-600 mt-0.5">📍 {item.storageLocation}</div>
+                            <div className="text-xs font-mono text-emerald-600 mt-0.5 flex items-center gap-0.5"><IcoPin />{item.storageLocation}</div>
                           )}
                         </td>
                         <td className="px-4 py-3 text-gray-400 text-sm">${item.startingBid}</td>

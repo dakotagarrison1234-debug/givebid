@@ -181,7 +181,7 @@ export default function OrgCommandCenter({ org: initial }: { org: Org }) {
           disabled={enteringOrg}
           className="bg-orange-500 hover:bg-orange-400 disabled:opacity-50 text-white font-semibold px-5 py-2 rounded-lg text-sm"
         >
-          {enteringOrg ? "Entering..." : "⚡ Enter as Org"}
+          {enteringOrg ? "Entering..." : "Enter as Org"}
         </button>
       </header>
 

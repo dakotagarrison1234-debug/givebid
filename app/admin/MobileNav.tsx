@@ -3,6 +3,20 @@ import { useState } from "react";
 import Link from "next/link";
 import { useClerk } from "@clerk/nextjs";
 
+function NavIcon({ name }: { name: string }) {
+  const s = { width: 16, height: 16, fill: "none", viewBox: "0 0 16 16", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
+  if (name === "grid") return <svg {...s}><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/></svg>;
+  if (name === "gavel") return <svg {...s}><path d="M10 2L6 6l4 4 4-4-4-4zM2 14l5-5"/><path d="M6 10l-4 4"/></svg>;
+  if (name === "trophy") return <svg {...s}><path d="M4 3H2V6a4 4 0 0 0 3.5 3.97M12 3h2V6a4 4 0 0 1-3.5 3.97M4 3h8v5a4 4 0 0 1-8 0V3zM6 14h4M8 12v2"/></svg>;
+  if (name === "package") return <svg {...s}><path d="M8 2L2 5v6l6 3 6-3V5L8 2z"/><path d="M2 5l6 3 6-3M8 8v7"/></svg>;
+  if (name === "users") return <svg {...s}><circle cx="6" cy="5" r="2.5"/><path d="M1 14c0-3 2-4.5 5-4.5s5 1.5 5 4.5"/><circle cx="12" cy="5" r="2"/><path d="M12 10c2 0 3 1 3 3.5"/></svg>;
+  if (name === "settings") return <svg {...s}><circle cx="8" cy="8" r="2.5"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41"/></svg>;
+  if (name === "mybids") return <svg {...s}><circle cx="8" cy="8" r="6"/><path d="M8 5v3.5l2 1.5"/></svg>;
+  if (name === "home") return <svg {...s}><path d="M2 7L8 2l6 5v7a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V7z"/><path d="M6 14V9h4v5"/></svg>;
+  if (name === "bolt") return <svg {...s}><path d="M9 2L4 9h4l-1 5 6-7H9l1-5z"/></svg>;
+  return null;
+}
+
 interface NavItem { label: string; href: string; icon: string; }
 
 interface Props {
@@ -66,7 +80,7 @@ export default function MobileNav({ navItems, orgName, role, superAdmin, showSup
                   onClick={() => setOpen(false)}
                   className="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-400 hover:text-white hover:bg-gray-800 transition-colors text-sm"
                 >
-                  <span>{item.icon}</span>
+                  <span className="w-5 flex items-center justify-center shrink-0"><NavIcon name={item.icon} /></span>
                   <span>{item.label}</span>
                 </Link>
               ))}
@@ -77,7 +91,7 @@ export default function MobileNav({ navItems, orgName, role, superAdmin, showSup
                   onClick={() => setOpen(false)}
                   className="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-400 hover:text-white hover:bg-gray-800 transition-colors text-sm"
                 >
-                  <span>⭐</span>
+                  <span className="w-5 flex items-center justify-center shrink-0"><NavIcon name="mybids" /></span>
                   <span>My Bids</span>
                 </Link>
                 <Link
@@ -85,7 +99,7 @@ export default function MobileNav({ navItems, orgName, role, superAdmin, showSup
                   onClick={() => setOpen(false)}
                   className="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-400 hover:text-white hover:bg-gray-800 transition-colors text-sm"
                 >
-                  <span>🏠</span>
+                  <span className="w-5 flex items-center justify-center shrink-0"><NavIcon name="home" /></span>
                   <span>Browse Auctions</span>
                 </Link>
               </div>
@@ -97,7 +111,7 @@ export default function MobileNav({ navItems, orgName, role, superAdmin, showSup
                     onClick={() => setOpen(false)}
                     className="flex items-center gap-3 px-4 py-3 rounded-xl text-orange-400 hover:text-orange-300 hover:bg-orange-500/10 transition-colors text-sm"
                   >
-                    <span>⚡</span>
+                    <span className="w-5 flex items-center justify-center shrink-0"><NavIcon name="bolt" /></span>
                     <span>Super Admin</span>
                   </Link>
                 </div>

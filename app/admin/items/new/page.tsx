@@ -172,7 +172,7 @@ function NewItemForm() {
             <input type="file" accept="image/*" multiple id="photo-upload" className="hidden" onChange={handlePhotoUpload} />
             <label htmlFor="photo-upload"
               className="border-2 border-dashed border-gray-700 rounded-xl p-10 text-center hover:border-emerald-500 transition-colors cursor-pointer block">
-              <div className="text-gray-500 mb-2">📷</div>
+              <div className="text-gray-500 mb-2 flex justify-center"><svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="6" width="20" height="15" rx="2"/><circle cx="12" cy="13.5" r="4"/><path d="M9 6l1.5-3h3L15 6"/></svg></div>
               <div className="text-gray-400 text-sm">{uploading ? "Uploading..." : "Click to upload photos"}</div>
               <div className="text-gray-600 text-xs mt-1">PNG, JPG up to 10MB each</div>
             </label>
