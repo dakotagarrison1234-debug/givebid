@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
@@ -60,15 +61,20 @@ export async function POST(request: NextRequest) {
             data: { status: "PAID", stripePaymentIntentId: paymentIntentId },
           });
         } else {
-          await prisma.payment.create({
-            data: {
-              clerkUserId,
-              itemId: item.id,
-              amount: winningBidAmount,
-              stripePaymentIntentId: paymentIntentId,
-              status: "PAID",
-            },
-          });
+          try {
+            await prisma.payment.create({
+              data: {
+                clerkUserId,
+                itemId: item.id,
+                amount: winningBidAmount,
+                stripePaymentIntentId: paymentIntentId,
+                status: "PAID",
+              },
+            });
+          } catch (e) {
+            if (!(e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002")) throw e;
+            // P2002 = payment row already exists; safe to ignore.
+          }
         }
 
         // Move item to PENDING_PICKUP (only if currently SOLD — idempotent guard)

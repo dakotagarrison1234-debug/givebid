@@ -97,17 +97,9 @@ export async function POST(request: NextRequest) {
       paymentIntent.status === "succeeded" ||
       paymentIntent.status === "processing"
     ) {
-      // Mark payment PAID and update/create Payment record
+      // Mark payment PAID — upsert on the DB-unique compound key (itemId + clerkUserId)
       await prisma.payment.upsert({
-        where: {
-          // Find existing failed payment — use a findFirst approach
-          id: (
-            await prisma.payment.findFirst({
-              where: { itemId, clerkUserId: userId },
-              select: { id: true },
-            })
-          )?.id ?? "none",
-        },
+        where: { itemId_clerkUserId: { itemId, clerkUserId: userId } },
         update: {
           status: "PAID",
           stripePaymentIntentId: paymentIntent.id,

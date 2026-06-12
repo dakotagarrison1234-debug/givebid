@@ -162,18 +162,23 @@ async function chargeWinners(
         const item = winner.items[idx];
         const itemFeeCents = baseFeeCents + (idx === 0 ? feeRemainderCents : 0);
         const itemTaxCents = baseTaxCents + (idx === 0 ? taxRemainderCents : 0);
-        await prisma.payment.create({
-          data: {
-            clerkUserId,
-            itemId: item.id,
-            amount: item.amount,
-            applicationFeeAmount: itemFeeCents / 100,
-            taxAmount: itemTaxCents / 100,
-            stripePaymentIntentId: paymentIntent.id,
-            status: "PAID",
-            autoChargeAttemptedAt: now,
-          },
-        });
+        try {
+          await prisma.payment.create({
+            data: {
+              clerkUserId,
+              itemId: item.id,
+              amount: item.amount,
+              applicationFeeAmount: itemFeeCents / 100,
+              taxAmount: itemTaxCents / 100,
+              stripePaymentIntentId: paymentIntent.id,
+              status: "PAID",
+              autoChargeAttemptedAt: now,
+            },
+          });
+        } catch (e) {
+          if (!(e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002")) throw e;
+          // P2002 = a payment row for this item+user already exists; safe to ignore.
+        }
         await prisma.item.update({
           where: { id: item.id },
           data: { status: "PENDING_PICKUP" },
@@ -198,16 +203,21 @@ async function chargeWinners(
       console.error(`Auto-charge FAILED for ${clerkUserId}:`, failureReason);
 
       for (const item of winner.items) {
-        await prisma.payment.create({
-          data: {
-            clerkUserId,
-            itemId: item.id,
-            amount: item.amount,
-            status: "FAILED",
-            autoChargeAttemptedAt: now,
-            failureReason,
-          },
-        });
+        try {
+          await prisma.payment.create({
+            data: {
+              clerkUserId,
+              itemId: item.id,
+              amount: item.amount,
+              status: "FAILED",
+              autoChargeAttemptedAt: now,
+              failureReason,
+            },
+          });
+        } catch (p2002err) {
+          if (!(p2002err instanceof Prisma.PrismaClientKnownRequestError && p2002err.code === "P2002")) throw p2002err;
+          // P2002 = payment row already exists; safe to ignore.
+        }
       }
     }
   }

@@ -138,6 +138,9 @@ model Bid {
   isProxy     Boolean   @default(false)
   placedAt    DateTime  @default(now())
   item        Item      @relation(fields: [itemId], references: [id])
+
+  @@index([itemId, status])
+  @@index([clerkUserId])
 }
 
 model ProxyBid {
@@ -174,6 +177,9 @@ model Payment {
   failureReason         String?
   createdAt             DateTime      @default(now())
   item                  Item          @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@unique([itemId, clerkUserId])
+  @@index([stripePaymentIntentId])
 }
 
 model BidderStripeCustomer {
