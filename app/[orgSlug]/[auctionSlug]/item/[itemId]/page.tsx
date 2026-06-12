@@ -26,7 +26,7 @@ interface Item {
   photos: { url: string; isPrimary: boolean }[];
   bids: { id: string; amount: number; clerkUserId?: string; bidder?: string; placedAt: string; isProxy?: boolean }[];
   auction: { title: string; endAt: string; status: string } | null;
-  org?: { id: string; stripeAccountId: string | null; stripeChargesEnabled: boolean } | null;
+  org?: { id: string; stripeAccountId: string | null; stripeChargesEnabled: boolean; platformFeePercent?: number; taxPercent?: number } | null;
 }
 
 type LiveBid = { user: string; amount: number; time: string; isProxy?: boolean };
@@ -520,7 +520,15 @@ export default function ItemPage() {
               </div>
             ) : (
               <>
-                <div className="text-gray-500 text-sm mb-4 mt-4">Minimum next bid: ${minBid.toLocaleString()}</div>
+                <div className="text-gray-500 text-sm mb-1 mt-4">Minimum next bid: ${minBid.toLocaleString()}</div>
+                {/* Fee/tax disclosure — winners are auto-charged bid + fee (+ tax) */}
+                {(item.org?.platformFeePercent ?? 0) + (item.org?.taxPercent ?? 0) > 0 && (
+                  <div className="text-gray-500 text-xs mb-4">
+                    Winners are charged their winning bid
+                    {item.org?.platformFeePercent ? ` + ${item.org.platformFeePercent}% platform fee` : ""}
+                    {item.org?.taxPercent ? ` + ${item.org.taxPercent}% tax` : ""} automatically when the auction closes.
+                  </div>
+                )}
                 {message && (
                   <div className={`text-sm mb-3 px-3 py-2 rounded-lg ${
                     message.type === "success" ? "bg-emerald-500/20 text-emerald-400" : "bg-red-500/20 text-red-400"

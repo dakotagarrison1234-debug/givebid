@@ -16,7 +16,7 @@ export async function GET() {
         item: {
           include: {
             photos: { where: { isPrimary: true }, take: 1 },
-            auction: { include: { organization: { select: { name: true, slug: true, id: true, stripeAccountId: true } } } },
+            auction: { include: { organization: { select: { name: true, slug: true, id: true, stripeAccountId: true, platformFeePercent: true, taxPercent: true, taxExempt: true } } } },
           },
         },
       },
@@ -117,6 +117,21 @@ export async function GET() {
           unpaidWins.push({
             ...base,
             amountOwed: Number(item.currentBid),
+            // Fee/tax disclosure — same cent math as the auto-charge in chargeWinners
+            ...(() => {
+              const bidCents = Math.round(Number(item.currentBid) * 100);
+              const feePercent = Number(auction.organization.platformFeePercent);
+              const taxPercent = auction.organization.taxExempt ? 0 : Number(auction.organization.taxPercent);
+              const feeCents = Math.round(Number(item.currentBid) * feePercent / 100 * 100);
+              const taxCents = Math.round(Number(item.currentBid) * taxPercent / 100 * 100);
+              return {
+                feePercent,
+                taxPercent,
+                feeAmount: feeCents / 100,
+                taxAmount: taxCents / 100,
+                totalDue: (bidCents + feeCents + taxCents) / 100,
+              };
+            })(),
             paymentFailed: failedItemIds.has(item.id),
             orgId: auction.organization.id,
             orgStripeAccountId: auction.organization.stripeAccountId,
@@ -165,6 +180,21 @@ export async function GET() {
           unpaidWins.push({
             ...base,
             amountOwed: Number(item.currentBid),
+            // Fee/tax disclosure — same cent math as the auto-charge in chargeWinners
+            ...(() => {
+              const bidCents = Math.round(Number(item.currentBid) * 100);
+              const feePercent = Number(auction.organization.platformFeePercent);
+              const taxPercent = auction.organization.taxExempt ? 0 : Number(auction.organization.taxPercent);
+              const feeCents = Math.round(Number(item.currentBid) * feePercent / 100 * 100);
+              const taxCents = Math.round(Number(item.currentBid) * taxPercent / 100 * 100);
+              return {
+                feePercent,
+                taxPercent,
+                feeAmount: feeCents / 100,
+                taxAmount: taxCents / 100,
+                totalDue: (bidCents + feeCents + taxCents) / 100,
+              };
+            })(),
             paymentFailed: failedItemIds.has(item.id),
             orgId: auction.organization.id,
             orgStripeAccountId: auction.organization.stripeAccountId,

@@ -14,6 +14,16 @@ const s3 = new S3Client({
   },
 });
 
+// Image-only allowlist — prevents HTML/SVG uploads to the public bucket (stored XSS)
+const ALLOWED_TYPES = [
+  "image/jpeg",
+  "image/jpg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+  "image/avif",
+];
+
 export async function POST(request: NextRequest) {
   try {
     const { userId } = await auth();
@@ -24,11 +34,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
+    if (!ALLOWED_TYPES.includes(fileType)) {
+      return NextResponse.json({ error: "File type not allowed" }, { status: 400 });
+    }
+
     if (!(await canAccessOrg(orgId))) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const ext = fileName.split(".").pop() || "png";
+    // Sanitize extension — alphanumeric only, capped length
+    const rawExt = fileName.split(".").pop() || "png";
+    const ext = rawExt.replace(/[^a-zA-Z0-9]/g, "").slice(0, 8) || "png";
     const key = `orgs/${orgId}/logo-${Date.now()}.${ext}`;
 
     const command = new PutObjectCommand({

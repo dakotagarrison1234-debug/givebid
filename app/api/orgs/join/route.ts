@@ -1,4 +1,4 @@
-import { auth } from "@clerk/nextjs/server";
+import { auth, currentUser } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
@@ -19,6 +19,18 @@ export async function POST(request: NextRequest) {
     if (!invite) return NextResponse.json({ error: "Invalid invite link." }, { status: 404 });
     if (invite.accepted) return NextResponse.json({ error: "This invite has already been used." }, { status: 409 });
     if (invite.expiresAt < new Date()) return NextResponse.json({ error: "This invite has expired." }, { status: 410 });
+
+    // The invite is only valid for the email address it was sent to.
+    // Compare against the signed-in user's Clerk email addresses so a
+    // forwarded link can't grant staff/admin access to someone else.
+    const user = await currentUser();
+    const userEmails = (user?.emailAddresses ?? []).map((e) => e.emailAddress.toLowerCase());
+    if (!userEmails.includes(invite.email.toLowerCase())) {
+      return NextResponse.json(
+        { error: `This invite was sent to ${invite.email}. Sign in with that email address to accept it.` },
+        { status: 403 }
+      );
+    }
 
     // Check user doesn't already belong to an org
     const existingMember = await prisma.orgMember.findFirst({

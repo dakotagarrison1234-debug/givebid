@@ -6,24 +6,24 @@ These are the items Claude can't do for you — they require your login, credent
 
 ## 🔴 CRITICAL (site won't work correctly without these)
 
-### 1. Set `STRIPE_WEBHOOK_SECRET` in Vercel
-Your `.env.local` has:
-```
-STRIPE_WEBHOOK_SECRET=PASTE_FROM_STRIPE_DASHBOARD_AFTER_CREATING_WEBHOOK
-```
-**This is a placeholder — it must be replaced with the real value.**
+### 1. Set `STRIPE_CONNECT_WEBHOOK_SECRET` in Vercel  ⚠️ UPDATED — this replaced the old item
+The old `/api/webhooks/stripe` checkout webhook is GONE (that payment path was dead code and has been deleted).
+The webhook that matters now is the **Connect** webhook — it's how the site learns an org finished
+Stripe onboarding (`charges_enabled`). There's also a built-in fallback now (the Payments settings
+page syncs directly from Stripe on load), but the webhook should still be set up.
 
 Steps:
 1. Go to [Stripe Dashboard → Developers → Webhooks](https://dashboard.stripe.com/webhooks)
 2. Click **"Add endpoint"**
-3. URL: `https://purposebid.com/api/webhooks/stripe`
-4. Select event: `checkout.session.completed`
-5. Copy the **Signing Secret** (starts with `whsec_`)
-6. Go to [Vercel → givebid → Settings → Environment Variables](https://vercel.com/givebid)
-7. Set `STRIPE_WEBHOOK_SECRET` = the signing secret you just copied
-8. Redeploy or it won't take effect
+3. URL: `https://purposebid.com/api/webhooks/stripe/connect`
+4. IMPORTANT: under "Listen to", choose **"Events on Connected accounts"** (not your own account)
+5. Select event: `account.updated`
+6. Copy the **Signing Secret** (starts with `whsec_`)
+7. In Vercel → Settings → Environment Variables, set `STRIPE_CONNECT_WEBHOOK_SECRET` = that secret
+8. You can DELETE the old `STRIPE_WEBHOOK_SECRET` var (and the old placeholder in `.env.local`)
+9. Redeploy
 
-Without this: payments will process but the site won't know about them — winners never get marked as paid and items stay stuck at SOLD forever.
+Without this: org Stripe status only updates when an admin visits Settings → Payments (the fallback sync).
 
 ---
 

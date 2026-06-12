@@ -131,6 +131,16 @@ export async function POST(request: NextRequest) {
       });
 
       return NextResponse.json({ success: true });
+    } else if (
+      paymentIntent.status === "requires_action" ||
+      paymentIntent.status === "requires_confirmation"
+    ) {
+      // Card requires 3DS — hand the client secret back so the dashboard
+      // can complete authentication on-session, then hit /api/retry-payment/confirm.
+      return NextResponse.json({
+        requiresAction: true,
+        clientSecret: paymentIntent.client_secret,
+      });
     } else {
       return NextResponse.json(
         { error: "Payment did not complete. Please try a different card." },
@@ -138,6 +148,22 @@ export async function POST(request: NextRequest) {
       );
     }
   } catch (error: unknown) {
+    // 3DS authentication required — off-session confirm is rejected, but Stripe
+    // attaches the PaymentIntent to the error so the client can authenticate.
+    if (
+      typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      (error as { code?: string }).code === "authentication_required"
+    ) {
+      const pi = (error as { payment_intent?: { client_secret?: string } }).payment_intent;
+      if (pi?.client_secret) {
+        return NextResponse.json({
+          requiresAction: true,
+          clientSecret: pi.client_secret,
+        });
+      }
+    }
     // Stripe card decline errors
     if (
       typeof error === "object" &&

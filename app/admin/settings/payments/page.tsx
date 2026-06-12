@@ -33,8 +33,31 @@ function PaymentsContent() {
   const fetchOrg = useCallback(() => {
     fetch("/api/admin/settings")
       .then((r) => r.json())
-      .then((d) => {
-        if (d.org) setOrg(d.org);
+      .then(async (d) => {
+        if (!d.org) return;
+        setOrg(d.org);
+        // Sync live status from Stripe if the account exists but isn't fully
+        // enabled yet — fallback in case the Connect webhook was missed.
+        if (d.org.stripeAccountId && !d.org.stripeChargesEnabled) {
+          try {
+            const syncRes = await fetch(`/api/orgs/${d.org.id}/stripe/sync`, { method: "POST" });
+            const s = await syncRes.json();
+            if (s.synced) {
+              setOrg((prev) =>
+                prev
+                  ? {
+                      ...prev,
+                      stripeChargesEnabled: s.stripeChargesEnabled,
+                      stripePayoutsEnabled: s.stripePayoutsEnabled,
+                      stripeDetailsSubmitted: s.stripeDetailsSubmitted,
+                    }
+                  : prev
+              );
+            }
+          } catch {
+            // best-effort — webhook remains the primary mechanism
+          }
+        }
       })
       .finally(() => setLoading(false));
   }, []);

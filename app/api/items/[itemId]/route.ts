@@ -16,7 +16,14 @@ export async function GET(
         bids: { orderBy: { placedAt: "desc" } },
         auction: { select: { title: true, endAt: true, status: true } },
         organization: {
-          select: { id: true, stripeAccountId: true, stripeChargesEnabled: true },
+          select: {
+            id: true,
+            stripeAccountId: true,
+            stripeChargesEnabled: true,
+            platformFeePercent: true,
+            taxPercent: true,
+            taxExempt: true,
+          },
         },
       },
     });
@@ -37,6 +44,8 @@ export async function GET(
           id: item.organization.id,
           stripeAccountId: item.organization.stripeAccountId,
           stripeChargesEnabled: item.organization.stripeChargesEnabled,
+          platformFeePercent: Number(item.organization.platformFeePercent),
+          taxPercent: item.organization.taxExempt ? 0 : Number(item.organization.taxPercent),
         },
       };
       return NextResponse.json({ item: staffItem });
@@ -65,6 +74,9 @@ export async function GET(
           id: item.organization.id,
           stripeAccountId: item.organization.stripeAccountId,
           stripeChargesEnabled: item.organization.stripeChargesEnabled,
+          // Fee/tax disclosure — bidders must see the full cost before bidding
+          platformFeePercent: Number(item.organization.platformFeePercent),
+          taxPercent: item.organization.taxExempt ? 0 : Number(item.organization.taxPercent),
         },
       },
     });

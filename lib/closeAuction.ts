@@ -9,6 +9,7 @@ type ItemWithBidsAndOrg = {
   id: string;
   title: string;
   auctionId: string | null;
+  reservePrice: Prisma.Decimal | null;
   bids: { id: string; clerkUserId: string; amount: Prisma.Decimal }[];
   auction: { id: string; title: string; organization: { name: string; slug: string } } | null;
 };
@@ -37,6 +38,24 @@ async function closeItem(
   item: ItemWithBidsAndOrg
 ): Promise<{ clerkUserId: string; amount: number } | null> {
   const winningBid = item.bids[0];
+
+  // Reserve price enforcement: if the top bid is below the reserve, the item
+  // does NOT sell. Mark UNSOLD, cancel the standing bid, deactivate proxies.
+  if (
+    winningBid &&
+    item.reservePrice != null &&
+    Number(winningBid.amount) < Number(item.reservePrice)
+  ) {
+    await prisma.$transaction([
+      prisma.bid.update({ where: { id: winningBid.id }, data: { status: "CANCELLED" } }),
+      prisma.item.update({ where: { id: item.id }, data: { status: "UNSOLD" } }),
+      prisma.proxyBid.updateMany({ where: { itemId: item.id, isActive: true }, data: { isActive: false } }),
+    ]);
+    console.log(
+      `closeItem: reserve not met for "${item.title}" (${item.id}) — top bid $${Number(winningBid.amount)} < reserve $${Number(item.reservePrice)}`
+    );
+    return null;
+  }
 
   if (winningBid) {
     await prisma.$transaction([
@@ -292,7 +311,18 @@ export async function openScheduledAuctions(): Promise<{ openedAuctions: number 
     include: { organization: true },
   });
 
+  let opened = 0;
   for (const auction of dueAuctions) {
+    // Stripe gate — same rule as manual publish. An org that can't accept
+    // payments must not have auctions auto-opened; the auction stays DRAFT
+    // and will open on a later cron pass once Stripe charges are enabled.
+    if (!auction.organization.stripeChargesEnabled) {
+      console.warn(
+        `[cron] Skipping auto-open of auction "${auction.title}" (${auction.id}) — org ${auction.organization.id} has not enabled Stripe charges`
+      );
+      continue;
+    }
+    opened++;
     await prisma.$transaction([
       prisma.auction.update({ where: { id: auction.id }, data: { status: "OPEN" } }),
       prisma.item.updateMany({ where: { auctionId: auction.id, status: "DRAFT" }, data: { status: "ACTIVE" } }),
@@ -319,11 +349,11 @@ export async function openScheduledAuctions(): Promise<{ openedAuctions: number 
     data: { status: "ACTIVE" },
   });
 
-  if (dueAuctions.length > 0) {
+  if (opened > 0) {
     triggerAuctionUpdated().catch(() => {});
   }
 
-  return { openedAuctions: dueAuctions.length };
+  return { openedAuctions: opened };
 }
 
 /**

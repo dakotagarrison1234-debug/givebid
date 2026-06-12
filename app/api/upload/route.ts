@@ -36,7 +36,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "File type not allowed" }, { status: 400 });
     }
 
-    const key = `items/${Date.now()}-${fileName.replace(/\s+/g, "-")}`;
+    // Sanitize the file name — keep alphanumerics, dot, dash; strip path tricks
+    const safeName = String(fileName)
+      .replace(/\s+/g, "-")
+      .replace(/[^a-zA-Z0-9.\-_]/g, "")
+      .replace(/\.{2,}/g, ".")
+      .slice(-100) || "upload";
+    const key = `items/${Date.now()}-${safeName}`;
 
     const command = new PutObjectCommand({
       Bucket: process.env.CLOUDFLARE_R2_BUCKET,

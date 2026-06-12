@@ -24,7 +24,17 @@ interface BidBase {
 interface WinningBid extends BidBase { myBid: number; currentBid: number; itemEndAt: string | null; }
 interface LosingBid extends BidBase { myBid: number; currentBid: number; itemEndAt: string | null; }
 interface PastBid extends BidBase { myBid: number; finalBid: number; outcome: "won" | "lost" | "unsold"; paid: boolean; pickedUp?: boolean; storageLocation?: string | null; }
-interface UnpaidWin extends BidBase { amountOwed: number; paymentFailed?: boolean; orgId?: string; orgStripeAccountId?: string | null; }
+interface UnpaidWin extends BidBase {
+  amountOwed: number;
+  paymentFailed?: boolean;
+  orgId?: string;
+  orgStripeAccountId?: string | null;
+  feePercent?: number;
+  taxPercent?: number;
+  feeAmount?: number;
+  taxAmount?: number;
+  totalDue?: number;
+}
 interface Profile { name: string | null; email: string | null; phone: string | null; }
 interface DashboardData { profile: Profile | null; winning: WinningBid[]; losing: LosingBid[]; past: PastBid[]; unpaidWins: UnpaidWin[]; }
 
@@ -242,7 +252,7 @@ export default function BidderDashboard() {
     finally { setSavingProfile(false); }
   };
 
-  const retryPayment = async (itemId: string) => {
+  const retryPayment = async (itemId: string, stripeAccountId?: string | null) => {
     setRetryingItemId(itemId);
     setRetryMsg(null);
     try {
@@ -255,6 +265,38 @@ export default function BidderDashboard() {
       if (d.success) {
         setRetryMsg({ text: "Payment successful! Your item is ready for pickup.", ok: true });
         load();
+      } else if (d.requiresAction && d.clientSecret && stripeAccountId) {
+        // Card requires 3DS authentication — confirm on-session in the browser
+        const { loadStripe } = await import("@stripe/stripe-js");
+        const stripe = await loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!, {
+          stripeAccount: stripeAccountId,
+        });
+        if (!stripe) {
+          setRetryMsg({ text: "Could not load payment form. Please try again.", ok: false });
+          return;
+        }
+        const result = await stripe.confirmCardPayment(d.clientSecret);
+        if (result.error) {
+          setRetryMsg({ text: result.error.message || "Authentication failed. Please try again.", ok: false });
+          return;
+        }
+        if (result.paymentIntent?.status === "succeeded" || result.paymentIntent?.status === "processing") {
+          // Record the confirmed payment server-side
+          const c = await fetch("/api/retry-payment/confirm", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ itemId, paymentIntentId: result.paymentIntent.id }),
+          });
+          const cd = await c.json();
+          if (cd.success) {
+            setRetryMsg({ text: "Payment successful! Your item is ready for pickup.", ok: true });
+            load();
+          } else {
+            setRetryMsg({ text: cd.error || "Payment went through but we couldn't confirm it. Refresh in a minute.", ok: false });
+          }
+        } else {
+          setRetryMsg({ text: "Payment did not complete. Please try a different card.", ok: false });
+        }
       } else {
         setRetryMsg({ text: d.error || "Payment failed. Please update your card in Settings.", ok: false });
       }
@@ -278,7 +320,7 @@ export default function BidderDashboard() {
   if (!data) return null;
 
   const { winning, losing, past, unpaidWins } = data;
-  const totalOwed = unpaidWins.reduce((s, i) => s + i.amountOwed, 0);
+  const totalOwed = unpaidWins.reduce((s, i) => s + (i.totalDue ?? i.amountOwed), 0);
   const failedWins = unpaidWins.filter((w) => w.paymentFailed);
   const pendingWins = unpaidWins.filter((w) => !w.paymentFailed);
 
@@ -394,7 +436,7 @@ export default function BidderDashboard() {
           <div className="bg-orange-500/8 border-b border-orange-500/20 px-4 sm:px-8 py-3">
             <div className="text-sm">
               <span className="text-orange-300 font-bold">{pendingWins.length} win{pendingWins.length !== 1 ? "s" : ""} pending payment</span>
-              <span className="text-gray-400"> · ${pendingWins.reduce((s, i) => s + i.amountOwed, 0).toLocaleString()} total</span>
+              <span className="text-gray-400"> · ${pendingWins.reduce((s, i) => s + (i.totalDue ?? i.amountOwed), 0).toLocaleString()} total{pendingWins.some((i) => (i.feeAmount ?? 0) + (i.taxAmount ?? 0) > 0) ? " (incl. fee & tax)" : ""}</span>
             </div>
             <p className="text-xs text-gray-500 mt-1">Your auction organizer will process payment.</p>
           </div>
@@ -679,10 +721,17 @@ export default function BidderDashboard() {
                         )}
                       </div>
                       <div className="text-right shrink-0 flex flex-col items-end gap-1.5">
-                        <div className="text-emerald-400 font-extrabold">${b.amountOwed.toLocaleString()}</div>
+                        <div className="text-emerald-400 font-extrabold">${(b.totalDue ?? b.amountOwed).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                        {(b.feeAmount ?? 0) + (b.taxAmount ?? 0) > 0 && (
+                          <div className="text-[11px] text-gray-500 leading-tight">
+                            ${b.amountOwed.toLocaleString()} bid
+                            {b.feeAmount ? ` + $${b.feeAmount.toFixed(2)} fee` : ""}
+                            {b.taxAmount ? ` + $${b.taxAmount.toFixed(2)} tax` : ""}
+                          </div>
+                        )}
                         {b.paymentFailed ? (
                           <>
-                            <button onClick={() => retryPayment(b.itemId)} disabled={retryingItemId === b.itemId}
+                            <button onClick={() => retryPayment(b.itemId, b.orgStripeAccountId)} disabled={retryingItemId === b.itemId}
                               className="text-xs bg-red-500 hover:bg-red-400 disabled:opacity-50 text-white font-semibold px-3 py-1.5 rounded-lg transition-colors">
                               {retryingItemId === b.itemId ? "Retrying…" : "Retry Payment"}
                             </button>
