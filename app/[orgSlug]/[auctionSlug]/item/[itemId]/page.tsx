@@ -392,22 +392,22 @@ export default function ItemPage() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-10 grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-12">
         {/* Left: photos */}
         <div>
-          <div className="w-full h-56 sm:h-96 bg-gray-800 rounded-2xl overflow-hidden mb-4">
+          <div className="w-full aspect-square bg-gray-900 rounded-2xl overflow-hidden mb-3 flex items-center justify-center">
             {item.photos.length > 0 ? (
               <img
                 src={item.photos.find(p => p.isPrimary)?.url || item.photos[0].url}
                 alt={item.title}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-contain"
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center text-gray-600">No photo</div>
+              <div className="text-gray-600 text-sm">No photo</div>
             )}
           </div>
           {item.photos.length > 1 && (
             <div className="grid grid-cols-4 gap-2">
               {item.photos.slice(0, 4).map((photo, i) => (
-                <div key={i} className="h-20 bg-gray-800 rounded-lg overflow-hidden">
-                  <img src={photo.url} alt={`Photo ${i + 1}`} className="w-full h-full object-cover" />
+                <div key={i} className="aspect-square bg-gray-900 rounded-lg overflow-hidden flex items-center justify-center">
+                  <img src={photo.url} alt={`Photo ${i + 1}`} className="w-full h-full object-contain" />
                 </div>
               ))}
             </div>

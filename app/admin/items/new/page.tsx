@@ -44,19 +44,38 @@ function NewItemForm() {
     const files = Array.from(e.target.files || []);
     if (photos.length + files.length > 10) { alert("Maximum 10 photos per item"); return; }
     setUploading(true);
-    try {
-      for (const file of files) {
+    const failed: string[] = [];
+    for (const file of files) {
+      // Derive MIME type from extension when browser doesn't populate file.type (common on mobile)
+      let fileType = file.type;
+      if (!fileType) {
+        const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
+        const extMap: Record<string, string> = {
+          jpg: "image/jpeg", jpeg: "image/jpeg", png: "image/png",
+          webp: "image/webp", gif: "image/gif", heic: "image/heic",
+          heif: "image/heif", avif: "image/avif",
+        };
+        fileType = extMap[ext] ?? "image/jpeg";
+      }
+      try {
         const res = await fetch("/api/upload", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ fileName: file.name, fileType: file.type }),
+          body: JSON.stringify({ fileName: file.name, fileType }),
         });
+        if (!res.ok) throw new Error(`Server error ${res.status}`);
         const { signedUrl, publicUrl } = await res.json();
-        await fetch(signedUrl, { method: "PUT", body: file, headers: { "Content-Type": file.type } });
+        const putRes = await fetch(signedUrl, { method: "PUT", body: file, headers: { "Content-Type": fileType } });
+        if (!putRes.ok) throw new Error(`Storage error ${putRes.status}`);
         setPhotos(prev => [...prev, publicUrl]);
+      } catch (err) {
+        console.error(`Upload failed for ${file.name}:`, err);
+        failed.push(file.name);
       }
-    } catch { alert("Upload failed."); }
-    finally { setUploading(false); }
+    }
+    e.target.value = "";
+    setUploading(false);
+    if (failed.length) alert(`Failed to upload: ${failed.join(", ")}\n\nCheck that files are under 10MB and a supported format (JPG, PNG, WebP, HEIC).`);
   };
 
   const handleSave = async () => {
@@ -179,8 +198,8 @@ function NewItemForm() {
             {photos.length > 0 && (
               <div className="grid grid-cols-4 gap-2 mt-4">
                 {photos.map((url, i) => (
-                  <div key={i} className="relative">
-                    <img src={url} alt={`Photo ${i + 1}`} className="w-full h-20 object-cover rounded-lg" />
+                  <div key={i} className="relative aspect-square bg-gray-800 rounded-lg overflow-hidden">
+                    <img src={url} alt={`Photo ${i + 1}`} className="w-full h-full object-contain" />
                     <button onClick={() => setPhotos(photos.filter((_, idx) => idx !== i))}
                       className="absolute top-1 right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">×</button>
                   </div>
