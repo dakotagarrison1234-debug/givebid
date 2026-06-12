@@ -142,21 +142,33 @@ async function chargeWinners(
             itemIds: itemIds.slice(0, 5).join(","), // Stripe metadata 500-char limit
           },
         },
-        { stripeAccount: org.stripeAccountId }
+        {
+          stripeAccount: org.stripeAccountId,
+          // Stable per winner per auction — a winner is only ever charged once.
+          idempotencyKey: `autocharge-${auctionId}-${clerkUserId}`,
+        }
       );
 
-      // Charge succeeded — create PAID Payment records + move items to PENDING_PICKUP
-      const perItemFee = appFeeAmountCents / 100 / winner.items.length;
-      const perItemTax = taxAmountCents / 100 / winner.items.length;
+      // Charge succeeded — create PAID Payment records + move items to PENDING_PICKUP.
+      // Distribute fee/tax across items in whole cents; any leftover cent goes to item 0
+      // so the per-item rows sum back to the actual charged total.
+      const n = winner.items.length;
+      const baseFeeCents = Math.floor(appFeeAmountCents / n);
+      const feeRemainderCents = appFeeAmountCents - baseFeeCents * n;
+      const baseTaxCents = Math.floor(taxAmountCents / n);
+      const taxRemainderCents = taxAmountCents - baseTaxCents * n;
 
-      for (const item of winner.items) {
+      for (let idx = 0; idx < winner.items.length; idx++) {
+        const item = winner.items[idx];
+        const itemFeeCents = baseFeeCents + (idx === 0 ? feeRemainderCents : 0);
+        const itemTaxCents = baseTaxCents + (idx === 0 ? taxRemainderCents : 0);
         await prisma.payment.create({
           data: {
             clerkUserId,
             itemId: item.id,
             amount: item.amount,
-            applicationFeeAmount: perItemFee,
-            taxAmount: perItemTax,
+            applicationFeeAmount: itemFeeCents / 100,
+            taxAmount: itemTaxCents / 100,
             stripePaymentIntentId: paymentIntent.id,
             status: "PAID",
             autoChargeAttemptedAt: now,

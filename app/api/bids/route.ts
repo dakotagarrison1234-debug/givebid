@@ -23,9 +23,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { itemId, amount } = await request.json();
-    if (!itemId || !amount) {
-      return NextResponse.json({ error: "Item and amount required" }, { status: 400 });
+    const { itemId, amount: rawAmount } = await request.json();
+    const amount = Number(rawAmount);
+    if (!itemId || !Number.isFinite(amount) || amount <= 0) {
+      return NextResponse.json({ error: "Item and a valid amount are required" }, { status: 400 });
+    }
+    if (amount > 1_000_000) {
+      return NextResponse.json({ error: "Bid exceeds the maximum allowed amount" }, { status: 400 });
     }
 
     const item = await prisma.item.findUnique({

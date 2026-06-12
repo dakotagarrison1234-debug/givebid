@@ -27,6 +27,14 @@ export async function POST(request: NextRequest) {
     });
     if (!wonBid) return NextResponse.json({ error: "No winning bid found" }, { status: 404 });
 
+    // GUARD: never charge an item that is already paid.
+    const alreadyPaid = await prisma.payment.findFirst({
+      where: { itemId, clerkUserId: userId, status: "PAID" },
+    });
+    if (alreadyPaid) {
+      return NextResponse.json({ error: "This item is already paid." }, { status: 409 });
+    }
+
     const item = await prisma.item.findUnique({
       where: { id: itemId },
       include: {
@@ -76,7 +84,13 @@ export async function POST(request: NextRequest) {
         application_fee_amount: appFeeAmount,
         metadata: { clerkUserId: userId, orgId: org.id, itemId, isRetry: "true" },
       },
-      { stripeAccount: org.stripeAccountId ?? undefined }
+      {
+        stripeAccount: org.stripeAccountId ?? undefined,
+        // PM id is part of the key on purpose: a double-click with the SAME card
+        // is idempotent (no double charge), but a genuine retry with an UPDATED
+        // card produces a new key so the new card is actually attempted.
+        idempotencyKey: `retry-${itemId}-${userId}-${bidderCustomer.defaultPaymentMethodId}`,
+      }
     );
 
     if (

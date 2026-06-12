@@ -27,6 +27,9 @@ export async function POST(request: NextRequest) {
     if (isNaN(amount) || amount <= 0) {
       return NextResponse.json({ error: "Invalid maxAmount" }, { status: 400 });
     }
+    if (amount > 1_000_000) {
+      return NextResponse.json({ error: "Proxy max exceeds the maximum allowed amount" }, { status: 400 });
+    }
 
     const item = await prisma.item.findUnique({
       where: { id: itemId },
