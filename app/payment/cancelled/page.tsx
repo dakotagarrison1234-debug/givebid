@@ -33,7 +33,7 @@ export default function PaymentCancelled() {
             Complete Payment
           </Link>
           <Link
-            href="/"
+            href="/auctions"
             className="bg-gray-800 hover:bg-gray-700 text-white px-8 py-3 rounded-xl font-semibold transition-colors"
           >
             Browse Auctions

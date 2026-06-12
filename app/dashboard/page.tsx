@@ -7,18 +7,7 @@ import Pusher from "pusher-js";
 import UserMenu from "@/app/components/UserMenu";
 import CardSetupModal from "@/app/components/CardSetupModal";
 
-type Tab = "overview" | "winning" | "losing" | "past" | "profile";
-
-interface PaymentMethod {
-  orgId: string;
-  orgName: string;
-  orgSlug: string;
-  stripeAccountId: string | null;
-  stripeChargesEnabled: boolean;
-  hasCard: boolean;
-  last4: string | null;
-  brand: string | null;
-}
+type Tab = "overview" | "winning" | "losing" | "past" | "auctions" | "profile";
 
 interface BidBase {
   itemId: string;
@@ -38,6 +27,27 @@ interface PastBid extends BidBase { myBid: number; finalBid: number; outcome: "w
 interface UnpaidWin extends BidBase { amountOwed: number; paymentFailed?: boolean; orgId?: string; orgStripeAccountId?: string | null; }
 interface Profile { name: string | null; email: string | null; phone: string | null; }
 interface DashboardData { profile: Profile | null; winning: WinningBid[]; losing: LosingBid[]; past: PastBid[]; unpaidWins: UnpaidWin[]; }
+
+interface LiveAuction {
+  id: string;
+  title: string;
+  slug: string;
+  endAt: string;
+  org: { id: string; name: string; slug: string; logoUrl: string | null };
+  activeItems: number;
+  raised: number;
+}
+
+interface PaymentMethod {
+  orgId: string;
+  orgName: string;
+  orgSlug: string;
+  stripeAccountId: string | null;
+  stripeChargesEnabled: boolean;
+  hasCard: boolean;
+  last4: string | null;
+  brand: string | null;
+}
 
 // ── SVG Nav Icons ─────────────────────────────────────────────────────────────
 function IcoGrid() {
@@ -77,6 +87,16 @@ function IcoUser() {
     <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 20 20" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
       <circle cx="10" cy="7" r="4" />
       <path d="M2.5 18c0-4.14 3.36-7.5 7.5-7.5s7.5 3.36 7.5 7.5" />
+    </svg>
+  );
+}
+function IcoGavel() {
+  return (
+    <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 20 20" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M10.5 3.5 16 9l-1.5 1.5L9 5l1.5-1.5z" />
+      <path d="M9 5 5 9l-1 2 2-1 4-4" />
+      <path d="M14 12l-8 8" />
+      <path d="M3 17h5" />
     </svg>
   );
 }
@@ -124,6 +144,8 @@ export default function BidderDashboard() {
   const [cardModal, setCardModal] = useState<{ orgId: string; stripeAccountId: string } | null>(null);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [loadingPMs, setLoadingPMs] = useState(false);
+  const [liveAuctions, setLiveAuctions] = useState<LiveAuction[]>([]);
+  const [loadingAuctions, setLoadingAuctions] = useState(false);
 
   const load = useCallback(() => {
     fetch("/api/my-bids").then((r) => r.json()).then((d: DashboardData) => {
@@ -172,10 +194,19 @@ export default function BidderDashboard() {
       .finally(() => setLoadingPMs(false));
   }, []);
 
-  // Load payment methods when profile tab is opened
+  const loadLiveAuctions = useCallback(() => {
+    setLoadingAuctions(true);
+    fetch("/api/live-auctions")
+      .then(r => r.json())
+      .then(d => setLiveAuctions(d.auctions ?? []))
+      .catch(() => {/* non-critical */})
+      .finally(() => setLoadingAuctions(false));
+  }, []);
+
   useEffect(() => {
     if (tab === "profile") loadPaymentMethods();
-  }, [tab, loadPaymentMethods]);
+    if (tab === "auctions") loadLiveAuctions();
+  }, [tab, loadPaymentMethods, loadLiveAuctions]);
 
   const saveProfile = async () => {
     setSavingProfile(true);
@@ -205,7 +236,7 @@ export default function BidderDashboard() {
       const d = await res.json();
       if (d.success) {
         setRetryMsg({ text: "Payment successful! Your item is ready for pickup.", ok: true });
-        load(); // Refresh to move item from unpaidWins to past
+        load();
       } else {
         setRetryMsg({ text: d.error || "Payment failed. Please update your card in Settings.", ok: false });
       }
@@ -234,23 +265,24 @@ export default function BidderDashboard() {
   const pendingWins = unpaidWins.filter((w) => !w.paymentFailed);
 
   const navItems: { id: Tab; label: string; shortLabel: string; count?: number; icon: React.ReactNode }[] = [
-    { id: "overview", label: "Overview",      shortLabel: "Overview", icon: <IcoGrid /> },
-    { id: "winning",  label: "Active Bids",   shortLabel: "Active",   count: winning.length, icon: <IcoUp /> },
-    { id: "losing",   label: "Losing Bids",   shortLabel: "Losing",   count: losing.length,  icon: <IcoDown /> },
-    { id: "past",     label: "Past Bids",     shortLabel: "Past",     icon: <IcoClock /> },
-    { id: "profile",  label: "My Profile",    shortLabel: "Profile",  icon: <IcoUser /> },
+    { id: "overview",  label: "Overview",           shortLabel: "Home",     icon: <IcoGrid /> },
+    { id: "auctions",  label: "Current Auctions",   shortLabel: "Auctions", icon: <IcoGavel /> },
+    { id: "winning",   label: "Active Bids",         shortLabel: "Active",   count: winning.length, icon: <IcoUp /> },
+    { id: "losing",    label: "Outbid",              shortLabel: "Outbid",   count: losing.length,  icon: <IcoDown /> },
+    { id: "past",      label: "Bid History",         shortLabel: "History",  icon: <IcoClock /> },
+    { id: "profile",   label: "Profile & Settings",  shortLabel: "Profile",  icon: <IcoUser /> },
   ];
 
   return (
     <div className="min-h-screen bg-gray-950 text-white flex flex-col md:flex-row">
 
       {/* ── Desktop sidebar ── */}
-      <aside className="hidden md:flex w-60 bg-gray-900/80 border-r border-gray-800/60 flex-col shrink-0">
+      <aside className="hidden md:flex w-64 bg-gray-900/80 border-r border-gray-800/60 flex-col shrink-0">
         <div className="px-5 py-5 border-b border-gray-800/60">
           <Link href="/" className="text-xl font-extrabold tracking-tight bg-gradient-to-r from-emerald-400 to-emerald-300 bg-clip-text text-transparent">
             PurposeBid
           </Link>
-          <p className="text-gray-600 text-xs mt-0.5">Bidder Portal</p>
+          <p className="text-gray-600 text-xs mt-0.5">Bidder Dashboard</p>
         </div>
         <nav className="flex-1 px-3 py-3 space-y-0.5">
           {navItems.map((item) => (
@@ -279,13 +311,20 @@ export default function BidderDashboard() {
             </button>
           ))}
         </nav>
-        <div className="px-3 pb-3">
+        <div className="px-3 pb-4 border-t border-gray-800/60 pt-3 space-y-0.5">
           <Link
-            href="/"
-            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-600 hover:text-white hover:bg-gray-800/50 text-sm transition-colors"
+            href="/auctions"
+            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-500 hover:text-white hover:bg-gray-800/50 text-sm transition-colors"
           >
-            <IcoArrow />
-            <span>Browse Auctions</span>
+            <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 20 20" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round"><circle cx="10" cy="10" r="8"/><path d="M10 6v4l2.5 2.5"/></svg>
+            <span>Live Auctions Page</span>
+          </Link>
+          <Link
+            href="/search"
+            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-500 hover:text-white hover:bg-gray-800/50 text-sm transition-colors"
+          >
+            <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 20 20" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round"><circle cx="9" cy="9" r="6"/><path d="m17 17-3.5-3.5"/></svg>
+            <span>Search</span>
           </Link>
         </div>
         <div className="px-3 py-4 border-t border-gray-800/60 flex items-center gap-3">
@@ -332,7 +371,7 @@ export default function BidderDashboard() {
           </div>
         )}
 
-        {/* Pending wins banner (no card — legacy fallback) */}
+        {/* Pending wins banner */}
         {pendingWins.length > 0 && (
           <div className="bg-orange-500/8 border-b border-orange-500/20 px-4 sm:px-8 py-3">
             <div className="text-sm">
@@ -346,11 +385,12 @@ export default function BidderDashboard() {
         {/* Desktop page title */}
         <header className="hidden md:block border-b border-gray-800/60 px-8 py-4">
           <h1 className="text-lg font-bold">
-            {tab === "overview" && "Overview"}
-            {tab === "winning" && "Active Bids"}
-            {tab === "losing" && "Losing Bids"}
-            {tab === "past" && "Past Bids"}
-            {tab === "profile" && "My Profile"}
+            {tab === "overview"  && "Overview"}
+            {tab === "auctions"  && "Current Auctions"}
+            {tab === "winning"   && "Active Bids"}
+            {tab === "losing"    && "Outbid"}
+            {tab === "past"      && "Bid History"}
+            {tab === "profile"   && "Profile & Settings"}
           </h1>
         </header>
 
@@ -360,7 +400,7 @@ export default function BidderDashboard() {
           {tab === "overview" && (
             <div className="space-y-5 max-w-3xl">
 
-              {/* Ready for pickup callout */}
+              {/* Ready for pickup */}
               {(() => {
                 const awaitingPickup = past.filter(b => b.outcome === "won" && b.paid && !b.pickedUp);
                 if (awaitingPickup.length === 0) return null;
@@ -372,9 +412,7 @@ export default function BidderDashboard() {
                         {awaitingPickup.length} item{awaitingPickup.length !== 1 ? "s" : ""} ready for pickup
                       </span>
                     </div>
-                    <p className="text-gray-400 text-xs mb-4">
-                      Payment confirmed. Contact the organization to arrange collection.
-                    </p>
+                    <p className="text-gray-400 text-xs mb-4">Payment confirmed. Contact the organization to arrange collection.</p>
                     <div className="space-y-3">
                       {awaitingPickup.map((b) => (
                         <div key={b.itemId} className="flex items-center gap-3">
@@ -398,35 +436,17 @@ export default function BidderDashboard() {
 
               {/* Stat cards */}
               <div className="grid grid-cols-3 gap-2 sm:gap-3">
-                <div className={`bg-gray-900 border rounded-2xl p-3 sm:p-5 transition-all ${
-                  winning.length > 0
-                    ? "border-emerald-500/25 shadow-[0_0_20px_rgba(52,211,153,0.06)]"
-                    : "border-gray-800"
-                }`}>
+                <div className={`bg-gray-900 border rounded-2xl p-3 sm:p-5 transition-all ${winning.length > 0 ? "border-emerald-500/25 shadow-[0_0_20px_rgba(52,211,153,0.06)]" : "border-gray-800"}`}>
                   <div className="text-gray-500 text-xs sm:text-sm mb-1">Winning</div>
-                  <div className={`text-xl sm:text-2xl font-extrabold ${winning.length > 0 ? "text-emerald-400" : "text-gray-400"}`}>
-                    {winning.length}
-                  </div>
+                  <div className={`text-xl sm:text-2xl font-extrabold ${winning.length > 0 ? "text-emerald-400" : "text-gray-400"}`}>{winning.length}</div>
                 </div>
-                <div className={`bg-gray-900 border rounded-2xl p-3 sm:p-5 transition-all ${
-                  losing.length > 0
-                    ? "border-red-500/20 shadow-[0_0_20px_rgba(239,68,68,0.05)]"
-                    : "border-gray-800"
-                }`}>
+                <div className={`bg-gray-900 border rounded-2xl p-3 sm:p-5 transition-all ${losing.length > 0 ? "border-red-500/20 shadow-[0_0_20px_rgba(239,68,68,0.05)]" : "border-gray-800"}`}>
                   <div className="text-gray-500 text-xs sm:text-sm mb-1">Outbid</div>
-                  <div className={`text-xl sm:text-2xl font-extrabold ${losing.length > 0 ? "text-red-400" : "text-gray-400"}`}>
-                    {losing.length}
-                  </div>
+                  <div className={`text-xl sm:text-2xl font-extrabold ${losing.length > 0 ? "text-red-400" : "text-gray-400"}`}>{losing.length}</div>
                 </div>
-                <div className={`bg-gray-900 border rounded-2xl p-3 sm:p-5 transition-all ${
-                  totalOwed > 0
-                    ? "border-orange-500/20 shadow-[0_0_20px_rgba(249,115,22,0.05)]"
-                    : "border-gray-800"
-                }`}>
+                <div className={`bg-gray-900 border rounded-2xl p-3 sm:p-5 transition-all ${totalOwed > 0 ? "border-orange-500/20 shadow-[0_0_20px_rgba(249,115,22,0.05)]" : "border-gray-800"}`}>
                   <div className="text-gray-500 text-xs sm:text-sm mb-1">Owed</div>
-                  <div className={`text-xl sm:text-2xl font-extrabold ${totalOwed > 0 ? "text-orange-400" : "text-gray-400"}`}>
-                    ${totalOwed.toLocaleString()}
-                  </div>
+                  <div className={`text-xl sm:text-2xl font-extrabold ${totalOwed > 0 ? "text-orange-400" : "text-gray-400"}`}>${totalOwed.toLocaleString()}</div>
                 </div>
               </div>
 
@@ -440,11 +460,8 @@ export default function BidderDashboard() {
                   </div>
                   <div className="space-y-2">
                     {winning.slice(0, 3).map((b) => (
-                      <Link
-                        key={b.itemId}
-                        href={`/${b.orgSlug}/${b.auctionSlug}/item/${b.itemId}`}
-                        className="flex items-center gap-3 bg-gray-900 border border-emerald-500/15 rounded-2xl px-4 py-3 hover:border-emerald-500/35 transition-all hover:shadow-[0_0_20px_rgba(52,211,153,0.05)]"
-                      >
+                      <Link key={b.itemId} href={`/${b.orgSlug}/${b.auctionSlug}/item/${b.itemId}`}
+                        className="flex items-center gap-3 bg-gray-900 border border-emerald-500/15 rounded-2xl px-4 py-3 hover:border-emerald-500/35 transition-all hover:shadow-[0_0_20px_rgba(52,211,153,0.05)]">
                         <Photo url={b.photo} title={b.itemTitle} />
                         <div className="flex-1 min-w-0">
                           <div className="font-semibold text-sm truncate">{b.itemTitle}</div>
@@ -470,11 +487,8 @@ export default function BidderDashboard() {
                   </div>
                   <div className="space-y-2">
                     {losing.slice(0, 3).map((b) => (
-                      <Link
-                        key={b.itemId}
-                        href={`/${b.orgSlug}/${b.auctionSlug}/item/${b.itemId}`}
-                        className="flex items-center gap-3 bg-gray-900 border border-red-500/15 rounded-2xl px-4 py-3 hover:border-red-500/30 transition-all"
-                      >
+                      <Link key={b.itemId} href={`/${b.orgSlug}/${b.auctionSlug}/item/${b.itemId}`}
+                        className="flex items-center gap-3 bg-gray-900 border border-red-500/15 rounded-2xl px-4 py-3 hover:border-red-500/30 transition-all">
                         <Photo url={b.photo} title={b.itemTitle} />
                         <div className="flex-1 min-w-0">
                           <div className="font-semibold text-sm truncate">{b.itemTitle}</div>
@@ -500,12 +514,66 @@ export default function BidderDashboard() {
                     </svg>
                   </div>
                   <p className="text-gray-500 mb-5 text-sm">You haven&apos;t placed any bids yet.</p>
-                  <Link
-                    href="/"
+                  <button
+                    onClick={() => setTab("auctions")}
                     className="bg-emerald-500 hover:bg-emerald-400 text-white font-bold px-6 py-3 rounded-2xl text-sm transition-all hover:shadow-[0_0_25px_rgba(52,211,153,0.25)]"
                   >
-                    Browse Auctions
-                  </Link>
+                    Browse Live Auctions
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── Current Auctions ── */}
+          {tab === "auctions" && (
+            <div className="max-w-3xl">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2 text-sm text-gray-500">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse inline-block" />
+                  {loadingAuctions ? "Loading…" : `${liveAuctions.length} live auction${liveAuctions.length !== 1 ? "s" : ""}`}
+                </div>
+                <Link href="/auctions" className="text-xs text-emerald-400 hover:text-emerald-300 font-medium transition-colors flex items-center gap-1">
+                  Full page <IcoArrow />
+                </Link>
+              </div>
+
+              {loadingAuctions ? (
+                <div className="space-y-3">
+                  {[1,2,3].map(i => (
+                    <div key={i} className="bg-gray-900 border border-gray-800 rounded-2xl p-5 animate-pulse">
+                      <div className="h-4 bg-gray-800 rounded w-1/3 mb-3" />
+                      <div className="h-5 bg-gray-800 rounded w-2/3 mb-3" />
+                      <div className="h-3 bg-gray-800 rounded w-1/4" />
+                    </div>
+                  ))}
+                </div>
+              ) : liveAuctions.length === 0 ? (
+                <div className="bg-gray-900 border border-gray-800 rounded-2xl p-12 text-center">
+                  <p className="text-gray-500 mb-2 text-sm font-semibold">No live auctions right now</p>
+                  <p className="text-gray-600 text-xs">Check back soon — new auctions are added regularly.</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {liveAuctions.map((a) => (
+                    <Link key={a.id} href={`/${a.org.slug}/${a.slug}`}
+                      className="flex items-center gap-4 bg-gray-900 border border-gray-800 hover:border-emerald-500/35 rounded-2xl px-4 sm:px-6 py-4 transition-all hover:shadow-[0_0_20px_rgba(52,211,153,0.05)] group">
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs text-emerald-400 font-semibold mb-1 truncate">{a.org.name}</div>
+                        <div className="font-bold truncate group-hover:text-emerald-400 transition-colors">{a.title}</div>
+                        <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
+                          <span>{a.activeItems} item{a.activeItems !== 1 ? "s" : ""}</span>
+                          {a.raised > 0 && <span className="text-emerald-400 font-semibold">${a.raised.toLocaleString()} raised</span>}
+                        </div>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <span className="text-xs bg-emerald-500/15 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-full font-semibold">Live</span>
+                        <div className="text-xs text-gray-600 mt-2">
+                          Ends {new Date(a.endAt).toLocaleDateString([], { month: "short", day: "numeric" })}
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
                 </div>
               )}
             </div>
@@ -517,16 +585,13 @@ export default function BidderDashboard() {
               {winning.length === 0 ? (
                 <div className="bg-gray-900 border border-gray-800 rounded-2xl p-12 text-center">
                   <p className="text-gray-500 mb-4 text-sm">Not currently winning any items.</p>
-                  <Link href="/" className="text-emerald-400 hover:text-emerald-300 text-sm transition-colors">Browse auctions</Link>
+                  <button onClick={() => setTab("auctions")} className="text-emerald-400 hover:text-emerald-300 text-sm transition-colors">Browse live auctions</button>
                 </div>
               ) : (
                 <div className="space-y-3">
                   {winning.map((b) => (
-                    <Link
-                      key={b.itemId}
-                      href={`/${b.orgSlug}/${b.auctionSlug}/item/${b.itemId}`}
-                      className="flex items-center gap-4 bg-gray-900 border border-emerald-500/15 rounded-2xl px-4 sm:px-6 py-4 hover:border-emerald-500/35 transition-all hover:shadow-[0_0_20px_rgba(52,211,153,0.05)]"
-                    >
+                    <Link key={b.itemId} href={`/${b.orgSlug}/${b.auctionSlug}/item/${b.itemId}`}
+                      className="flex items-center gap-4 bg-gray-900 border border-emerald-500/15 rounded-2xl px-4 sm:px-6 py-4 hover:border-emerald-500/35 transition-all hover:shadow-[0_0_20px_rgba(52,211,153,0.05)]">
                       <Photo url={b.photo} title={b.itemTitle} />
                       <div className="flex-1 min-w-0">
                         <div className="font-bold truncate">{b.itemTitle}</div>
@@ -544,7 +609,7 @@ export default function BidderDashboard() {
             </div>
           )}
 
-          {/* ── Losing Bids ── */}
+          {/* ── Outbid ── */}
           {tab === "losing" && (
             <div className="max-w-3xl">
               {losing.length === 0 ? (
@@ -554,11 +619,8 @@ export default function BidderDashboard() {
               ) : (
                 <div className="space-y-3">
                   {losing.map((b) => (
-                    <Link
-                      key={b.itemId}
-                      href={`/${b.orgSlug}/${b.auctionSlug}/item/${b.itemId}`}
-                      className="flex items-center gap-4 bg-gray-900 border border-red-500/15 rounded-2xl px-4 sm:px-6 py-4 hover:border-red-500/30 transition-all"
-                    >
+                    <Link key={b.itemId} href={`/${b.orgSlug}/${b.auctionSlug}/item/${b.itemId}`}
+                      className="flex items-center gap-4 bg-gray-900 border border-red-500/15 rounded-2xl px-4 sm:px-6 py-4 hover:border-red-500/30 transition-all">
                       <Photo url={b.photo} title={b.itemTitle} />
                       <div className="flex-1 min-w-0">
                         <div className="font-bold truncate">{b.itemTitle}</div>
@@ -578,22 +640,18 @@ export default function BidderDashboard() {
             </div>
           )}
 
-          {/* ── Past Bids ── */}
+          {/* ── Bid History ── */}
           {tab === "past" && (
             <div className="max-w-3xl">
               {past.length === 0 && unpaidWins.length === 0 ? (
                 <div className="bg-gray-900 border border-gray-800 rounded-2xl p-12 text-center">
-                  <p className="text-gray-500 text-sm">No past bids yet.</p>
+                  <p className="text-gray-500 text-sm">No bid history yet.</p>
                 </div>
               ) : (
                 <div className="space-y-2.5">
                   {unpaidWins.map((b) => (
-                    <div
-                      key={b.itemId}
-                      className={`flex items-center gap-4 bg-gray-900 border rounded-2xl px-4 sm:px-6 py-4 ${
-                        b.paymentFailed ? "border-red-500/25" : "border-orange-500/25"
-                      }`}
-                    >
+                    <div key={b.itemId}
+                      className={`flex items-center gap-4 bg-gray-900 border rounded-2xl px-4 sm:px-6 py-4 ${b.paymentFailed ? "border-red-500/25" : "border-orange-500/25"}`}>
                       <Photo url={b.photo} title={b.itemTitle} />
                       <div className="flex-1 min-w-0">
                         <div className="font-bold truncate">{b.itemTitle}</div>
@@ -606,18 +664,13 @@ export default function BidderDashboard() {
                         <div className="text-emerald-400 font-extrabold">${b.amountOwed.toLocaleString()}</div>
                         {b.paymentFailed ? (
                           <>
-                            <button
-                              onClick={() => retryPayment(b.itemId)}
-                              disabled={retryingItemId === b.itemId}
-                              className="text-xs bg-red-500 hover:bg-red-400 disabled:opacity-50 text-white font-semibold px-3 py-1.5 rounded-lg transition-colors"
-                            >
+                            <button onClick={() => retryPayment(b.itemId)} disabled={retryingItemId === b.itemId}
+                              className="text-xs bg-red-500 hover:bg-red-400 disabled:opacity-50 text-white font-semibold px-3 py-1.5 rounded-lg transition-colors">
                               {retryingItemId === b.itemId ? "Retrying…" : "Retry Payment"}
                             </button>
                             {b.orgId && b.orgStripeAccountId && (
-                              <button
-                                onClick={() => setCardModal({ orgId: b.orgId!, stripeAccountId: b.orgStripeAccountId! })}
-                                className="text-xs text-gray-400 hover:text-white border border-gray-700 hover:border-gray-500 px-3 py-1.5 rounded-lg transition-colors"
-                              >
+                              <button onClick={() => setCardModal({ orgId: b.orgId!, stripeAccountId: b.orgStripeAccountId! })}
+                                className="text-xs text-gray-400 hover:text-white border border-gray-700 hover:border-gray-500 px-3 py-1.5 rounded-lg transition-colors">
                                 Update Card
                               </button>
                             )}
@@ -629,12 +682,8 @@ export default function BidderDashboard() {
                     </div>
                   ))}
                   {past.map((b, i) => (
-                    <div
-                      key={i}
-                      className={`flex items-center gap-4 bg-gray-900 border rounded-2xl px-4 sm:px-6 py-4 ${
-                        b.outcome === "won" ? "border-emerald-500/12" : "border-gray-800/60"
-                      }`}
-                    >
+                    <div key={i}
+                      className={`flex items-center gap-4 bg-gray-900 border rounded-2xl px-4 sm:px-6 py-4 ${b.outcome === "won" ? "border-emerald-500/12" : "border-gray-800/60"}`}>
                       <Photo url={b.photo} title={b.itemTitle} />
                       <div className="flex-1 min-w-0">
                         <div className="font-bold truncate">{b.itemTitle}</div>
@@ -650,19 +699,11 @@ export default function BidderDashboard() {
                             : "text-gray-600"
                         }`}>
                           {b.outcome === "won"
-                            ? b.pickedUp
-                              ? "Picked up"
-                              : b.paid
-                              ? "Paid — awaiting pickup"
-                              : "Won"
-                            : b.outcome === "unsold"
-                            ? "Went unsold"
-                            : `Lost · $${b.finalBid.toLocaleString()}`}
+                            ? b.pickedUp ? "Picked up" : b.paid ? "Paid — awaiting pickup" : "Won"
+                            : b.outcome === "unsold" ? "Went unsold" : `Lost · $${b.finalBid.toLocaleString()}`}
                         </div>
                         {b.outcome === "won" && b.paid && !b.pickedUp && b.storageLocation && (
-                          <div className="text-xs text-gray-600 mt-0.5">
-                            Pickup: {b.storageLocation}
-                          </div>
+                          <div className="text-xs text-gray-600 mt-0.5">Pickup: {b.storageLocation}</div>
                         )}
                       </div>
                     </div>
@@ -672,7 +713,7 @@ export default function BidderDashboard() {
             </div>
           )}
 
-          {/* ── Profile ── */}
+          {/* ── Profile & Settings ── */}
           {tab === "profile" && (
             <div className="max-w-lg">
               <div className="flex items-center gap-4 mb-6 pb-6 border-b border-gray-800/60">
@@ -709,13 +750,11 @@ export default function BidderDashboard() {
                     {profileMsg.text}
                   </p>
                 )}
-                <button
-                  onClick={saveProfile}
-                  disabled={savingProfile}
-                  className="bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-white font-bold px-6 py-3 rounded-2xl w-full transition-all hover:shadow-[0_0_25px_rgba(52,211,153,0.2)]"
-                >
+                <button onClick={saveProfile} disabled={savingProfile}
+                  className="bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-white font-bold px-6 py-3 rounded-2xl w-full transition-all hover:shadow-[0_0_25px_rgba(52,211,153,0.2)]">
                   {savingProfile ? "Saving…" : "Save Profile"}
                 </button>
+
                 {/* Payment Methods */}
                 <div className="pt-4 border-t border-gray-800/60">
                   <h3 className="text-sm font-semibold text-gray-300 mb-3">Payment Methods</h3>
@@ -762,11 +801,8 @@ export default function BidderDashboard() {
                 </div>
 
                 <div className="pt-2 border-t border-gray-800/60">
-                  <Link
-                    href="/"
-                    className="flex items-center justify-center gap-2 text-gray-600 hover:text-white text-sm py-2 transition-colors"
-                  >
-                    Browse Auctions <IcoArrow />
+                  <Link href="/auctions" className="flex items-center justify-center gap-2 text-gray-600 hover:text-white text-sm py-2 transition-colors">
+                    Browse Live Auctions <IcoArrow />
                   </Link>
                 </div>
               </div>
@@ -784,7 +820,7 @@ export default function BidderDashboard() {
           onSuccess={() => {
             setCardModal(null);
             setRetryMsg({ text: "Card updated. You can now retry the payment.", ok: true });
-            loadPaymentMethods(); // Refresh the payment methods list
+            loadPaymentMethods();
           }}
           onClose={() => setCardModal(null)}
         />
@@ -803,7 +839,7 @@ export default function BidderDashboard() {
             {item.icon}
             <span className="text-[9px] font-semibold leading-none tracking-wide uppercase">{item.shortLabel}</span>
             {item.count !== undefined && item.count > 0 && (
-              <span className={`absolute top-1.5 right-[18%] text-[9px] w-3.5 h-3.5 rounded-full flex items-center justify-center font-bold ${
+              <span className={`absolute top-1.5 right-[10%] text-[9px] w-3.5 h-3.5 rounded-full flex items-center justify-center font-bold ${
                 item.id === "losing" ? "bg-red-500 text-white" : "bg-emerald-500 text-white"
               }`}>
                 {item.count}

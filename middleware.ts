@@ -4,7 +4,8 @@ const isPublicRoute = createRouteMatcher([
   "/",
   "/sign-in(.*)",
   "/sign-up(.*)",
-  "/auctions(.*)",
+  "/auctions(.*)",        // public live auctions page
+  "/api/live-auctions",  // public live auctions API
   "/register(.*)",
   "/onboarding(.*)",
   "/apply(.*)",

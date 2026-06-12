@@ -179,7 +179,7 @@ export default function UserMenu() {
 
         {/* Navigation — flex-1 with overflow scroll */}
         <nav style={{ flex: 1, padding: "12px", overflowY: "auto", minHeight: 0 }}>
-          <NavLink href="/" iconEl={<IcoHome />} label="Browse Auctions" onClick={() => setOpen(false)} />
+          <NavLink href="/auctions" iconEl={<IcoHome />} label="Browse Auctions" onClick={() => setOpen(false)} />
           <NavLink href="/dashboard" iconEl={<IcoGavel />} label="My Bids" onClick={() => setOpen(false)} />
 
           {me?.orgId ? (

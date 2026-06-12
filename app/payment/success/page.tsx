@@ -63,7 +63,7 @@ export default function PaymentSuccess() {
             Go to My Dashboard
           </Link>
           <Link
-            href="/"
+            href="/auctions"
             className="bg-gray-900 hover:bg-gray-800 border border-gray-700 text-gray-300 hover:text-white font-semibold px-8 py-3.5 rounded-2xl transition-colors text-sm"
           >
             Browse More Auctions

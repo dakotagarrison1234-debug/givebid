@@ -85,7 +85,7 @@ export default function ApplyPendingPage() {
             <p className="text-gray-500 text-sm mb-6">
               If you have questions, please contact us.
             </p>
-            <Link href="/" className="text-emerald-400 hover:underline text-sm">
+            <Link href="/auctions" className="text-emerald-400 hover:underline text-sm">
               Browse Auctions
             </Link>
           </>
