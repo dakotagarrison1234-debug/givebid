@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 export async function GET() {
+  try {
   const { userId } = await auth();
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -191,4 +192,9 @@ export async function GET() {
   }
 
   return NextResponse.json({ profile, winning, losing, past, unpaidWins });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Internal error";
+    console.error("[my-bids GET]:", msg, err);
+    return NextResponse.json({ error: msg }, { status: 500 });
+  }
 }

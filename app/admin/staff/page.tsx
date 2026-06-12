@@ -38,7 +38,7 @@ export default function StaffPage() {
       setInvites(inviteData.invites || []);
       setMyRole(meData.role || null);
       setLoading(false);
-    });
+    }).catch(() => setLoading(false));
   };
 
   useEffect(() => { load(); }, []);

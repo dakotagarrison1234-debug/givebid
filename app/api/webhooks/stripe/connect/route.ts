@@ -25,30 +25,37 @@ export async function POST(request: NextRequest) {
   }
 
   if (event.type === "account.updated") {
-    const account = event.data.object as Stripe.Account;
+    try {
+      const account = event.data.object as Stripe.Account;
 
-    const org = await prisma.organization.findUnique({
-      where: { stripeAccountId: account.id },
-    });
-    if (!org) {
-      // Unknown account — acknowledge and move on
+      const org = await prisma.organization.findUnique({
+        where: { stripeAccountId: account.id },
+      });
+      if (!org) {
+        // Unknown account — acknowledge and move on
+        return NextResponse.json({ received: true });
+      }
+
+      const chargesEnabled = account.charges_enabled ?? false;
+      const payoutsEnabled = account.payouts_enabled ?? false;
+      const detailsSubmitted = account.details_submitted ?? false;
+
+      await prisma.organization.update({
+        where: { id: org.id },
+        data: {
+          stripeChargesEnabled: chargesEnabled,
+          stripePayoutsEnabled: payoutsEnabled,
+          stripeDetailsSubmitted: detailsSubmitted,
+          // Promote to LIVE as soon as charges are enabled
+          ...(chargesEnabled ? { status: "LIVE" } : {}),
+        },
+      });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Internal error";
+      console.error("[webhooks/stripe/connect account.updated]:", msg, err);
+      // Always return 200 so Stripe doesn't retry forever
       return NextResponse.json({ received: true });
     }
-
-    const chargesEnabled = account.charges_enabled ?? false;
-    const payoutsEnabled = account.payouts_enabled ?? false;
-    const detailsSubmitted = account.details_submitted ?? false;
-
-    await prisma.organization.update({
-      where: { id: org.id },
-      data: {
-        stripeChargesEnabled: chargesEnabled,
-        stripePayoutsEnabled: payoutsEnabled,
-        stripeDetailsSubmitted: detailsSubmitted,
-        // Promote to LIVE as soon as charges are enabled
-        ...(chargesEnabled ? { status: "LIVE" } : {}),
-      },
-    });
   }
 
   return NextResponse.json({ received: true });

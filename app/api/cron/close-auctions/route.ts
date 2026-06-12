@@ -9,11 +9,25 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // Open auctions whose startAt has passed and activate their items
-  const { openedAuctions } = await openScheduledAuctions();
+  let openedAuctions = 0;
+  let closedItems = 0;
+  let closedAuctions = 0;
 
-  // Close items/auctions whose endAt has passed
-  const { closedItems, closedAuctions } = await closeExpiredItems();
+  try {
+    // Open auctions whose startAt has passed and activate their items
+    ({ openedAuctions } = await openScheduledAuctions());
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Internal error";
+    console.error("[cron] openScheduledAuctions failed:", msg, err);
+  }
+
+  try {
+    // Close items/auctions whose endAt has passed
+    ({ closedItems, closedAuctions } = await closeExpiredItems());
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Internal error";
+    console.error("[cron] closeExpiredItems failed:", msg, err);
+  }
 
   console.log(`[cron] Opened ${openedAuctions} auction(s), closed ${closedItems} item(s), ${closedAuctions} auction(s)`);
   return NextResponse.json({ openedAuctions, closedItems, closedAuctions });

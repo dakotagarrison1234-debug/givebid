@@ -98,15 +98,20 @@ function PaymentsContent() {
     setMsg(null);
     try {
       const res = await fetch(`/api/orgs/${org.id}/stripe/onboard`, { method: "POST" });
-      const d = await res.json();
+      let d: { url?: string; error?: string };
+      try {
+        d = await res.json();
+      } catch {
+        d = { error: `Server error (HTTP ${res.status}). Check Vercel logs.` };
+      }
       if (d.url) {
         window.location.href = d.url;
       } else {
         setMsg({ text: d.error || "Failed to start onboarding.", ok: false });
         setConnecting(false);
       }
-    } catch {
-      setMsg({ text: "Something went wrong. Try again.", ok: false });
+    } catch (err) {
+      setMsg({ text: err instanceof Error ? err.message : "Something went wrong. Try again.", ok: false });
       setConnecting(false);
     }
   };
@@ -122,8 +127,8 @@ function PaymentsContent() {
       } else {
         setMsg({ text: d.error || "Could not open dashboard.", ok: false });
       }
-    } catch {
-      setMsg({ text: "Something went wrong. Try again.", ok: false });
+    } catch (err) {
+      setMsg({ text: err instanceof Error ? err.message : "Something went wrong. Try again.", ok: false });
     } finally {
       setConnecting(false);
     }

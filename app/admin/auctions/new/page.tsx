@@ -14,7 +14,7 @@ export default function NewAuctionPage() {
   useEffect(() => {
     fetch("/api/me").then(r => r.json()).then(d => {
       if (d.orgId) setOrgId(d.orgId);
-    });
+    }).catch(() => {});
   }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {

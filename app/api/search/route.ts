@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 export async function GET(request: NextRequest) {
+  try {
   const q = request.nextUrl.searchParams.get("q")?.trim() ?? "";
   if (q.length < 2) {
     return NextResponse.json({ items: [], auctions: [], orgs: [] });
@@ -71,4 +72,9 @@ export async function GET(request: NextRequest) {
     auctions,
     orgs,
   });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Internal error";
+    console.error("[search GET]:", msg, err);
+    return NextResponse.json({ error: msg }, { status: 500 });
+  }
 }

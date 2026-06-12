@@ -63,7 +63,10 @@ export default function SearchBar({
       const data: SearchResults = await res.json();
       setResults(data);
       setOpen(true);
-    } catch { /* ignore */ } finally { setLoading(false); }
+    } catch {
+      setResults(null);
+      setOpen(false);
+    } finally { setLoading(false); }
   }, []);
 
   useEffect(() => {

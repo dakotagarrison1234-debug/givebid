@@ -23,7 +23,7 @@ function NewItemForm() {
   useEffect(() => {
     fetch("/api/me").then(r => r.json()).then(d => {
       if (d.orgId) setOrgId(d.orgId);
-    });
+    }).catch(() => {});
     fetch("/api/auctions").then(r => r.json()).then(d => {
       if (d.auctions) {
         // Only show auctions that can accept new items (not closed/settled)
@@ -31,7 +31,7 @@ function NewItemForm() {
           ["DRAFT", "OPEN", "CLOSING"].includes(a.status)
         ));
       }
-    });
+    }).catch(() => {});
   }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {

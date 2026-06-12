@@ -205,7 +205,7 @@ export default async function PickupPage() {
                         {/* Right side: amount + payment + action */}
                         <div className="flex items-center gap-2 sm:gap-3 shrink-0">
                           <span className="text-sm font-bold text-white hidden sm:block">
-                            ${Number(bid.amount)}
+                            ${Number(bid.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </span>
                           {payment?.status === "PAID" ? (
                             <span className="text-xs bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full">

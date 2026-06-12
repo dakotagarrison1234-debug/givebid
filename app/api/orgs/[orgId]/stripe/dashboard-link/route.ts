@@ -22,11 +22,17 @@ export async function POST(_request: NextRequest, { params }: Props) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const org = await prisma.organization.findUnique({ where: { id: orgId } });
-  if (!org?.stripeAccountId) {
-    return NextResponse.json({ error: "No Stripe account connected" }, { status: 400 });
-  }
+  try {
+    const org = await prisma.organization.findUnique({ where: { id: orgId } });
+    if (!org?.stripeAccountId) {
+      return NextResponse.json({ error: "No Stripe account connected" }, { status: 400 });
+    }
 
-  const loginLink = await stripe.accounts.createLoginLink(org.stripeAccountId);
-  return NextResponse.json({ url: loginLink.url });
+    const loginLink = await stripe.accounts.createLoginLink(org.stripeAccountId);
+    return NextResponse.json({ url: loginLink.url });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Internal error";
+    console.error("[stripe/dashboard-link POST]:", msg, err);
+    return NextResponse.json({ error: msg }, { status: 500 });
+  }
 }

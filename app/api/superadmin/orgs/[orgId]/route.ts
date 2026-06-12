@@ -5,77 +5,95 @@ import { prisma } from "@/lib/prisma";
 interface Props { params: Promise<{ orgId: string }> }
 
 export async function GET(_req: NextRequest, { params }: Props) {
-  await requireSuperAdmin();
-  const { orgId } = await params;
+  try {
+    await requireSuperAdmin();
+    const { orgId } = await params;
 
-  const org = await prisma.organization.findUnique({
-    where: { id: orgId },
-    include: {
-      members: true,
-      auctions: {
-        include: { items: { select: { id: true, status: true, currentBid: true } } },
-        orderBy: { createdAt: "desc" },
+    const org = await prisma.organization.findUnique({
+      where: { id: orgId },
+      include: {
+        members: true,
+        auctions: {
+          include: { items: { select: { id: true, status: true, currentBid: true } } },
+          orderBy: { createdAt: "desc" },
+        },
+        items: {
+          include: { photos: { where: { isPrimary: true }, take: 1 }, auction: { select: { title: true } } },
+          orderBy: { createdAt: "desc" },
+        },
       },
-      items: {
-        include: { photos: { where: { isPrimary: true }, take: 1 }, auction: { select: { title: true } } },
-        orderBy: { createdAt: "desc" },
-      },
-    },
-  });
+    });
 
-  if (!org) return NextResponse.json({ error: "Not found" }, { status: 404 });
-  return NextResponse.json({ org });
+    if (!org) return NextResponse.json({ error: "Not found" }, { status: 404 });
+    return NextResponse.json({ org });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Internal error";
+    console.error("[superadmin/orgs GET]:", msg, err);
+    return NextResponse.json({ error: msg }, { status: 500 });
+  }
 }
 
 export async function PATCH(request: NextRequest, { params }: Props) {
-  await requireSuperAdmin();
-  const { orgId } = await params;
-  const body = await request.json();
+  try {
+    await requireSuperAdmin();
+    const { orgId } = await params;
+    const body = await request.json();
 
-  const { name, description, isActive } = body;
+    const { name, description, isActive } = body;
 
-  let slug: string | undefined;
-  if (name) {
-    const raw = name.trim().toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
-    const existing = await prisma.organization.findFirst({ where: { slug: raw, NOT: { id: orgId } } });
-    slug = existing ? `${raw}-${Date.now()}` : raw;
+    let slug: string | undefined;
+    if (name) {
+      const raw = name.trim().toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+      const existing = await prisma.organization.findFirst({ where: { slug: raw, NOT: { id: orgId } } });
+      slug = existing ? `${raw}-${Date.now()}` : raw;
+    }
+
+    const org = await prisma.organization.update({
+      where: { id: orgId },
+      data: {
+        ...(name && { name: name.trim(), slug }),
+        ...(description !== undefined && { description }),
+        ...(isActive !== undefined && { isActive }),
+      },
+    });
+
+    return NextResponse.json({ success: true, org });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Internal error";
+    console.error("[superadmin/orgs PATCH]:", msg, err);
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
-
-  const org = await prisma.organization.update({
-    where: { id: orgId },
-    data: {
-      ...(name && { name: name.trim(), slug }),
-      ...(description !== undefined && { description }),
-      ...(isActive !== undefined && { isActive }),
-    },
-  });
-
-  return NextResponse.json({ success: true, org });
 }
 
 export async function DELETE(_req: NextRequest, { params }: Props) {
-  await requireSuperAdmin();
-  const { orgId } = await params;
+  try {
+    await requireSuperAdmin();
+    const { orgId } = await params;
 
-  // Get member clerkUserIds before deleting, so we can clean up their applications
-  const members = await prisma.orgMember.findMany({ where: { organizationId: orgId }, select: { clerkUserId: true } });
-  const memberIds = members.map((m) => m.clerkUserId);
+    // Get member clerkUserIds before deleting, so we can clean up their applications
+    const members = await prisma.orgMember.findMany({ where: { organizationId: orgId }, select: { clerkUserId: true } });
+    const memberIds = members.map((m) => m.clerkUserId);
 
-  // Delete in dependency order (cascades handle most of this now, but explicit is safer)
-  await prisma.$transaction([
-    prisma.orgInvite.deleteMany({ where: { organizationId: orgId } }),
-    prisma.orgMember.deleteMany({ where: { organizationId: orgId } }),
-    prisma.bidderStripeCustomer.deleteMany({ where: { organizationId: orgId } }),
-    prisma.proxyBid.deleteMany({ where: { item: { organizationId: orgId } } }),
-    prisma.itemPhoto.deleteMany({ where: { item: { organizationId: orgId } } }),
-    prisma.bid.deleteMany({ where: { item: { organizationId: orgId } } }),
-    prisma.payment.deleteMany({ where: { item: { organizationId: orgId } } }),
-    prisma.item.deleteMany({ where: { organizationId: orgId } }),
-    prisma.auction.deleteMany({ where: { organizationId: orgId } }),
-    prisma.organization.delete({ where: { id: orgId } }),
-    // Clean up OrgApplications for this org's members to prevent infinite redirect loop
-    prisma.orgApplication.deleteMany({ where: { clerkUserId: { in: memberIds } } }),
-  ]);
+    // Delete in dependency order (cascades handle most of this now, but explicit is safer)
+    await prisma.$transaction([
+      prisma.orgInvite.deleteMany({ where: { organizationId: orgId } }),
+      prisma.orgMember.deleteMany({ where: { organizationId: orgId } }),
+      prisma.bidderStripeCustomer.deleteMany({ where: { organizationId: orgId } }),
+      prisma.proxyBid.deleteMany({ where: { item: { organizationId: orgId } } }),
+      prisma.itemPhoto.deleteMany({ where: { item: { organizationId: orgId } } }),
+      prisma.bid.deleteMany({ where: { item: { organizationId: orgId } } }),
+      prisma.payment.deleteMany({ where: { item: { organizationId: orgId } } }),
+      prisma.item.deleteMany({ where: { organizationId: orgId } }),
+      prisma.auction.deleteMany({ where: { organizationId: orgId } }),
+      prisma.organization.delete({ where: { id: orgId } }),
+      // Clean up OrgApplications for this org's members to prevent infinite redirect loop
+      prisma.orgApplication.deleteMany({ where: { clerkUserId: { in: memberIds } } }),
+    ]);
 
-  return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Internal error";
+    console.error("[superadmin/orgs DELETE]:", msg, err);
+    return NextResponse.json({ error: msg }, { status: 500 });
+  }
 }

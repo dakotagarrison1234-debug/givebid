@@ -106,8 +106,9 @@ export default function ItemPage() {
             isProxy: b.isProxy ?? false,
           })));
         }
-        setLoading(false);
-      });
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
   }, [itemId]);
 
   // Helper: refresh proxy status from server

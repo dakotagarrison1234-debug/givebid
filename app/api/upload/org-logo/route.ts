@@ -15,29 +15,35 @@ const s3 = new S3Client({
 });
 
 export async function POST(request: NextRequest) {
-  const { userId } = await auth();
-  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  try {
+    const { userId } = await auth();
+    if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { fileName, fileType, orgId } = await request.json();
-  if (!fileName || !fileType || !orgId) {
-    return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    const { fileName, fileType, orgId } = await request.json();
+    if (!fileName || !fileType || !orgId) {
+      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    }
+
+    if (!(await canAccessOrg(orgId))) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    const ext = fileName.split(".").pop() || "png";
+    const key = `orgs/${orgId}/logo-${Date.now()}.${ext}`;
+
+    const command = new PutObjectCommand({
+      Bucket: process.env.CLOUDFLARE_R2_BUCKET,
+      Key: key,
+      ContentType: fileType,
+    });
+
+    const signedUrl = await getSignedUrl(s3, command, { expiresIn: 3600 });
+    const publicUrl = `${process.env.CLOUDFLARE_R2_PUBLIC_URL}/${key}`;
+
+    return NextResponse.json({ signedUrl, publicUrl });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Internal error";
+    console.error("[upload/org-logo POST]:", msg, err);
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
-
-  if (!(await canAccessOrg(orgId))) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
-
-  const ext = fileName.split(".").pop() || "png";
-  const key = `orgs/${orgId}/logo-${Date.now()}.${ext}`;
-
-  const command = new PutObjectCommand({
-    Bucket: process.env.CLOUDFLARE_R2_BUCKET,
-    Key: key,
-    ContentType: fileType,
-  });
-
-  const signedUrl = await getSignedUrl(s3, command, { expiresIn: 3600 });
-  const publicUrl = `${process.env.CLOUDFLARE_R2_PUBLIC_URL}/${key}`;
-
-  return NextResponse.json({ signedUrl, publicUrl });
 }

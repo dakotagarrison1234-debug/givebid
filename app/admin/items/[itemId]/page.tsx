@@ -35,8 +35,7 @@ export default function EditItemPage() {
         });
         if (item.photos) setPhotos(item.photos.map((p: { url: string }) => p.url));
       }
-      setLoading(false);
-    });
+    }).catch(() => {}).finally(() => setLoading(false));
     fetch("/api/auctions").then(r => r.json()).then(d => {
       if (d.auctions) {
         // Only show auctions that can accept items (not closed/settled)

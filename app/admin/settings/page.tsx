@@ -17,6 +17,7 @@ export default function AdminSettingsPage() {
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [msg, setMsg] = useState<{ text: string; ok: boolean } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -30,7 +31,9 @@ export default function AdminSettingsPage() {
           setDescription(d.org.description || "");
           setLogoUrl(d.org.logoUrl || null);
         }
-      });
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
   }, []);
 
   const handleLogoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -106,7 +109,7 @@ export default function AdminSettingsPage() {
     }
   };
 
-  if (!org) {
+  if (loading || !org) {
     return (
       <div className="flex items-center justify-center h-64">
         <p className="text-gray-500">Loading…</p>

@@ -148,13 +148,16 @@ export default function BidderDashboard() {
   const [loadingAuctions, setLoadingAuctions] = useState(false);
 
   const load = useCallback(() => {
-    fetch("/api/my-bids").then((r) => r.json()).then((d: DashboardData) => {
-      setData(d);
-      setEditName(d.profile?.name || "");
-      setEditEmail(d.profile?.email || user?.primaryEmailAddress?.emailAddress || "");
-      setEditPhone(d.profile?.phone || "");
-      setLoading(false);
-    });
+    fetch("/api/my-bids")
+      .then((r) => r.json())
+      .then((d: DashboardData) => {
+        setData(d);
+        setEditName(d.profile?.name || "");
+        setEditEmail(d.profile?.email || user?.primaryEmailAddress?.emailAddress || "");
+        setEditPhone(d.profile?.phone || "");
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
   }, [user]);
 
   useEffect(() => {
