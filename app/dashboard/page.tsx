@@ -208,6 +208,21 @@ export default function BidderDashboard() {
     if (tab === "auctions") loadLiveAuctions();
   }, [tab, loadPaymentMethods, loadLiveAuctions]);
 
+  // Live auction list updates — re-fetch when any auction opens or closes
+  useEffect(() => {
+    const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY!, {
+      cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER!,
+    });
+    const ch = pusher.subscribe("auctions");
+    ch.bind("auction-updated", () => {
+      if (tab === "auctions") loadLiveAuctions();
+    });
+    return () => {
+      ch.unbind_all();
+      pusher.disconnect();
+    };
+  }, [tab, loadLiveAuctions]);
+
   const saveProfile = async () => {
     setSavingProfile(true);
     setProfileMsg(null);

@@ -2,6 +2,7 @@ import { auth } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { canAccessOrg } from "@/lib/auth";
+import { triggerAuctionUpdated } from "@/lib/pusherServer";
 
 interface Props {
   params: Promise<{ auctionId: string }>;
@@ -87,6 +88,9 @@ export async function PATCH(request: NextRequest, { params }: Props) {
         }).catch((e) => console.error("GHL auction-started webhook failed:", e));
       }
     }
+
+    // Notify live-watching pages that auction list has changed
+    triggerAuctionUpdated(auction.organization.slug).catch(() => {});
 
     return NextResponse.json({ success: true, auction: updated });
   } catch (error) {

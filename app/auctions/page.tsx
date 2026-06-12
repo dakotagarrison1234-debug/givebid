@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import HomeHeader from "@/app/components/HomeHeader";
 import LocalDate from "@/app/components/LocalDate";
 import OrgLogo from "@/app/components/OrgLogo";
+import PusherRefresh from "@/app/components/PusherRefresh";
 
 function IcoCalendar() {
   return (
@@ -26,6 +27,7 @@ export default async function AuctionsPage() {
 
   return (
     <main className="min-h-screen bg-gray-950 text-white">
+      <PusherRefresh channel="auctions" event="auction-updated" />
       <HomeHeader />
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10 sm:py-14">

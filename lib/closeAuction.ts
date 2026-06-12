@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import Stripe from "stripe";
+import { triggerAuctionUpdated } from "@/lib/pusherServer";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
@@ -310,6 +311,10 @@ export async function openScheduledAuctions(): Promise<{ openedAuctions: number 
     data: { status: "ACTIVE" },
   });
 
+  if (dueAuctions.length > 0) {
+    triggerAuctionUpdated().catch(() => {});
+  }
+
   return { openedAuctions: dueAuctions.length };
 }
 
@@ -422,6 +427,7 @@ export async function closeExpiredItems(): Promise<{ closedItems: number; closed
     // Auto-charge winners BEFORE sending GHL notifications
     await chargeWinners(winnerMap, auction.organization, auctionId);
     await notifyWinners(winnerMap);
+    triggerAuctionUpdated(auction.organization.slug).catch(() => {});
   }
 
   return { closedItems: expiredItems.length, closedAuctions };
@@ -482,6 +488,7 @@ export async function closeAuction(auctionId: string): Promise<{ winnersCount: n
   // Auto-charge winners BEFORE sending GHL notifications
   await chargeWinners(winnerMap, auction.organization, auctionId);
   await notifyWinners(winnerMap);
+  triggerAuctionUpdated(auction.organization.slug).catch(() => {});
 
   return { winnersCount: winnerMap.size };
 }
