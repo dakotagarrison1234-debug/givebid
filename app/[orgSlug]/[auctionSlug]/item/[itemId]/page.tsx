@@ -243,7 +243,7 @@ export default function ItemPage() {
           setBiddingEnded(false);
         }
       } else if (data.requiresRegistration) {
-        router.push("/register");
+        router.push(`/register?redirect_url=${encodeURIComponent(window.location.pathname)}`);
       } else if (data.requiresPaymentMethod) {
         setShowCardModal(true);
       } else {
@@ -301,7 +301,7 @@ export default function ItemPage() {
           setBiddingEnded(false);
         }
       } else if (data.requiresRegistration) {
-        router.push("/register");
+        router.push(`/register?redirect_url=${encodeURIComponent(window.location.pathname)}`);
       } else if (data.requiresPaymentMethod) {
         setShowCardModal(true);
       } else {
@@ -696,21 +696,33 @@ export default function ItemPage() {
         </div>
       </div>
       {/* Card setup modal — shown when user tries to bid without a card on file */}
-      {showCardModal && item.org?.stripeAccountId && (
-        <CardSetupModal
-          orgId={item.org.id}
-          stripeAccountId={item.org.stripeAccountId}
-          onSuccess={() => {
-            setShowCardModal(false);
-            setHasCard(true);
-            refreshCardStatus();
-            setMessage({
-              text: "Card saved! Click Place Bid to confirm your bid.",
-              type: "success",
-            });
-          }}
-          onClose={() => setShowCardModal(false)}
-        />
+      {showCardModal && (
+        item.org?.stripeAccountId ? (
+          <CardSetupModal
+            orgId={item.org.id}
+            stripeAccountId={item.org.stripeAccountId}
+            onSuccess={() => {
+              setShowCardModal(false);
+              setHasCard(true);
+              refreshCardStatus();
+              setMessage({
+                text: "Card saved! Click Place Bid to confirm your bid.",
+                type: "success",
+              });
+            }}
+            onClose={() => setShowCardModal(false)}
+          />
+        ) : (
+          <div className="fixed inset-0 z-50 bg-gray-950/90 backdrop-blur-sm flex items-end sm:items-center justify-center p-4">
+            <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-sm text-center">
+              <p className="text-gray-300 mb-2 font-semibold">Payments not yet enabled</p>
+              <p className="text-gray-500 text-sm mb-5">This organization hasn&apos;t finished setting up payments. Try again later.</p>
+              <button onClick={() => setShowCardModal(false)} className="w-full bg-gray-800 hover:bg-gray-700 text-white py-3 rounded-xl text-sm font-semibold">
+                Close
+              </button>
+            </div>
+          </div>
+        )
       )}
     </main>
   );

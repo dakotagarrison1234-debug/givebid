@@ -1,11 +1,14 @@
 "use client";
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 
-export default function RegisterPage() {
+function RegisterForm() {
   const { user, isLoaded } = useUser();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectUrl = searchParams.get("redirect_url") || "/dashboard";
+
   const [phone, setPhone] = useState("");
   const [saving, setSaving] = useState(false);
   const [checking, setChecking] = useState(true);
@@ -16,13 +19,13 @@ export default function RegisterPage() {
       .then(res => res.json())
       .then(data => {
         if (data.profile?.phone) {
-          router.push("/dashboard");
+          router.push(redirectUrl);
         } else {
           setChecking(false);
         }
       })
       .catch(() => setChecking(false));
-  }, [isLoaded, router]);
+  }, [isLoaded, router, redirectUrl]);
 
   const handleSubmit = async () => {
     if (!phone || phone.length < 10) {
@@ -42,7 +45,7 @@ export default function RegisterPage() {
       });
       const data = await res.json();
       if (data.success) {
-        router.push("/dashboard");
+        router.push(redirectUrl);
       } else {
         alert("Error saving profile");
       }
@@ -75,6 +78,7 @@ export default function RegisterPage() {
               type="tel"
               value={phone}
               onChange={e => setPhone(e.target.value)}
+              onKeyDown={e => e.key === "Enter" && !saving && handleSubmit()}
               placeholder="+1 (555) 000-0000"
               className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-emerald-500"
             />
@@ -87,7 +91,7 @@ export default function RegisterPage() {
             {saving ? "Saving..." : "Save & Continue"}
           </button>
           <button
-            onClick={() => router.push("/")}
+            onClick={() => router.push(redirectUrl)}
             className="w-full text-gray-500 hover:text-gray-300 text-sm py-2"
           >
             Skip for now
@@ -95,5 +99,17 @@ export default function RegisterPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={
+      <main className="min-h-screen bg-gray-950 text-white flex items-center justify-center">
+        <p className="text-gray-400">Loading...</p>
+      </main>
+    }>
+      <RegisterForm />
+    </Suspense>
   );
 }

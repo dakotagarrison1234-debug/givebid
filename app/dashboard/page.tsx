@@ -9,6 +9,17 @@ import CardSetupModal from "@/app/components/CardSetupModal";
 
 type Tab = "overview" | "winning" | "losing" | "past" | "profile";
 
+interface PaymentMethod {
+  orgId: string;
+  orgName: string;
+  orgSlug: string;
+  stripeAccountId: string | null;
+  stripeChargesEnabled: boolean;
+  hasCard: boolean;
+  last4: string | null;
+  brand: string | null;
+}
+
 interface BidBase {
   itemId: string;
   itemTitle: string;
@@ -111,6 +122,8 @@ export default function BidderDashboard() {
   const [retryingItemId, setRetryingItemId] = useState<string | null>(null);
   const [retryMsg, setRetryMsg] = useState<{ text: string; ok: boolean } | null>(null);
   const [cardModal, setCardModal] = useState<{ orgId: string; stripeAccountId: string } | null>(null);
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
+  const [loadingPMs, setLoadingPMs] = useState(false);
 
   const load = useCallback(() => {
     fetch("/api/my-bids").then((r) => r.json()).then((d: DashboardData) => {
@@ -149,6 +162,20 @@ export default function BidderDashboard() {
       pusher.disconnect();
     };
   }, [data, load]);
+
+  const loadPaymentMethods = useCallback(() => {
+    setLoadingPMs(true);
+    fetch("/api/payment-methods")
+      .then(r => r.json())
+      .then(d => setPaymentMethods(d.paymentMethods ?? []))
+      .catch(() => {/* non-critical */})
+      .finally(() => setLoadingPMs(false));
+  }, []);
+
+  // Load payment methods when profile tab is opened
+  useEffect(() => {
+    if (tab === "profile") loadPaymentMethods();
+  }, [tab, loadPaymentMethods]);
 
   const saveProfile = async () => {
     setSavingProfile(true);
@@ -689,6 +716,51 @@ export default function BidderDashboard() {
                 >
                   {savingProfile ? "Saving…" : "Save Profile"}
                 </button>
+                {/* Payment Methods */}
+                <div className="pt-4 border-t border-gray-800/60">
+                  <h3 className="text-sm font-semibold text-gray-300 mb-3">Payment Methods</h3>
+                  {loadingPMs ? (
+                    <div className="text-gray-600 text-sm py-2">Loading…</div>
+                  ) : paymentMethods.length === 0 ? (
+                    <div className="bg-gray-900 border border-gray-800 rounded-xl px-4 py-4 text-sm text-gray-500">
+                      No payment methods saved yet. A card will be requested when you place your first bid.
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {paymentMethods.map((pm) => (
+                        <div key={pm.orgId} className="bg-gray-900 border border-gray-800 rounded-xl px-4 py-3 flex items-center justify-between gap-3">
+                          <div className="min-w-0">
+                            <div className="text-sm font-medium text-white truncate">{pm.orgName}</div>
+                            {pm.hasCard ? (
+                              <div className="text-xs text-gray-400 mt-0.5 flex items-center gap-1">
+                                <svg className="w-3 h-3 shrink-0" fill="none" viewBox="0 0 16 16" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round">
+                                  <rect x="1" y="3" width="14" height="10" rx="1.5" />
+                                  <path d="M1 7h14" />
+                                </svg>
+                                {pm.brand ? (
+                                  <span>{pm.brand.charAt(0).toUpperCase() + pm.brand.slice(1)} ···· {pm.last4}</span>
+                                ) : (
+                                  <span>Card on file</span>
+                                )}
+                              </div>
+                            ) : (
+                              <div className="text-xs text-yellow-500 mt-0.5">No card saved</div>
+                            )}
+                          </div>
+                          {pm.stripeAccountId && pm.stripeChargesEnabled && (
+                            <button
+                              onClick={() => setCardModal({ orgId: pm.orgId, stripeAccountId: pm.stripeAccountId! })}
+                              className="text-xs text-emerald-400 hover:text-emerald-300 font-medium shrink-0 transition-colors"
+                            >
+                              {pm.hasCard ? "Update" : "Add card"}
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
                 <div className="pt-2 border-t border-gray-800/60">
                   <Link
                     href="/"
@@ -712,6 +784,7 @@ export default function BidderDashboard() {
           onSuccess={() => {
             setCardModal(null);
             setRetryMsg({ text: "Card updated. You can now retry the payment.", ok: true });
+            loadPaymentMethods(); // Refresh the payment methods list
           }}
           onClose={() => setCardModal(null)}
         />
