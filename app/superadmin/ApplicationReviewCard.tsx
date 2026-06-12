@@ -20,14 +20,21 @@ export default function ApplicationReviewCard({ application }: { application: Ap
   const [reviewNote, setReviewNote] = useState("");
   const [loading, setLoading] = useState<"approve" | "reject" | null>(null);
   const [expanded, setExpanded] = useState(false);
+  const [taxExempt, setTaxExempt] = useState(true);
+  const [taxPercent, setTaxPercent] = useState("0");
 
   const handleAction = async (action: "approve" | "reject") => {
     setLoading(action);
     try {
+      const body: Record<string, unknown> = { action, reviewNote };
+      if (action === "approve") {
+        body.taxExempt = taxExempt;
+        if (!taxExempt) body.taxPercent = parseFloat(taxPercent);
+      }
       const res = await fetch(`/api/superadmin/applications/${application.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action, reviewNote }),
+        body: JSON.stringify(body),
       });
       const data = await res.json();
       if (data.success) {
@@ -100,6 +107,38 @@ export default function ApplicationReviewCard({ application }: { application: Ap
           placeholder="Optional note (shown on rejection)"
           className="w-full bg-gray-800 border border-gray-700/80 rounded-xl px-3 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-emerald-500/60 transition-colors"
         />
+
+        {/* Tax status — set at approval by ForPurpose */}
+        <div className="bg-gray-800/60 border border-gray-700/60 rounded-xl p-3 space-y-2">
+          <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Tax Status</div>
+          <label className="flex items-center gap-2.5 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={taxExempt}
+              onChange={(e) => { setTaxExempt(e.target.checked); if (e.target.checked) setTaxPercent("0"); }}
+              className="w-4 h-4 accent-emerald-500"
+            />
+            <span className="text-sm text-gray-200">Tax exempt (most nonprofits)</span>
+          </label>
+          {!taxExempt && (
+            <div className="flex items-center gap-2 pt-1">
+              <div className="relative w-28">
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.1"
+                  value={taxPercent}
+                  onChange={(e) => setTaxPercent(e.target.value)}
+                  className="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:border-emerald-500/60 pr-7"
+                />
+                <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 text-xs">%</span>
+              </div>
+              <span className="text-xs text-gray-500">Michigan is 6%</span>
+            </div>
+          )}
+        </div>
+
         <div className="flex gap-2.5">
           <button
             onClick={() => handleAction("approve")}

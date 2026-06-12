@@ -31,7 +31,7 @@ export async function PATCH(request: NextRequest) {
     if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const body = await request.json();
-    const { name, description, logoUrl, orgId, taxPercent } = body;
+    const { name, description, logoUrl, orgId } = body;
 
     if (!orgId) return NextResponse.json({ error: "orgId required" }, { status: 400 });
 
@@ -39,13 +39,7 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    // Validate taxPercent if provided
-    if (taxPercent !== undefined) {
-      const tax = parseFloat(taxPercent);
-      if (isNaN(tax) || tax < 0 || tax > 100) {
-        return NextResponse.json({ error: "Tax percent must be between 0 and 100" }, { status: 400 });
-      }
-    }
+    // taxPercent and taxExempt are set at approval by ForPurpose — orgs cannot edit them.
 
     const updated = await prisma.organization.update({
       where: { id: orgId },
@@ -53,7 +47,6 @@ export async function PATCH(request: NextRequest) {
         ...(name !== undefined && { name: name.trim() }),
         ...(description !== undefined && { description: description.trim() || null }),
         ...(logoUrl !== undefined && { logoUrl }),
-        ...(taxPercent !== undefined && { taxPercent: parseFloat(taxPercent) }),
       },
     });
 

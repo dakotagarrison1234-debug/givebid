@@ -14,7 +14,7 @@ export async function PATCH(request: NextRequest, { params }: Props) {
     await requireSuperAdmin();
     const { userId } = await auth();
     const { id } = await params;
-    const { action, reviewNote } = await request.json();
+    const { action, reviewNote, taxExempt, taxPercent } = await request.json();
 
     const application = await prisma.orgApplication.findUnique({ where: { id } });
     if (!application) {
@@ -33,6 +33,16 @@ export async function PATCH(request: NextRequest, { params }: Props) {
     }
 
     if (action === "approve") {
+      // Validate tax fields
+      const isExempt = taxExempt !== false; // default true
+      if (!isExempt) {
+        const rate = Number(taxPercent);
+        if (isNaN(rate) || rate < 0 || rate > 100) {
+          return NextResponse.json({ error: "taxPercent must be between 0 and 100 when org is not exempt" }, { status: 400 });
+        }
+      }
+      const resolvedTaxPercent = isExempt ? 0 : Number(taxPercent ?? 0);
+
       // Check user doesn't already have an org
       const existingMember = await prisma.orgMember.findFirst({
         where: { clerkUserId: application.clerkUserId },
@@ -53,6 +63,8 @@ export async function PATCH(request: NextRequest, { params }: Props) {
             slug: finalSlug,
             description: application.description,
             isActive: true,
+            taxExempt: isExempt,
+            taxPercent: resolvedTaxPercent,
             members: {
               create: { clerkUserId: application.clerkUserId, role: "OWNER" },
             },

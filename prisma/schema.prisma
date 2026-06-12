@@ -27,6 +27,7 @@ model Organization {
   stripeDetailsSubmitted Boolean     @default(false)
   platformFeePercent     Decimal     @default(10) @db.Decimal(5, 2)
   taxPercent             Decimal     @default(0) @db.Decimal(5, 2)
+  taxExempt              Boolean     @default(true)
   isActive               Boolean     @default(true)
   createdAt              DateTime    @default(now())
   updatedAt              DateTime    @updatedAt

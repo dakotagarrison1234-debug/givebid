@@ -10,6 +10,7 @@ interface OrgStripeStatus {
   stripeDetailsSubmitted: boolean;
   platformFeePercent: number;
   taxPercent: number;
+  taxExempt: boolean;
 }
 
 function StatusDot({ enabled }: { enabled: boolean }) {
@@ -27,51 +28,16 @@ function PaymentsContent() {
   const [loading, setLoading] = useState(true);
   const [connecting, setConnecting] = useState(false);
   const [msg, setMsg] = useState<{ text: string; ok: boolean } | null>(null);
-  const [taxInput, setTaxInput] = useState("");
-  const [savingTax, setSavingTax] = useState(false);
-  const [taxMsg, setTaxMsg] = useState<{ text: string; ok: boolean } | null>(null);
   const searchParams = useSearchParams();
 
   const fetchOrg = useCallback(() => {
     fetch("/api/admin/settings")
       .then((r) => r.json())
       .then((d) => {
-        if (d.org) {
-          setOrg(d.org);
-          setTaxInput(String(d.org.taxPercent ?? 0));
-        }
+        if (d.org) setOrg(d.org);
       })
       .finally(() => setLoading(false));
   }, []);
-
-  const saveTax = async () => {
-    if (!org) return;
-    const tax = parseFloat(taxInput);
-    if (isNaN(tax) || tax < 0 || tax > 100) {
-      setTaxMsg({ text: "Enter a number between 0 and 100.", ok: false });
-      return;
-    }
-    setSavingTax(true);
-    setTaxMsg(null);
-    try {
-      const res = await fetch("/api/admin/settings", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orgId: org.id, taxPercent: tax }),
-      });
-      const d = await res.json();
-      if (d.success) {
-        setOrg((o) => o ? { ...o, taxPercent: tax } : o);
-        setTaxMsg({ text: "Tax rate saved.", ok: true });
-      } else {
-        setTaxMsg({ text: d.error || "Failed to save.", ok: false });
-      }
-    } catch {
-      setTaxMsg({ text: "Something went wrong.", ok: false });
-    } finally {
-      setSavingTax(false);
-    }
-  };
 
   useEffect(() => {
     fetchOrg();
@@ -251,40 +217,22 @@ function PaymentsContent() {
         </p>
       )}
 
-      {/* Tax rate */}
+      {/* Tax status — read-only, set at approval by ForPurpose */}
       <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 mb-5">
         <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-1">
-          Sales Tax Rate
+          Sales Tax
         </h2>
-        <p className="text-xs text-gray-600 mb-4">
-          Added on top of each winning bid at checkout. Set to 0 if your organization is tax-exempt (most nonprofits).
+        <p className="text-xs text-gray-600 mb-3">
+          Tax status is set by ForPurpose when your organization is approved.
         </p>
-        <div className="flex items-center gap-3">
-          <div className="relative flex-1 max-w-[160px]">
-            <input
-              type="number"
-              min="0"
-              max="100"
-              step="0.1"
-              value={taxInput}
-              onChange={(e) => setTaxInput(e.target.value)}
-              className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500 pr-8"
-            />
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">%</span>
-          </div>
-          <button
-            onClick={saveTax}
-            disabled={savingTax}
-            className="bg-gray-800 hover:bg-gray-700 border border-gray-700 text-white text-sm px-4 py-2.5 rounded-xl disabled:opacity-50 transition-colors"
-          >
-            {savingTax ? "Saving…" : "Save"}
-          </button>
+        <div className="flex items-center gap-2">
+          <span className={`inline-block w-2 h-2 rounded-full ${org.taxExempt ? "bg-emerald-400" : "bg-yellow-400"}`} />
+          <span className="text-sm text-gray-300">
+            {org.taxExempt
+              ? "Tax exempt — no sales tax collected"
+              : `Sales tax: ${Number(org.taxPercent)}% added to each winning bid`}
+          </span>
         </div>
-        {taxMsg && (
-          <p className={`text-sm mt-3 ${taxMsg.ok ? "text-emerald-400" : "text-red-400"}`}>
-            {taxMsg.text}
-          </p>
-        )}
       </div>
 
       {/* Info block */}

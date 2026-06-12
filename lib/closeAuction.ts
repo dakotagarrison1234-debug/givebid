@@ -25,6 +25,7 @@ type OrgForCharging = {
   stripeAccountId: string | null;
   platformFeePercent: Prisma.Decimal;
   taxPercent: Prisma.Decimal;
+  taxExempt: boolean;
 };
 
 /**
@@ -75,7 +76,8 @@ async function chargeWinners(
   if (!org.stripeAccountId || winnerMap.size === 0) return;
 
   const platformFeePercent = Number(org.platformFeePercent);
-  const taxPercent = Number(org.taxPercent);
+  // If the org is tax-exempt, force tax to zero regardless of taxPercent.
+  const taxPercent = org.taxExempt ? 0 : Number(org.taxPercent);
 
   for (const [clerkUserId, winner] of winnerMap) {
     const itemIds = winner.items.map((i) => i.id);
@@ -120,9 +122,13 @@ async function chargeWinners(
 
     // Calculate totals (all in cents for Stripe)
     const totalBidAmount = winner.items.reduce((s, i) => s + i.amount, 0);
+    // Tax only collected if org is not exempt (set at approval by ForPurpose).
     const taxAmountCents = Math.round(totalBidAmount * taxPercent / 100 * 100);
-    const chargeAmountCents = Math.round(totalBidAmount * 100) + taxAmountCents;
-    const appFeeAmountCents = Math.round(totalBidAmount * platformFeePercent / 100 * 100);
+    const feeAmountCents = Math.round(totalBidAmount * platformFeePercent / 100 * 100);
+    // Fee AND tax ADDED ON TOP of the bid — buyer pays bid + fee + tax.
+    // ForPurpose holds fee + tax via application_fee_amount; org nets exactly the bid.
+    const chargeAmountCents = Math.round(totalBidAmount * 100) + feeAmountCents + taxAmountCents;
+    const appFeeAmountCents = feeAmountCents + taxAmountCents;
 
     const now = new Date();
 
@@ -154,8 +160,10 @@ async function chargeWinners(
       // Distribute fee/tax across items in whole cents; any leftover cent goes to item 0
       // so the per-item rows sum back to the actual charged total.
       const n = winner.items.length;
-      const baseFeeCents = Math.floor(appFeeAmountCents / n);
-      const feeRemainderCents = appFeeAmountCents - baseFeeCents * n;
+      // Distribute fee only (not fee+tax) across per-item Payment rows.
+      // applicationFeeAmount = fee portion; taxAmount = tax portion (recorded separately).
+      const baseFeeCents = Math.floor(feeAmountCents / n);
+      const feeRemainderCents = feeAmountCents - baseFeeCents * n;
       const baseTaxCents = Math.floor(taxAmountCents / n);
       const taxRemainderCents = taxAmountCents - baseTaxCents * n;
 
@@ -393,6 +401,7 @@ export async function closeExpiredItems(): Promise<{ closedItems: number; closed
             stripeAccountId: true,
             platformFeePercent: true,
             taxPercent: true,
+            taxExempt: true,
           },
         },
       },
@@ -449,6 +458,7 @@ export async function closeAuction(auctionId: string): Promise<{ winnersCount: n
           stripeAccountId: true,
           platformFeePercent: true,
           taxPercent: true,
+          taxExempt: true,
         },
       },
       items: {

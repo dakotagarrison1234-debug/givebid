@@ -44,6 +44,7 @@ export async function POST(request: NextRequest) {
             stripeAccountId: true,
             platformFeePercent: true,
             taxPercent: true,
+            taxExempt: true,
           },
         },
       },
@@ -68,9 +69,13 @@ export async function POST(request: NextRequest) {
     }
 
     const bidAmount = Number(wonBid.amount);
-    const taxAmount = Math.round(bidAmount * Number(org.taxPercent) / 100 * 100); // cents
-    const chargeAmount = Math.round(bidAmount * 100) + taxAmount; // total cents
-    const appFeeAmount = Math.round(bidAmount * Number(org.platformFeePercent) / 100 * 100); // cents
+    // Tax only collected if org is not exempt (set at approval by ForPurpose).
+    const taxRate = org.taxExempt ? 0 : Number(org.taxPercent);
+    const taxAmount = Math.round(bidAmount * taxRate / 100 * 100); // cents
+    const feeAmount = Math.round(bidAmount * Number(org.platformFeePercent) / 100 * 100); // cents
+    // Fee + tax ADDED ON TOP; ForPurpose holds both; org nets exactly the bid.
+    const chargeAmount = Math.round(bidAmount * 100) + feeAmount + taxAmount; // total cents
+    const appFeeAmount = feeAmount + taxAmount; // cents
 
     // Create fresh PaymentIntent on the connected account
     const paymentIntent = await stripe.paymentIntents.create(
@@ -105,14 +110,14 @@ export async function POST(request: NextRequest) {
           stripePaymentIntentId: paymentIntent.id,
           failureReason: null,
           autoChargeAttemptedAt: new Date(),
-          applicationFeeAmount: appFeeAmount / 100,
+          applicationFeeAmount: feeAmount / 100,
           taxAmount: taxAmount / 100,
         },
         create: {
           clerkUserId: userId,
           itemId,
           amount: bidAmount,
-          applicationFeeAmount: appFeeAmount / 100,
+          applicationFeeAmount: feeAmount / 100,
           taxAmount: taxAmount / 100,
           stripePaymentIntentId: paymentIntent.id,
           status: "PAID",
