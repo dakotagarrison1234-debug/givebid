@@ -5,6 +5,7 @@ import LocalDate from "@/app/components/LocalDate";
 import UserMenu from "@/app/components/UserMenu";
 import ItemCardTimer from "@/app/components/ItemCardTimer";
 import PusherRefresh from "@/app/components/PusherRefresh";
+import NotFoundCard from "@/app/components/NotFoundCard";
 
 interface Props {
   params: Promise<{ orgSlug: string; auctionSlug: string }>;
@@ -45,12 +46,14 @@ export default async function AuctionPage({ params }: Props) {
 
   if (!auction) {
     return (
-      <main className="min-h-screen bg-gray-950 text-white flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-2">Auction not found</h1>
-          <Link href="/" className="text-emerald-400">Go home</Link>
-        </div>
-      </main>
+      <NotFoundCard
+        title="Auction not found"
+        message="This auction may have ended or the link is incorrect."
+        actions={[
+          { href: `/${orgSlug}`, label: "View organization", primary: true },
+          { href: "/auctions", label: "Browse all auctions" },
+        ]}
+      />
     );
   }
 
@@ -141,12 +144,20 @@ export default async function AuctionPage({ params }: Props) {
       {/* Item grid */}
       <section className="px-4 sm:px-6 py-8 sm:py-10 max-w-6xl mx-auto">
         {visibleItems.length === 0 ? (
-          <div className="text-center py-20 text-gray-600">
-            <p className="text-lg font-medium">
+          <div className="text-center py-20 text-gray-600 px-5">
+            <p className="text-lg font-medium mb-5">
               {isLive && endedCount > 0
                 ? "All items have ended — final results are being processed."
                 : "No items in this auction yet"}
             </p>
+            <div className="flex flex-col sm:flex-row gap-2.5 justify-center max-w-sm mx-auto">
+              <Link href={`/${orgSlug}`} className="bg-emerald-500 hover:bg-emerald-400 text-white font-semibold py-2.5 px-5 rounded-xl transition-colors">
+                More from {orgSlug.replace(/-/g, " ")}
+              </Link>
+              <Link href="/auctions" className="border border-gray-700 hover:border-gray-500 text-gray-300 hover:text-white font-medium py-2.5 px-5 rounded-xl transition-colors">
+                Browse all auctions
+              </Link>
+            </div>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">

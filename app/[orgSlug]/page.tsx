@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import LocalDate from "@/app/components/LocalDate";
 import OrgLogo from "@/app/components/OrgLogo";
 import UserMenu from "@/app/components/UserMenu";
+import NotFoundCard from "@/app/components/NotFoundCard";
 import PusherRefresh from "@/app/components/PusherRefresh";
 
 interface Props {
@@ -25,12 +26,14 @@ export default async function OrgPage({ params }: Props) {
 
   if (!org) {
     return (
-      <main className="min-h-screen bg-gray-950 text-white flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-2">Organization not found</h1>
-          <Link href="/" className="text-emerald-400">Go home</Link>
-        </div>
-      </main>
+      <NotFoundCard
+        title="Organization not found"
+        message="This organization may have moved or the link is incorrect."
+        actions={[
+          { href: "/auctions", label: "Browse auctions", primary: true },
+          { href: "/", label: "Go home" },
+        ]}
+      />
     );
   }
 

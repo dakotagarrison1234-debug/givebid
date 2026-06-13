@@ -59,7 +59,15 @@ function JoinPageInner() {
         {!token ? (
           <>
             <h1 className="text-2xl font-bold mb-3">Invalid Invite</h1>
-            <p className="text-gray-400">This invite link is missing a token. Please ask for a new invite.</p>
+            <p className="text-gray-400 mb-8">This invite link is missing a token. Please ask for a new invite.</p>
+            <div className="flex flex-col gap-2.5">
+              <Link href="/auctions" className="w-full bg-emerald-500 hover:bg-emerald-400 text-white font-semibold py-3 rounded-xl transition-colors">
+                Browse auctions
+              </Link>
+              <Link href="/" className="w-full border border-gray-700 hover:border-gray-500 text-gray-300 hover:text-white font-medium py-3 rounded-xl transition-colors">
+                Go home
+              </Link>
+            </div>
           </>
         ) : status === "success" ? (
           <>
@@ -72,7 +80,10 @@ function JoinPageInner() {
               </svg>
             </div>
             <h1 className="text-2xl font-bold mb-2">You&apos;re in!</h1>
-            <p className="text-gray-400">Redirecting to your dashboard...</p>
+            <p className="text-gray-400 mb-6">Redirecting to your dashboard...</p>
+            <Link href="/admin/dashboard" className="w-full inline-block bg-emerald-500 hover:bg-emerald-400 text-white font-semibold py-3 rounded-xl transition-colors">
+              Go to dashboard
+            </Link>
           </>
         ) : (
           <>
@@ -92,6 +103,11 @@ function JoinPageInner() {
             >
               {status === "joining" ? "Joining..." : "Accept Invite"}
             </button>
+            {status === "error" && (
+              <Link href="/auctions" className="block mt-3 text-sm text-gray-400 hover:text-white transition-colors">
+                Browse auctions instead
+              </Link>
+            )}
           </>
         )}
       </div>

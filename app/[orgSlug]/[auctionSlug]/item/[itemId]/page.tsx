@@ -346,10 +346,18 @@ export default function ItemPage() {
 
   if (!item) {
     return (
-      <main className="min-h-screen bg-gray-950 text-white flex items-center justify-center">
-        <div className="text-center">
+      <main className="min-h-screen bg-gray-950 text-white flex items-center justify-center px-5">
+        <div className="text-center max-w-sm w-full">
           <h1 className="text-2xl font-bold mb-2">Item not found</h1>
-          <Link href="/" className="text-emerald-400">Go home</Link>
+          <p className="text-gray-400 text-sm mb-6">This item may have been removed or the link is incorrect.</p>
+          <div className="flex flex-col gap-2.5">
+            <Link href={`/${orgSlug}/${auctionSlug}`} className="w-full bg-emerald-500 hover:bg-emerald-400 text-white font-semibold py-3 rounded-xl transition-colors">
+              Back to auction
+            </Link>
+            <Link href="/auctions" className="w-full border border-gray-700 hover:border-gray-500 text-gray-300 hover:text-white font-medium py-3 rounded-xl transition-colors">
+              Browse all auctions
+            </Link>
+          </div>
         </div>
       </main>
     );
