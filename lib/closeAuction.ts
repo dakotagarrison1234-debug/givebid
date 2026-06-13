@@ -398,6 +398,21 @@ export async function closeExpiredItems(): Promise<{ closedItems: number; closed
     await closeItem(item as ItemWithBidsAndOrg);
   }
 
+  // Broadcast item-level closings immediately so live grids drop ended items
+  // in real time (don't wait for the whole auction to close).
+  if (expiredItems.length > 0) {
+    const closedSlugs = [
+      ...new Set(
+        expiredItems
+          .map((i) => i.auction?.organization?.slug)
+          .filter(Boolean)
+      ),
+    ] as string[];
+    for (const slug of closedSlugs) {
+      await triggerAuctionUpdated(slug);
+    }
+  }
+
   // Close auctions with no remaining ACTIVE items
   const affectedAuctionIds = [
     ...new Set(expiredItems.map((i) => i.auctionId).filter(Boolean)),

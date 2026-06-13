@@ -48,8 +48,8 @@ export default function StripeOnboardingGate({ orgId, hasStripeAccount, chargesE
           <div>
             <h2 className="text-xl font-bold text-white mb-2">Connect Stripe to go live</h2>
             <p className="text-sm text-gray-400">
-              GiveBid uses Stripe Connect so bidders pay your organization directly. You keep the
-              funds — we collect a 10% platform fee automatically.
+              PurposeBid uses Stripe Connect so bidders pay your organization directly. You keep the
+              funds — we collect a 20% platform fee automatically.
             </p>
           </div>
 

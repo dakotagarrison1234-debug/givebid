@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import Pusher from "pusher";
 import { getNextValidBid } from "@/lib/bidIncrements";
 import { resolveProxiesAfterBid } from "@/lib/proxyBidResolver";
+import { triggerAuctionUpdated } from "@/lib/pusherServer";
 
 const pusher = new Pusher({
   appId: process.env.PUSHER_APP_ID!,
@@ -202,6 +203,9 @@ export async function POST(request: NextRequest) {
         }),
       }).catch((err) => console.error("GHL bid confirm webhook failed:", err));
     }
+
+    // Refresh browse grids (auction page, /auctions, org page) so prices update live
+    triggerAuctionUpdated(item.organization?.slug).catch(() => {});
 
     // If proxy fired, the new effective amount and end time come from the proxy resolution
     const finalAmount = proxyResult.proxyFired ? proxyResult.newAmount : amount;

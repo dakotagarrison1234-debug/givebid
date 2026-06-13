@@ -520,15 +520,7 @@ export default function ItemPage() {
               </div>
             ) : (
               <>
-                <div className="text-gray-500 text-sm mb-1 mt-4">Minimum next bid: ${minBid.toLocaleString()}</div>
-                {/* Fee/tax disclosure — winners are auto-charged bid + fee (+ tax) */}
-                {(item.org?.platformFeePercent ?? 0) + (item.org?.taxPercent ?? 0) > 0 && (
-                  <div className="text-gray-500 text-xs mb-4">
-                    Winners are charged their winning bid
-                    {item.org?.platformFeePercent ? ` + ${item.org.platformFeePercent}% platform fee` : ""}
-                    {item.org?.taxPercent ? ` + ${item.org.taxPercent}% tax` : ""} automatically when the auction closes.
-                  </div>
-                )}
+                <div className="text-gray-500 text-sm mb-4 mt-4">Minimum next bid: ${minBid.toLocaleString()}</div>
                 {message && (
                   <div className={`text-sm mb-3 px-3 py-2 rounded-lg ${
                     message.type === "success" ? "bg-emerald-500/20 text-emerald-400" : "bg-red-500/20 text-red-400"
@@ -555,6 +547,47 @@ export default function ItemPage() {
                     {placing ? "Placing…" : "Place Bid"}
                   </button>
                 </div>
+                {/* Total-due preview — live breakdown of what the bidder actually commits to */}
+                {(() => {
+                  const feePct = item.org?.platformFeePercent ?? 0;
+                  const taxPct = item.org?.taxPercent ?? 0;
+                  const entered = parseFloat(bidAmount);
+                  const baseBid = Number.isFinite(entered) && entered > 0 ? entered : minBid;
+                  // Same cent math as the auto-charge
+                  const bidCents = Math.round(baseBid * 100);
+                  const feeCents = Math.round(baseBid * feePct / 100 * 100);
+                  const taxCents = Math.round(baseBid * taxPct / 100 * 100);
+                  const totalCents = bidCents + feeCents + taxCents;
+                  const fmt = (c: number) =>
+                    (c / 100).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                  return (
+                    <div className="mt-3 bg-gray-800/60 border border-gray-700/60 rounded-xl px-4 py-3 text-xs space-y-1">
+                      <div className="flex justify-between text-gray-400">
+                        <span>{Number.isFinite(entered) && entered > 0 ? "Your bid" : "Minimum bid"}</span>
+                        <span className="tabular-nums">${fmt(bidCents)}</span>
+                      </div>
+                      {feePct > 0 && (
+                        <div className="flex justify-between text-gray-400">
+                          <span>Buyer premium ({feePct}%)</span>
+                          <span className="tabular-nums">${fmt(feeCents)}</span>
+                        </div>
+                      )}
+                      {taxPct > 0 && (
+                        <div className="flex justify-between text-gray-400">
+                          <span>Tax ({taxPct}%)</span>
+                          <span className="tabular-nums">${fmt(taxCents)}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between text-white font-bold border-t border-gray-700/60 pt-1.5 mt-1.5">
+                        <span>Total if you win</span>
+                        <span className="tabular-nums">${fmt(totalCents)}</span>
+                      </div>
+                      <p className="text-gray-600 pt-0.5">
+                        Charged automatically to your card on file when the auction closes.
+                      </p>
+                    </div>
+                  );
+                })()}
                 {/* Payment method indicator */}
                 {item.org?.stripeChargesEnabled && hasCard !== null && (
                   <div className="flex items-center justify-between mt-3 px-1">
@@ -677,6 +710,26 @@ export default function ItemPage() {
                       {proxyPlacing ? "Setting..." : "Set Proxy"}
                     </button>
                   </div>
+                  {/* Worst-case commitment preview for the proxy max */}
+                  {(() => {
+                    const amt = parseFloat(proxyAmount);
+                    if (!Number.isFinite(amt) || amt <= 0) return null;
+                    const feePct = item.org?.platformFeePercent ?? 0;
+                    const taxPct = item.org?.taxPercent ?? 0;
+                    const totalCents =
+                      Math.round(amt * 100) +
+                      Math.round(amt * feePct / 100 * 100) +
+                      Math.round(amt * taxPct / 100 * 100);
+                    return (
+                      <p className="text-xs text-gray-500 mt-2">
+                        If your proxy wins at its max, your total would be{" "}
+                        <span className="text-gray-300 font-semibold tabular-nums">
+                          ${(totalCents / 100).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </span>
+                        {feePct > 0 ? ` (incl. ${feePct}% buyer premium${taxPct > 0 ? ` + ${taxPct}% tax` : ""})` : ""}.
+                      </p>
+                    );
+                  })()}
                 </div>
               )}
             </div>

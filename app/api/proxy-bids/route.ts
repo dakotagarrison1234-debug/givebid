@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getNextValidBid } from "@/lib/bidIncrements";
 import { resolveNewProxy, broadcastProxyUpdate } from "@/lib/proxyBidResolver";
+import { triggerAuctionUpdated } from "@/lib/pusherServer";
 
 /**
  * POST /api/proxy-bids
@@ -101,6 +102,15 @@ export async function POST(request: NextRequest) {
 
     // Always broadcast a proxy-update so the badge appears for all viewers
     await broadcastProxyUpdate(itemId, true);
+
+    // If the proxy placed an auto-bid, refresh browse grids so prices update live
+    if (resolution.proxyFired) {
+      const org = await prisma.organization.findUnique({
+        where: { id: item.organizationId },
+        select: { slug: true },
+      });
+      triggerAuctionUpdated(org?.slug).catch(() => {});
+    }
 
     return NextResponse.json({
       success: true,

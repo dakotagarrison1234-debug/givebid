@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import LocalDate from "@/app/components/LocalDate";
 import UserMenu from "@/app/components/UserMenu";
 import ItemCardTimer from "@/app/components/ItemCardTimer";
+import PusherRefresh from "@/app/components/PusherRefresh";
 
 interface Props {
   params: Promise<{ orgSlug: string; auctionSlug: string }>;
@@ -55,17 +56,28 @@ export default async function AuctionPage({ params }: Props) {
 
   const isClosed = auction.status === "CLOSED" || auction.status === "SETTLED";
   const isClosing = auction.status === "CLOSING";
-
-  // Only show items that are visible to bidders (not DRAFT)
-  const visibleItems = auction.items.filter(i => i.status !== "DRAFT");
+  const isLive = !isClosed;
 
   const SOLD_STATUSES = ["SOLD", "PENDING_PICKUP", "PICKED_UP"];
-  const totalRaised = visibleItems
+
+  // Only show items that are visible to bidders (not DRAFT).
+  // While the auction is LIVE, ended items (sold/unsold) drop off the grid so
+  // bidders only see what's still biddable (popcorn stragglers included).
+  // Once the whole auction has closed, show everything as the historical view.
+  const allVisible = auction.items.filter(i => i.status !== "DRAFT");
+  const visibleItems = isLive
+    ? allVisible.filter(i => i.status === "ACTIVE")
+    : allVisible;
+  const endedCount = allVisible.length - (isLive ? visibleItems.length : 0);
+
+  const totalRaised = allVisible
     .filter(i => SOLD_STATUSES.includes(i.status))
     .reduce((sum, item) => sum + Number(item.currentBid), 0);
 
   return (
     <main className="min-h-screen bg-gray-950 text-white">
+      {/* Live refresh: re-renders this page when bids land or items/auctions close */}
+      <PusherRefresh channel="auctions" event="auction-updated" />
       {/* Header */}
       <header className="border-b border-gray-800/60 px-4 sm:px-6 py-3.5 flex items-center justify-between gap-3 bg-gray-950/95 backdrop-blur-md sticky top-0 z-40">
         <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 overflow-hidden text-sm">
@@ -110,7 +122,9 @@ export default async function AuctionPage({ params }: Props) {
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight mb-2">{auction.title}</h1>
             <p className="text-gray-400 text-sm">
-              {visibleItems.length} item{visibleItems.length !== 1 ? "s" : ""} ·{" "}
+              {isLive
+                ? `${visibleItems.length} live item${visibleItems.length !== 1 ? "s" : ""}${endedCount > 0 ? ` · ${endedCount} ended` : ""}`
+                : `${visibleItems.length} item${visibleItems.length !== 1 ? "s" : ""}`} ·{" "}
               {isClosed ? "Closed" : isClosing ? "Closing" : "Closes"}{" "}
               <LocalDate iso={auction.endAt.toISOString()} />
             </p>
@@ -128,7 +142,11 @@ export default async function AuctionPage({ params }: Props) {
       <section className="px-4 sm:px-6 py-8 sm:py-10 max-w-6xl mx-auto">
         {visibleItems.length === 0 ? (
           <div className="text-center py-20 text-gray-600">
-            <p className="text-lg font-medium">No items in this auction yet</p>
+            <p className="text-lg font-medium">
+              {isLive && endedCount > 0
+                ? "All items have ended — final results are being processed."
+                : "No items in this auction yet"}
+            </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
