@@ -3,6 +3,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import LocalDate from "@/app/components/LocalDate";
 import UserMenu from "@/app/components/UserMenu";
+import ItemCardTimer from "@/app/components/ItemCardTimer";
 
 interface Props {
   params: Promise<{ orgSlug: string; auctionSlug: string }>;
@@ -142,6 +143,12 @@ export default async function AuctionPage({ params }: Props) {
 
               const primaryPhoto = item.photos.find(p => p.isPrimary)?.url || item.photos[0]?.url;
 
+              // Live countdown badge — only for items still accepting bids
+              const isItemLive =
+                item.status === "ACTIVE" &&
+                (auction.status === "OPEN" || auction.status === "CLOSING");
+              const itemEndAtIso = (item.itemEndAt ?? auction.endAt).toISOString();
+
               return (
                 <Link
                   key={item.id}
@@ -170,6 +177,7 @@ export default async function AuctionPage({ params }: Props) {
                         <span className="text-xs">No photo</span>
                       </div>
                     )}
+                    {isItemLive && <ItemCardTimer itemId={item.id} endAt={itemEndAtIso} />}
                     {isItemSold && (
                       <div className="absolute top-2.5 right-2.5 bg-gray-950/80 backdrop-blur-sm text-gray-300 text-xs px-2.5 py-1 rounded-full font-semibold">
                         Sold
