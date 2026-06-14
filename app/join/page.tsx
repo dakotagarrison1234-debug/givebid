@@ -3,6 +3,7 @@ import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import Link from "next/link";
+import HomeHeader from "@/app/components/HomeHeader";
 
 function JoinPageInner() {
   const { isSignedIn, isLoaded } = useUser();
@@ -45,17 +46,15 @@ function JoinPageInner() {
 
   if (!isLoaded) {
     return (
-      <main className="min-h-screen bg-gray-950 text-white flex items-center justify-center">
+      <main className="flex-1 flex items-center justify-center">
         <p className="text-gray-400">Loading...</p>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen bg-gray-950 text-white flex items-center justify-center px-4">
+    <main className="flex-1 flex items-center justify-center px-4">
       <div className="max-w-md w-full text-center">
-        <Link href="/" className="text-emerald-400 font-bold text-xl block mb-8">PurposeBid</Link>
-
         {!token ? (
           <>
             <h1 className="text-2xl font-bold mb-3">Invalid Invite</h1>
@@ -117,12 +116,15 @@ function JoinPageInner() {
 
 export default function JoinPage() {
   return (
-    <Suspense fallback={
-      <main className="min-h-screen bg-gray-950 text-white flex items-center justify-center">
-        <p className="text-gray-400">Loading...</p>
-      </main>
-    }>
-      <JoinPageInner />
-    </Suspense>
+    <div className="min-h-screen bg-gray-950 text-white flex flex-col">
+      <HomeHeader />
+      <Suspense fallback={
+        <main className="flex-1 flex items-center justify-center">
+          <p className="text-gray-400">Loading...</p>
+        </main>
+      }>
+        <JoinPageInner />
+      </Suspense>
+    </div>
   );
 }

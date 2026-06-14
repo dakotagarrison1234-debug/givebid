@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
-import Link from "next/link";
+import HomeHeader from "@/app/components/HomeHeader";
 
 export default function ApplyPage() {
   const { isSignedIn, isLoaded, user } = useUser();
@@ -75,17 +75,20 @@ export default function ApplyPage() {
 
   if (!isLoaded || checking) {
     return (
-      <main className="min-h-screen bg-gray-950 text-white flex items-center justify-center">
-        <p className="text-gray-400">Loading...</p>
-      </main>
+      <div className="min-h-screen bg-gray-950 text-white flex flex-col">
+        <HomeHeader />
+        <main className="flex-1 flex items-center justify-center">
+          <p className="text-gray-400">Loading...</p>
+        </main>
+      </div>
     );
   }
 
   return (
-    <main className="min-h-screen bg-gray-950 text-white flex items-center justify-center px-4 py-12">
+    <div className="min-h-screen bg-gray-950 text-white flex flex-col">
+      <HomeHeader />
+      <main className="flex-1 flex items-center justify-center px-4 py-12">
       <div className="max-w-lg w-full">
-        <Link href="/" className="text-emerald-400 font-bold text-xl block mb-8">PurposeBid</Link>
-
         <h1 className="text-3xl font-bold mb-2">Apply to Host Auctions</h1>
         <p className="text-gray-400 mb-8">
           Tell us about your organization. We review every application and typically respond within 1 business day.
@@ -175,6 +178,7 @@ export default function ApplyPage() {
           </button>
         </div>
       </div>
-    </main>
+      </main>
+    </div>
   );
 }

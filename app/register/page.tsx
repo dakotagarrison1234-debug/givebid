@@ -2,6 +2,7 @@
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
+import HomeHeader from "@/app/components/HomeHeader";
 
 function RegisterForm() {
   const { user, isLoaded } = useUser();
@@ -58,14 +59,14 @@ function RegisterForm() {
 
   if (checking) {
     return (
-      <main className="min-h-screen bg-gray-950 text-white flex items-center justify-center">
+      <main className="flex-1 flex items-center justify-center">
         <p className="text-gray-400">Loading...</p>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen bg-gray-950 text-white flex items-center justify-center">
+    <main className="flex-1 flex items-center justify-center">
       <div className="bg-gray-900 border border-gray-800 rounded-2xl p-8 max-w-md w-full mx-4">
         <h1 className="text-2xl font-bold mb-2">One more step</h1>
         <p className="text-gray-400 mb-6">
@@ -104,12 +105,15 @@ function RegisterForm() {
 
 export default function RegisterPage() {
   return (
-    <Suspense fallback={
-      <main className="min-h-screen bg-gray-950 text-white flex items-center justify-center">
-        <p className="text-gray-400">Loading...</p>
-      </main>
-    }>
-      <RegisterForm />
-    </Suspense>
+    <div className="min-h-screen bg-gray-950 text-white flex flex-col">
+      <HomeHeader />
+      <Suspense fallback={
+        <main className="flex-1 flex items-center justify-center">
+          <p className="text-gray-400">Loading...</p>
+        </main>
+      }>
+        <RegisterForm />
+      </Suspense>
+    </div>
   );
 }

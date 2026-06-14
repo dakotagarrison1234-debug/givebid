@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import HomeHeader from "@/app/components/HomeHeader";
 
 export default function ApplyPendingPage() {
   const [status, setStatus] = useState<"PENDING" | "APPROVED" | "REJECTED" | null>(null);
@@ -20,10 +21,10 @@ export default function ApplyPendingPage() {
   }, []);
 
   return (
-    <main className="min-h-screen bg-gray-950 text-white flex items-center justify-center px-4">
+    <div className="min-h-screen bg-gray-950 text-white flex flex-col">
+      <HomeHeader />
+      <main className="flex-1 flex items-center justify-center px-4">
       <div className="max-w-md w-full text-center">
-        <Link href="/" className="text-emerald-400 font-bold text-xl block mb-8">PurposeBid</Link>
-
         {status === "PENDING" || status === null ? (
           <>
             <div className="flex justify-center mb-6">
@@ -91,6 +92,7 @@ export default function ApplyPendingPage() {
           </>
         )}
       </div>
-    </main>
+      </main>
+    </div>
   );
 }
