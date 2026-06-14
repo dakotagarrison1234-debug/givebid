@@ -53,11 +53,11 @@ export default async function AdminDashboard() {
 
   return (
     <>
-      <header className="border-b border-gray-800 px-4 sm:px-8 py-4 flex items-center justify-between">
+      <header className="border-b border-[#e5e0d5] px-4 sm:px-8 py-4 flex items-center justify-between">
         <h1 className="text-xl font-semibold">Dashboard</h1>
         <Link
           href="/admin/auctions/new"
-          className="bg-emerald-500 hover:bg-emerald-400 text-white text-sm px-4 py-2 rounded-lg"
+          className="bg-[#09a7ad] hover:bg-[#09a7ad] text-white text-sm px-4 py-2 rounded-lg"
         >
           + New Auction
         </Link>
@@ -71,8 +71,8 @@ export default async function AdminDashboard() {
           { label: "Active Bidders", value: uniqueBidders },
           { label: "Bids Placed", value: allBids.length },
         ].map((stat) => (
-          <div key={stat.label} className="bg-gray-900 border border-gray-800 rounded-xl p-4 sm:p-5">
-            <div className="text-gray-500 text-xs sm:text-sm mb-1">{stat.label}</div>
+          <div key={stat.label} className="bg-white border border-[#e5e0d5] rounded-xl p-4 sm:p-5">
+            <div className="text-[#8c8778] text-xs sm:text-sm mb-1">{stat.label}</div>
             <div className="text-xl sm:text-2xl font-bold">{stat.value}</div>
           </div>
         ))}
@@ -80,10 +80,10 @@ export default async function AdminDashboard() {
 
       {/* Recent bids + active auction */}
       <div className="px-4 sm:px-8 pb-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 sm:p-6">
+        <div className="bg-white border border-[#e5e0d5] rounded-xl p-5 sm:p-6">
           <h2 className="font-semibold mb-4">Recent Bids</h2>
           {recentBids.length === 0 ? (
-            <p className="text-gray-500 text-sm">No bids yet.</p>
+            <p className="text-[#8c8778] text-sm">No bids yet.</p>
           ) : (
             <div>
               {recentBids.map((bid) => {
@@ -92,11 +92,11 @@ export default async function AdminDashboard() {
                 return (
                   <div
                     key={bid.id}
-                    className="flex items-center justify-between py-3 border-b border-gray-800 last:border-0"
+                    className="flex items-center justify-between py-3 border-b border-[#e5e0d5] last:border-0"
                   >
                     <div className="min-w-0 pr-3">
                       <div className="text-sm font-medium truncate">{bid.item.title}</div>
-                      <div className="text-xs text-gray-500 truncate">
+                      <div className="text-xs text-[#8c8778] truncate">
                         {name} ·{" "}
                         {new Date(bid.placedAt).toLocaleTimeString([], {
                           hour: "numeric",
@@ -104,7 +104,7 @@ export default async function AdminDashboard() {
                         })}
                       </div>
                     </div>
-                    <span className="text-emerald-400 font-semibold shrink-0">
+                    <span className="text-[#09a7ad] font-semibold shrink-0">
                       ${Number(bid.amount).toLocaleString()}
                     </span>
                   </div>
@@ -114,14 +114,14 @@ export default async function AdminDashboard() {
           )}
         </div>
 
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 sm:p-6">
+        <div className="bg-white border border-[#e5e0d5] rounded-xl p-5 sm:p-6">
           <h2 className="font-semibold mb-4">Active Auction</h2>
           {!activeAuction ? (
             <div>
-              <p className="text-gray-500 text-sm mb-4">No auctions yet.</p>
+              <p className="text-[#8c8778] text-sm mb-4">No auctions yet.</p>
               <Link
                 href="/admin/auctions/new"
-                className="block text-center bg-emerald-500 hover:bg-emerald-400 text-white text-sm px-4 py-2 rounded-lg"
+                className="block text-center bg-[#09a7ad] hover:bg-[#09a7ad] text-white text-sm px-4 py-2 rounded-lg"
               >
                 Create Auction
               </Link>
@@ -130,18 +130,18 @@ export default async function AdminDashboard() {
             <>
               <div className="mb-4">
                 <div className="text-lg font-semibold">{activeAuction.title}</div>
-                <div className="text-gray-500 text-sm mt-0.5">
+                <div className="text-[#8c8778] text-sm mt-0.5">
                   Closes <LocalDate iso={activeAuction.endAt.toISOString()} />
                 </div>
               </div>
               <div className="space-y-2 mb-4">
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">Items</span>
+                  <span className="text-[#8c8778]">Items</span>
                   <span>{activeAuction.items.length}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">Raised</span>
-                  <span className="text-emerald-400 font-semibold">
+                  <span className="text-[#8c8778]">Raised</span>
+                  <span className="text-[#09a7ad] font-semibold">
                     ${activeAuction.items
                       .filter((i) => soldStatuses.includes(i.status))
                       .reduce((s, i) => s + Number(i.currentBid), 0)
@@ -149,10 +149,10 @@ export default async function AdminDashboard() {
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">Status</span>
+                  <span className="text-[#8c8778]">Status</span>
                   <span
                     className={`capitalize ${
-                      activeAuction.status === "OPEN" ? "text-emerald-400" : "text-gray-400"
+                      activeAuction.status === "OPEN" ? "text-[#09a7ad]" : "text-[#6b6659]"
                     }`}
                   >
                     {activeAuction.status.toLowerCase()}
@@ -161,7 +161,7 @@ export default async function AdminDashboard() {
               </div>
               <Link
                 href={`/admin/auctions/${activeAuction.id}`}
-                className="block text-center bg-gray-800 hover:bg-gray-700 text-white text-sm px-4 py-2 rounded-lg"
+                className="block text-center bg-[#f2efe8] hover:bg-[#e8e4dc] text-[#1a1916] text-sm px-4 py-2 rounded-lg"
               >
                 Manage Auction
               </Link>
@@ -182,10 +182,10 @@ export default async function AdminDashboard() {
             <Link
               key={link.href}
               href={link.href}
-              className="bg-gray-900 border border-gray-800 hover:border-gray-700 rounded-xl p-4 flex items-center gap-3 transition-colors"
+              className="bg-white border border-[#e5e0d5] hover:border-[#d4cfc4] rounded-xl p-4 flex items-center gap-3 transition-colors"
             >
-              <span className="text-gray-400"><QuickIcon name={link.icon} /></span>
-              <span className="text-sm font-medium text-gray-300">{link.label}</span>
+              <span className="text-[#6b6659]"><QuickIcon name={link.icon} /></span>
+              <span className="text-sm font-medium text-[#4a4640]">{link.label}</span>
             </Link>
           ))}
         </div>

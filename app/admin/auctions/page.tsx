@@ -19,18 +19,18 @@ export default async function AuctionsPage() {
 
   return (
     <>
-      <header className="border-b border-gray-800 px-4 sm:px-8 py-4 flex items-center justify-between">
+      <header className="border-b border-[#e5e0d5] px-4 sm:px-8 py-4 flex items-center justify-between">
         <h1 className="text-xl font-semibold">Auctions ({auctions.length})</h1>
-        <Link href="/admin/auctions/new" className="bg-emerald-500 hover:bg-emerald-400 text-white text-sm px-4 py-2 rounded-lg">
+        <Link href="/admin/auctions/new" className="bg-[#09a7ad] hover:bg-[#09a7ad] text-white text-sm px-4 py-2 rounded-lg">
           + New Auction
         </Link>
       </header>
 
       <div className="px-4 sm:px-8 py-6">
         {auctions.length === 0 ? (
-          <div className="text-center py-20 text-gray-500">
+          <div className="text-center py-20 text-[#8c8778]">
             <p className="text-lg mb-4">No auctions yet</p>
-            <Link href="/admin/auctions/new" className="bg-emerald-500 hover:bg-emerald-400 text-white px-6 py-3 rounded-lg">
+            <Link href="/admin/auctions/new" className="bg-[#09a7ad] hover:bg-[#09a7ad] text-white px-6 py-3 rounded-lg">
               Create your first auction
             </Link>
           </div>
@@ -47,32 +47,32 @@ export default async function AuctionsPage() {
                 <Link
                   key={auction.id}
                   href={`/admin/auctions/${auction.id}`}
-                  className="block bg-gray-900 border border-gray-800 hover:border-gray-600 rounded-xl p-5 transition-colors"
+                  className="block bg-white border border-[#e5e0d5] hover:border-[#bfb9ac] rounded-xl p-5 transition-colors"
                 >
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
                         <h3 className="font-semibold text-lg truncate">{auction.title}</h3>
                         <span className={`text-xs px-2 py-0.5 rounded-full shrink-0 ${
-                          auction.status === "OPEN" ? "bg-emerald-500/20 text-emerald-400"
-                          : auction.status === "CLOSING" ? "bg-yellow-500/20 text-yellow-400"
-                          : isScheduled ? "bg-blue-500/20 text-blue-400"
-                          : auction.status === "DRAFT" ? "bg-gray-700 text-gray-400"
-                          : "bg-red-500/20 text-red-400"
+                          auction.status === "OPEN" ? "bg-[#09a7ad]/20 text-[#09a7ad]"
+                          : auction.status === "CLOSING" ? "bg-yellow-500/20 text-amber-600"
+                          : isScheduled ? "bg-blue-500/20 text-blue-600"
+                          : auction.status === "DRAFT" ? "bg-[#e8e4dc] text-[#6b6659]"
+                          : "bg-red-500/20 text-red-600"
                         }`}>
                           {isScheduled ? "scheduled" : auction.status.toLowerCase()}
                         </span>
                       </div>
-                      <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1.5 text-sm text-gray-500">
+                      <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1.5 text-sm text-[#8c8778]">
                         <span>{auction.items.length} items</span>
-                        <span className="text-emerald-400 font-medium">${raised.toLocaleString()} raised</span>
+                        <span className="text-[#09a7ad] font-medium">${raised.toLocaleString()} raised</span>
                         {totalBids > 0 && <span>{totalBids} bids</span>}
                         <span>
                           <LocalDate iso={auction.startAt.toISOString()} format="date" /> → <LocalDate iso={auction.endAt.toISOString()} format="date" />
                         </span>
                       </div>
                     </div>
-                    <span className="text-gray-500 hover:text-white text-sm whitespace-nowrap shrink-0 self-end sm:self-auto">
+                    <span className="text-[#8c8778] hover:text-[#1a1916] text-sm whitespace-nowrap shrink-0 self-end sm:self-auto">
                       Manage →
                     </span>
                   </div>

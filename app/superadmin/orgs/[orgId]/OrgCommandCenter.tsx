@@ -155,26 +155,26 @@ export default function OrgCommandCenter({ org: initial }: { org: Org }) {
   ] as const;
 
   const statusColor = (s: string) => {
-    if (s === "OPEN" || s === "ACTIVE") return "text-emerald-400 bg-emerald-500/20";
-    if (s === "CLOSED" || s === "SOLD") return "text-gray-400 bg-gray-700";
-    if (s === "DRAFT") return "text-yellow-400 bg-yellow-500/20";
-    return "text-gray-400 bg-gray-700";
+    if (s === "OPEN" || s === "ACTIVE") return "text-[#09a7ad] bg-[#09a7ad]/20";
+    if (s === "CLOSED" || s === "SOLD") return "text-[#6b6659] bg-[#e8e4dc]";
+    if (s === "DRAFT") return "text-amber-600 bg-yellow-500/20";
+    return "text-[#6b6659] bg-[#e8e4dc]";
   };
 
   return (
     <div className="flex-1 flex flex-col min-w-0">
       {/* Header */}
-      <header className="border-b border-gray-800 px-8 py-4 flex items-center justify-between gap-4">
+      <header className="border-b border-[#e5e0d5] px-8 py-4 flex items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-3">
-            <Link href="/superadmin/orgs" className="text-gray-500 hover:text-white text-sm">← Orgs</Link>
-            <span className="text-gray-700">/</span>
+            <Link href="/superadmin/orgs" className="text-[#8c8778] hover:text-[#1a1916] text-sm">← Orgs</Link>
+            <span className="text-[#b0a99a]">/</span>
             <h1 className="text-xl font-semibold">{org.name}</h1>
-            <span className={`text-xs px-2 py-0.5 rounded-full ${org.isActive ? "bg-emerald-500/20 text-emerald-400" : "bg-gray-700 text-gray-500"}`}>
+            <span className={`text-xs px-2 py-0.5 rounded-full ${org.isActive ? "bg-[#09a7ad]/20 text-[#09a7ad]" : "bg-[#e8e4dc] text-[#8c8778]"}`}>
               {org.isActive ? "Active" : "Inactive"}
             </span>
           </div>
-          <p className="text-gray-500 text-sm mt-0.5">/{org.slug}</p>
+          <p className="text-[#8c8778] text-sm mt-0.5">/{org.slug}</p>
         </div>
         <button
           onClick={enterAsOrg}
@@ -186,14 +186,14 @@ export default function OrgCommandCenter({ org: initial }: { org: Org }) {
       </header>
 
       {/* Tabs */}
-      <div className="border-b border-gray-800 px-8">
+      <div className="border-b border-[#e5e0d5] px-8">
         <div className="flex gap-6">
           {tabs.map((t) => (
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
               className={`py-3 text-sm font-medium border-b-2 transition-colors ${
-                tab === t.id ? "border-emerald-500 text-white" : "border-transparent text-gray-500 hover:text-gray-300"
+                tab === t.id ? "border-[#09a7ad] text-[#1a1916]" : "border-transparent text-[#8c8778] hover:text-[#4a4640]"
               }`}
             >
               {t.label}
@@ -208,45 +208,45 @@ export default function OrgCommandCenter({ org: initial }: { org: Org }) {
         {tab === "overview" && (
           <div className="max-w-lg space-y-5">
             <div>
-              <label className="text-sm text-gray-400 mb-1 block">Name</label>
+              <label className="text-sm text-[#6b6659] mb-1 block">Name</label>
               <input value={editName} onChange={(e) => setEditName(e.target.value)}
-                className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500" />
+                className="w-full bg-[#f2efe8] border border-[#d4cfc4] rounded-xl px-4 py-3 text-[#1a1916] focus:outline-none focus:border-[#09a7ad]" />
             </div>
             <div>
-              <label className="text-sm text-gray-400 mb-1 block">Description</label>
+              <label className="text-sm text-[#6b6659] mb-1 block">Description</label>
               <textarea value={editDesc} onChange={(e) => setEditDesc(e.target.value)} rows={3}
-                className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500 resize-none" />
+                className="w-full bg-[#f2efe8] border border-[#d4cfc4] rounded-xl px-4 py-3 text-[#1a1916] focus:outline-none focus:border-[#09a7ad] resize-none" />
             </div>
             <div className="flex items-center gap-3">
               <input type="checkbox" id="active" checked={editActive} onChange={(e) => setEditActive(e.target.checked)}
-                className="w-4 h-4 accent-emerald-500" />
-              <label htmlFor="active" className="text-sm text-gray-300">Organization is active</label>
+                className="w-4 h-4 accent-[#09a7ad]" />
+              <label htmlFor="active" className="text-sm text-[#4a4640]">Organization is active</label>
             </div>
             <button onClick={saveOrg} disabled={savingOrg}
-              className="bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-white font-semibold px-6 py-2.5 rounded-xl text-sm">
+              className="bg-[#09a7ad] hover:bg-[#09a7ad] disabled:opacity-50 text-white font-semibold px-6 py-2.5 rounded-xl text-sm">
               {savingOrg ? "Saving..." : "Save Changes"}
             </button>
 
             {/* Danger Zone */}
-            <div className="border border-red-500/30 rounded-xl p-5 mt-8">
-              <h3 className="text-red-400 font-semibold mb-2">Danger Zone</h3>
-              <p className="text-gray-500 text-sm mb-4">
+            <div className="border border-red-200 rounded-xl p-5 mt-8">
+              <h3 className="text-red-600 font-semibold mb-2">Danger Zone</h3>
+              <p className="text-[#8c8778] text-sm mb-4">
                 Permanently delete this organization, all its auctions, items, bids, and members. This cannot be undone.
               </p>
               {!confirmDelete ? (
                 <button onClick={() => setConfirmDelete(true)}
-                  className="bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/30 text-sm px-4 py-2 rounded-lg">
+                  className="bg-red-500/20 hover:bg-red-500/30 text-red-600 border border-red-200 text-sm px-4 py-2 rounded-lg">
                   Delete Organization
                 </button>
               ) : (
                 <div className="space-y-3">
-                  <p className="text-red-400 text-sm font-semibold">Are you absolutely sure?</p>
+                  <p className="text-red-600 text-sm font-semibold">Are you absolutely sure?</p>
                   <div className="flex gap-3">
                     <button onClick={deleteOrg} disabled={deleting}
                       className="bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white text-sm px-4 py-2 rounded-lg font-semibold">
                       {deleting ? "Deleting..." : "Yes, Delete Everything"}
                     </button>
-                    <button onClick={() => setConfirmDelete(false)} className="text-gray-400 hover:text-white text-sm px-4 py-2">
+                    <button onClick={() => setConfirmDelete(false)} className="text-[#6b6659] hover:text-[#1a1916] text-sm px-4 py-2">
                       Cancel
                     </button>
                   </div>
@@ -260,14 +260,14 @@ export default function OrgCommandCenter({ org: initial }: { org: Org }) {
         {tab === "auctions" && (
           <div className="space-y-3 max-w-3xl">
             {org.auctions.length === 0 && (
-              <p className="text-gray-500 py-8 text-center">No auctions yet.</p>
+              <p className="text-[#8c8778] py-8 text-center">No auctions yet.</p>
             )}
             {org.auctions.map((auction) => (
-              <div key={auction.id} className="bg-gray-900 border border-gray-800 rounded-xl p-5">
+              <div key={auction.id} className="bg-white border border-[#e5e0d5] rounded-xl p-5">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
                     <div className="font-semibold text-lg">{auction.title}</div>
-                    <div className="text-gray-500 text-sm">
+                    <div className="text-[#8c8778] text-sm">
                       {auction.items.length} items · Ends {new Date(auction.endAt as string).toLocaleDateString()}
                     </div>
                   </div>
@@ -275,20 +275,20 @@ export default function OrgCommandCenter({ org: initial }: { org: Org }) {
                     <select
                       value={auction.status}
                       onChange={(e) => updateAuction(auction.id, { status: e.target.value })}
-                      className="bg-gray-800 border border-gray-700 rounded-lg px-2 py-1.5 text-sm text-white focus:outline-none"
+                      className="bg-[#f2efe8] border border-[#d4cfc4] rounded-lg px-2 py-1.5 text-sm text-[#1a1916] focus:outline-none"
                     >
                       {AUCTION_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
                     </select>
                     <button
                       onClick={() => deleteAuction(auction.id)}
-                      className="text-red-400 hover:text-red-300 text-sm px-2 py-1.5 bg-red-500/10 hover:bg-red-500/20 rounded-lg border border-red-500/20"
+                      className="text-red-600 hover:text-red-300 text-sm px-2 py-1.5 bg-red-50 hover:bg-red-500/20 rounded-lg border border-red-500/20"
                     >
                       Delete
                     </button>
                   </div>
                 </div>
                 {auction.items.length > 0 && (
-                  <div className="mt-3 pt-3 border-t border-gray-800 flex items-center gap-4 text-xs text-gray-500">
+                  <div className="mt-3 pt-3 border-t border-[#e5e0d5] flex items-center gap-4 text-xs text-[#8c8778]">
                     {(() => {
                       const active = auction.items.filter(i => i.status === "ACTIVE").length;
                       const sold = auction.items.filter(i => i.status === "SOLD").length;
@@ -296,10 +296,10 @@ export default function OrgCommandCenter({ org: initial }: { org: Org }) {
                       const totalBid = auction.items.reduce((s, i) => s + Number(i.currentBid), 0);
                       return <>
                         <span>{auction.items.length} items</span>
-                        {active > 0 && <span className="text-emerald-400">{active} active</span>}
-                        {sold > 0 && <span className="text-gray-400">{sold} sold</span>}
+                        {active > 0 && <span className="text-[#09a7ad]">{active} active</span>}
+                        {sold > 0 && <span className="text-[#6b6659]">{sold} sold</span>}
                         {draft > 0 && <span className="text-yellow-600">{draft} draft</span>}
-                        <span className="text-emerald-400 ml-auto">${totalBid.toLocaleString()} raised</span>
+                        <span className="text-[#09a7ad] ml-auto">${totalBid.toLocaleString()} raised</span>
                       </>;
                     })()}
                   </div>
@@ -313,20 +313,20 @@ export default function OrgCommandCenter({ org: initial }: { org: Org }) {
         {tab === "items" && (
           <div className="space-y-3 max-w-3xl">
             {org.items.length === 0 && (
-              <p className="text-gray-500 py-8 text-center">No items yet.</p>
+              <p className="text-[#8c8778] py-8 text-center">No items yet.</p>
             )}
             {org.items.map((item) => (
-              <div key={item.id} className="bg-gray-900 border border-gray-800 rounded-xl p-4 flex items-center gap-4">
-                <div className="w-14 h-14 rounded-lg bg-gray-800 shrink-0 overflow-hidden">
+              <div key={item.id} className="bg-white border border-[#e5e0d5] rounded-xl p-4 flex items-center gap-4">
+                <div className="w-14 h-14 rounded-lg bg-[#f2efe8] shrink-0 overflow-hidden">
                   {item.photos[0] ? (
                     <img src={item.photos[0].url} alt={item.title} className="w-full h-full object-cover" />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-gray-600 text-xs">—</div>
+                    <div className="w-full h-full flex items-center justify-center text-[#8c8778] text-xs">—</div>
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="font-medium truncate">{item.title}</div>
-                  <div className="text-gray-500 text-xs mt-0.5">
+                  <div className="text-[#8c8778] text-xs mt-0.5">
                     ${Number(item.currentBid)} current bid · ${Number(item.startingBid)} start
                     {item.auction && <span> · {item.auction.title}</span>}
                   </div>
@@ -335,13 +335,13 @@ export default function OrgCommandCenter({ org: initial }: { org: Org }) {
                   <select
                     value={item.status}
                     onChange={(e) => updateItem(item.id, { status: e.target.value })}
-                    className="bg-gray-800 border border-gray-700 rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none"
+                    className="bg-[#f2efe8] border border-[#d4cfc4] rounded-lg px-2 py-1.5 text-xs text-[#1a1916] focus:outline-none"
                   >
                     {ITEM_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
                   </select>
                   <button
                     onClick={() => deleteItem(item.id)}
-                    className="text-red-400 hover:text-red-300 text-xs px-2 py-1.5 bg-red-500/10 hover:bg-red-500/20 rounded-lg border border-red-500/20"
+                    className="text-red-600 hover:text-red-300 text-xs px-2 py-1.5 bg-red-50 hover:bg-red-500/20 rounded-lg border border-red-500/20"
                   >
                     Delete
                   </button>
@@ -355,22 +355,22 @@ export default function OrgCommandCenter({ org: initial }: { org: Org }) {
         {tab === "members" && (
           <div className="max-w-2xl space-y-2">
             {org.members.length === 0 && (
-              <p className="text-gray-500 py-8 text-center">No members.</p>
+              <p className="text-[#8c8778] py-8 text-center">No members.</p>
             )}
             {org.members.map((member) => (
-              <div key={member.id} className="bg-gray-900 border border-gray-800 rounded-xl px-5 py-4 flex items-center justify-between gap-4">
-                <div className="text-sm font-mono text-gray-400 truncate flex-1">{member.clerkUserId}</div>
+              <div key={member.id} className="bg-white border border-[#e5e0d5] rounded-xl px-5 py-4 flex items-center justify-between gap-4">
+                <div className="text-sm font-mono text-[#6b6659] truncate flex-1">{member.clerkUserId}</div>
                 <div className="flex items-center gap-2 shrink-0">
                   <select
                     value={member.role}
                     onChange={(e) => changeRole(member.id, e.target.value as OrgRole)}
-                    className="bg-gray-800 border border-gray-700 rounded-lg px-2 py-1.5 text-sm text-white focus:outline-none"
+                    className="bg-[#f2efe8] border border-[#d4cfc4] rounded-lg px-2 py-1.5 text-sm text-[#1a1916] focus:outline-none"
                   >
                     {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
                   </select>
                   <button
                     onClick={() => removeMember(member.id)}
-                    className="text-red-400 hover:text-red-300 text-sm px-2 py-1.5 bg-red-500/10 hover:bg-red-500/20 rounded-lg border border-red-500/20"
+                    className="text-red-600 hover:text-red-300 text-sm px-2 py-1.5 bg-red-50 hover:bg-red-500/20 rounded-lg border border-red-500/20"
                   >
                     Remove
                   </button>

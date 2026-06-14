@@ -36,10 +36,10 @@ export default function SuperAdminUsersPage() {
 
   return (
     <>
-      <header className="border-b border-gray-800/60 px-4 sm:px-8 py-4 flex items-center justify-between gap-4">
+      <header className="border-b border-[#e5e0d5]/60 px-4 sm:px-8 py-4 flex items-center justify-between gap-4">
         <div>
           <h1 className="text-lg font-bold">Users</h1>
-          <p className="text-gray-500 text-sm mt-0.5">{users.length} {query ? "results" : "total"}</p>
+          <p className="text-[#8c8778] text-sm mt-0.5">{users.length} {query ? "results" : "total"}</p>
         </div>
         <form onSubmit={handleSearch} className="flex gap-2">
           <input
@@ -47,13 +47,13 @@ export default function SuperAdminUsersPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search name or email…"
-            className="bg-gray-800 border border-gray-700 rounded-xl px-4 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500 w-56"
+            className="bg-[#f2efe8] border border-[#d4cfc4] rounded-xl px-4 py-2 text-sm text-[#1a1916] placeholder-[#b0a99a] focus:outline-none focus:border-[#09a7ad] w-56"
           />
-          <button type="submit" className="bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors">
+          <button type="submit" className="bg-[#07878d] hover:bg-[#09a7ad] text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors">
             Search
           </button>
           {query && (
-            <button type="button" onClick={() => { setSearch(""); setQuery(""); }} className="text-gray-400 hover:text-white text-sm px-3 py-2 rounded-xl transition-colors">
+            <button type="button" onClick={() => { setSearch(""); setQuery(""); }} className="text-[#6b6659] hover:text-[#1a1916] text-sm px-3 py-2 rounded-xl transition-colors">
               Clear
             </button>
           )}
@@ -63,17 +63,17 @@ export default function SuperAdminUsersPage() {
       <div className="px-4 sm:px-8 py-5 max-w-5xl">
         {loading ? (
           <div className="flex items-center justify-center py-16">
-            <div className="w-6 h-6 rounded-full border-2 border-emerald-500/30 border-t-emerald-500 animate-spin" />
+            <div className="w-6 h-6 rounded-full border-2 border-[#09a7ad]/30 border-t-[#09a7ad] animate-spin" />
           </div>
         ) : users.length === 0 ? (
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-8 text-center text-gray-500 text-sm">
+          <div className="bg-white border border-[#e5e0d5] rounded-2xl p-8 text-center text-[#8c8778] text-sm">
             {query ? "No users found matching that search." : "No registered users yet."}
           </div>
         ) : (
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-x-auto">
+          <div className="bg-white border border-[#e5e0d5] rounded-2xl overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-800 text-gray-500 text-xs uppercase tracking-wide">
+                <tr className="border-b border-[#e5e0d5] text-[#8c8778] text-xs uppercase tracking-wide">
                   <th className="text-left px-5 py-3">User</th>
                   <th className="text-left px-4 py-3 hidden sm:table-cell">Phone</th>
                   <th className="text-right px-4 py-3">Bids</th>
@@ -83,38 +83,38 @@ export default function SuperAdminUsersPage() {
                   <th className="text-right px-5 py-3">Joined</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-800/60">
+              <tbody className="divide-y divide-[#e5e0d5]/60">
                 {users.map((u) => (
-                  <tr key={u.clerkUserId} className="hover:bg-gray-800/30 transition-colors">
+                  <tr key={u.clerkUserId} className="hover:bg-[#f2efe8]/30 transition-colors">
                     <td className="px-5 py-3">
                       <Link
                         href={`/superadmin/users/${u.clerkUserId}`}
-                        className="hover:text-emerald-400 transition-colors"
+                        className="hover:text-[#09a7ad] transition-colors"
                       >
-                        <div className="font-medium text-white">{u.name || <span className="text-gray-500 italic">No name</span>}</div>
-                        <div className="text-gray-500 text-xs mt-0.5">{u.email || <span className="italic">No email</span>}</div>
+                        <div className="font-medium text-[#1a1916]">{u.name || <span className="text-[#8c8778] italic">No name</span>}</div>
+                        <div className="text-[#8c8778] text-xs mt-0.5">{u.email || <span className="italic">No email</span>}</div>
                       </Link>
                     </td>
-                    <td className="px-4 py-3 text-gray-400 hidden sm:table-cell">{u.phone || "—"}</td>
-                    <td className="px-4 py-3 text-right text-gray-300">{u.bidCount}</td>
-                    <td className="px-4 py-3 text-right text-emerald-400 font-medium hidden sm:table-cell">
+                    <td className="px-4 py-3 text-[#6b6659] hidden sm:table-cell">{u.phone || "—"}</td>
+                    <td className="px-4 py-3 text-right text-[#4a4640]">{u.bidCount}</td>
+                    <td className="px-4 py-3 text-right text-[#09a7ad] font-medium hidden sm:table-cell">
                       {u.paidTotal > 0 ? `$${u.paidTotal.toLocaleString()}` : "—"}
                     </td>
                     <td className="px-4 py-3 text-right hidden sm:table-cell">
                       {u.unpaidTotal > 0 ? (
                         <span className="text-orange-400 font-semibold">${u.unpaidTotal.toLocaleString()}</span>
                       ) : (
-                        <span className="text-gray-600">—</span>
+                        <span className="text-[#8c8778]">—</span>
                       )}
                     </td>
                     <td className="px-4 py-3 text-right">
                       {u.failedPayments > 0 ? (
-                        <span className="text-red-400 font-semibold">{u.failedPayments}</span>
+                        <span className="text-red-600 font-semibold">{u.failedPayments}</span>
                       ) : (
-                        <span className="text-gray-600">—</span>
+                        <span className="text-[#8c8778]">—</span>
                       )}
                     </td>
-                    <td className="px-5 py-3 text-right text-gray-500 text-xs">
+                    <td className="px-5 py-3 text-right text-[#8c8778] text-xs">
                       {new Date(u.createdAt).toLocaleDateString()}
                     </td>
                   </tr>

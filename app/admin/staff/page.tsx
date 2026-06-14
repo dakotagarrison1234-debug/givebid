@@ -102,31 +102,31 @@ export default function StaffPage() {
 
   const roleColor = (role: string) => {
     if (role === "OWNER") return "text-orange-400";
-    if (role === "ADMIN") return "text-emerald-400";
-    return "text-gray-400";
+    if (role === "ADMIN") return "text-[#09a7ad]";
+    return "text-[#6b6659]";
   };
 
   if (loading) {
     return (
       <div className="flex-1 flex items-center justify-center">
-        <p className="text-gray-500">Loading...</p>
+        <p className="text-[#8c8778]">Loading...</p>
       </div>
     );
   }
 
   return (
     <>
-      <header className="border-b border-gray-800 px-4 sm:px-8 py-4">
+      <header className="border-b border-[#e5e0d5] px-4 sm:px-8 py-4">
         <h1 className="text-xl font-semibold">Team Members</h1>
       </header>
 
       <div className="px-4 sm:px-8 py-6 max-w-2xl space-y-8">
         {/* Current Members */}
         <section>
-          <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">
+          <h2 className="text-sm font-semibold text-[#8c8778] uppercase tracking-wider mb-4">
             Current Members ({members.length})
           </h2>
-          <div className="bg-gray-900 border border-gray-800 rounded-xl divide-y divide-gray-800">
+          <div className="bg-white border border-[#e5e0d5] rounded-xl divide-y divide-[#e5e0d5]">
             {members.map((member) => {
               const isSelf = member.clerkUserId === user?.id;
               const isOwner = member.role === "OWNER";
@@ -134,14 +134,14 @@ export default function StaffPage() {
               return (
                 <div key={member.id} className="px-5 py-4 flex items-center justify-between gap-3">
                   <div className="min-w-0 flex-1">
-                    <div className="text-sm font-medium text-white flex items-center gap-2">
+                    <div className="text-sm font-medium text-[#1a1916] flex items-center gap-2">
                       {member.displayName || (
-                        <span className="text-gray-500 font-mono text-xs">{member.clerkUserId.substring(0, 20)}…</span>
+                        <span className="text-[#8c8778] font-mono text-xs">{member.clerkUserId.substring(0, 20)}…</span>
                       )}
-                      {isSelf && <span className="text-xs text-gray-600">(you)</span>}
+                      {isSelf && <span className="text-xs text-[#8c8778]">(you)</span>}
                     </div>
                     {member.displayName && (
-                      <div className="text-xs text-gray-600 font-mono mt-0.5">{member.clerkUserId.substring(0, 16)}…</div>
+                      <div className="text-xs text-[#8c8778] font-mono mt-0.5">{member.clerkUserId.substring(0, 16)}…</div>
                     )}
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
@@ -151,7 +151,7 @@ export default function StaffPage() {
                     {canRemoveMember && (
                       <button
                         onClick={() => removeMember(member.id, member.displayName || member.clerkUserId.substring(0, 12))}
-                        className="text-xs text-red-400 hover:text-red-300 px-2 py-1 rounded border border-red-500/20 hover:border-red-500/40 transition-colors"
+                        className="text-xs text-red-600 hover:text-red-300 px-2 py-1 rounded border border-red-500/20 hover:border-red-500/40 transition-colors"
                       >
                         Remove
                       </button>
@@ -166,15 +166,15 @@ export default function StaffPage() {
         {/* Pending Invites */}
         {invites.length > 0 && (
           <section>
-            <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">
+            <h2 className="text-sm font-semibold text-[#8c8778] uppercase tracking-wider mb-4">
               Pending Invites ({invites.length})
             </h2>
-            <div className="bg-gray-900 border border-gray-800 rounded-xl divide-y divide-gray-800">
+            <div className="bg-white border border-[#e5e0d5] rounded-xl divide-y divide-[#e5e0d5]">
               {invites.map((invite) => (
                 <div key={invite.id} className="px-5 py-4 flex items-center justify-between gap-3">
                   <div className="min-w-0 flex-1">
                     <div className="text-sm">{invite.email}</div>
-                    <div className="text-xs text-gray-600 mt-0.5">
+                    <div className="text-xs text-[#8c8778] mt-0.5">
                       Expires <span suppressHydrationWarning>{new Date(invite.expiresAt).toLocaleDateString()}</span>
                       {" · "}{roleLabel(invite.role)}
                     </div>
@@ -182,7 +182,7 @@ export default function StaffPage() {
                   {canInvite && (
                     <button
                       onClick={() => revokeInvite(invite.id, invite.email)}
-                      className="text-xs text-red-400 hover:text-red-300 px-2 py-1 rounded border border-red-500/20 hover:border-red-500/40 transition-colors shrink-0"
+                      className="text-xs text-red-600 hover:text-red-300 px-2 py-1 rounded border border-red-500/20 hover:border-red-500/40 transition-colors shrink-0"
                     >
                       Revoke
                     </button>
@@ -196,59 +196,59 @@ export default function StaffPage() {
         {/* Invite Form — OWNER/ADMIN only */}
         {canInvite && (
           <section>
-            <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">
+            <h2 className="text-sm font-semibold text-[#8c8778] uppercase tracking-wider mb-4">
               Invite Someone
             </h2>
-            <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 space-y-4">
+            <div className="bg-white border border-[#e5e0d5] rounded-xl p-6 space-y-4">
               <div>
-                <label className="text-sm text-gray-400 mb-1 block">Email Address</label>
+                <label className="text-sm text-[#6b6659] mb-1 block">Email Address</label>
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="teammate@email.com"
-                  className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-emerald-500"
+                  className="w-full bg-[#f2efe8] border border-[#d4cfc4] rounded-xl px-4 py-3 text-[#1a1916] placeholder-[#b0a99a] focus:outline-none focus:border-[#09a7ad]"
                 />
               </div>
               <div>
-                <label className="text-sm text-gray-400 mb-1 block">Role</label>
+                <label className="text-sm text-[#6b6659] mb-1 block">Role</label>
                 <select
                   value={role}
                   onChange={(e) => setRole(e.target.value as "STAFF" | "ADMIN")}
-                  className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500"
+                  className="w-full bg-[#f2efe8] border border-[#d4cfc4] rounded-xl px-4 py-3 text-[#1a1916] focus:outline-none focus:border-[#09a7ad]"
                 >
                   <option value="STAFF">Staff — can manage items and auctions</option>
                   <option value="ADMIN">Admin — can manage everything including team</option>
                 </select>
               </div>
 
-              {error && <p className="text-red-400 text-sm">{error}</p>}
+              {error && <p className="text-red-600 text-sm">{error}</p>}
 
               <button
                 onClick={handleInvite}
                 disabled={sending}
-                className="w-full bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-white font-semibold py-3 rounded-xl"
+                className="w-full bg-[#09a7ad] hover:bg-[#09a7ad] disabled:opacity-50 text-white font-semibold py-3 rounded-xl"
               >
                 {sending ? "Generating Invite..." : "Generate Invite Link"}
               </button>
 
               {inviteUrl && (
-                <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-4">
-                  <p className="text-emerald-400 text-sm font-semibold mb-2">Invite link created! Share this:</p>
+                <div className="bg-[#09a7ad]/10 border border-[#09a7ad]/30 rounded-xl p-4">
+                  <p className="text-[#09a7ad] text-sm font-semibold mb-2">Invite link created! Share this:</p>
                   <div className="flex items-center gap-2">
                     <input
                       readOnly
                       value={inviteUrl}
-                      className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-xs text-gray-300 font-mono"
+                      className="flex-1 bg-[#f2efe8] border border-[#d4cfc4] rounded-lg px-3 py-2 text-xs text-[#4a4640] font-mono"
                     />
                     <button
                       onClick={() => navigator.clipboard.writeText(inviteUrl)}
-                      className="bg-gray-700 hover:bg-gray-600 text-white text-xs px-3 py-2 rounded-lg"
+                      className="bg-[#e8e4dc] hover:bg-[#d4cfc4] text-[#1a1916] text-xs px-3 py-2 rounded-lg"
                     >
                       Copy
                     </button>
                   </div>
-                  <p className="text-gray-600 text-xs mt-2">Expires in 7 days. One-time use.</p>
+                  <p className="text-[#8c8778] text-xs mt-2">Expires in 7 days. One-time use.</p>
                 </div>
               )}
             </div>

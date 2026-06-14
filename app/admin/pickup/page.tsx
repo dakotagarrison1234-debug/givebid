@@ -68,25 +68,25 @@ export default async function PickupPage() {
 
   return (
     <>
-      <header className="border-b border-gray-800 px-4 sm:px-8 py-4">
+      <header className="border-b border-[#e5e0d5] px-4 sm:px-8 py-4">
         <div className="flex items-start sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-xl font-semibold">Pickup</h1>
-            <p className="text-gray-500 text-sm mt-0.5">
+            <p className="text-[#8c8778] text-sm mt-0.5">
               {pickedUpItems} of {totalItems} items picked up
             </p>
           </div>
           {totalItems > 0 && (
             <div className="text-right shrink-0">
-              <span className="text-2xl font-bold text-white">{pct}%</span>
-              <p className="text-xs text-gray-500">complete</p>
+              <span className="text-2xl font-bold text-[#1a1916]">{pct}%</span>
+              <p className="text-xs text-[#8c8778]">complete</p>
             </div>
           )}
         </div>
         {totalItems > 0 && (
-          <div className="mt-3 h-2 bg-gray-800 rounded-full overflow-hidden">
+          <div className="mt-3 h-2 bg-[#f2efe8] rounded-full overflow-hidden">
             <div
-              className="h-full bg-emerald-500 rounded-full transition-all"
+              className="h-full bg-[#09a7ad] rounded-full transition-all"
               style={{ width: `${pct}%` }}
             />
           </div>
@@ -95,7 +95,7 @@ export default async function PickupPage() {
 
       <div className="px-4 sm:px-8 py-6 space-y-4">
         {sortedEntries.length === 0 ? (
-          <div className="text-center py-20 text-gray-500">
+          <div className="text-center py-20 text-[#8c8778]">
             No winners yet — winners appear when an auction closes.
           </div>
         ) : (
@@ -114,40 +114,40 @@ export default async function PickupPage() {
               <div
                 key={clerkUserId}
                 className={`rounded-xl border overflow-hidden transition-opacity ${
-                  allDone ? "border-gray-800 opacity-50" : "border-gray-700"
+                  allDone ? "border-[#e5e0d5] opacity-50" : "border-[#d4cfc4]"
                 }`}
               >
                 {/* Winner header */}
                 <div
                   className={`px-5 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
-                    allDone ? "bg-gray-900/40" : "bg-gray-900"
+                    allDone ? "bg-white/40" : "bg-white"
                   }`}
                 >
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-semibold text-white text-base">
+                      <span className="font-semibold text-[#1a1916] text-base">
                         {profile?.name ?? "Unknown Bidder"}
                       </span>
                       {allDone ? (
-                        <span className="text-xs bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full inline-flex items-center gap-1">
+                        <span className="text-xs bg-[#09a7ad]/20 text-[#09a7ad] px-2 py-0.5 rounded-full inline-flex items-center gap-1">
                           <IcoPickedUp /> All picked up
                         </span>
                       ) : (
-                        <span className="text-xs bg-yellow-500/20 text-yellow-400 px-2 py-0.5 rounded-full">
+                        <span className="text-xs bg-yellow-500/20 text-amber-600 px-2 py-0.5 rounded-full">
                           {pickedUp}/{bids.length} done
                         </span>
                       )}
                     </div>
-                    <div className="flex flex-wrap gap-x-4 gap-y-0.5 mt-1 text-sm text-gray-400">
+                    <div className="flex flex-wrap gap-x-4 gap-y-0.5 mt-1 text-sm text-[#6b6659]">
                       {profile?.email && <span>{profile.email}</span>}
                       {profile?.phone && <span>{profile.phone}</span>}
                     </div>
-                    <div className="flex flex-wrap gap-x-4 gap-y-0.5 mt-1 text-xs text-gray-500">
+                    <div className="flex flex-wrap gap-x-4 gap-y-0.5 mt-1 text-xs text-[#8c8778]">
                       <span>
                         {paidCount === bids.length ? (
-                          <span className="text-emerald-400 inline-flex items-center gap-0.5"><IcoPickedUp />Fully paid</span>
+                          <span className="text-[#09a7ad] inline-flex items-center gap-0.5"><IcoPickedUp />Fully paid</span>
                         ) : (
-                          <span className="text-yellow-400">{paidCount}/{bids.length} items paid</span>
+                          <span className="text-amber-600">{paidCount}/{bids.length} items paid</span>
                         )}
                       </span>
                       <span>Total won: ${totalOwed.toLocaleString()}</span>
@@ -162,7 +162,7 @@ export default async function PickupPage() {
                 </div>
 
                 {/* Item rows */}
-                <div className="divide-y divide-gray-800/60">
+                <div className="divide-y divide-[#e5e0d5]/60">
                   {bids.map((bid) => {
                     const payment = paymentMap.get(bid.itemId);
                     const isPickedUp = (bid.item.status as string) === "PICKED_UP";
@@ -172,13 +172,13 @@ export default async function PickupPage() {
                       <div
                         key={bid.id}
                         className={`px-5 py-3 flex items-center gap-3 ${
-                          isPickedUp ? "bg-gray-950/60" : "bg-gray-950"
+                          isPickedUp ? "bg-[#faf8f4]/60" : "bg-[#faf8f4]"
                         }`}
                       >
                         {/* Status dot */}
                         <span
                           className={`text-xl shrink-0 leading-none ${
-                            isPickedUp ? "text-emerald-400" : isPendingPickup ? "text-yellow-400" : "text-gray-600"
+                            isPickedUp ? "text-[#09a7ad]" : isPendingPickup ? "text-amber-600" : "text-[#8c8778]"
                           }`}
                         >
                           {isPickedUp ? <IcoPickedUp /> : isPendingPickup ? <IcoPending /> : <IcoOpen />}
@@ -188,36 +188,36 @@ export default async function PickupPage() {
                         <div className="flex-1 min-w-0">
                           <div
                             className={`font-medium text-sm ${
-                              isPickedUp ? "text-gray-500 line-through" : "text-white"
+                              isPickedUp ? "text-[#8c8778] line-through" : "text-[#1a1916]"
                             }`}
                           >
                             {bid.item.title}
                           </div>
                           {bid.item.storageLocation ? (
-                            <div className="text-xs font-mono text-emerald-400 mt-0.5 flex items-center gap-0.5">
+                            <div className="text-xs font-mono text-[#09a7ad] mt-0.5 flex items-center gap-0.5">
                               <IcoPin />{bid.item.storageLocation}
                             </div>
                           ) : (
-                            <div className="text-xs text-gray-600 mt-0.5">No location set</div>
+                            <div className="text-xs text-[#8c8778] mt-0.5">No location set</div>
                           )}
                         </div>
 
                         {/* Right side: amount + payment + action */}
                         <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-                          <span className="text-sm font-bold text-white hidden sm:block">
+                          <span className="text-sm font-bold text-[#1a1916] hidden sm:block">
                             ${Number(bid.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </span>
                           {payment?.status === "PAID" ? (
-                            <span className="text-xs bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full">
+                            <span className="text-xs bg-[#09a7ad]/20 text-[#09a7ad] px-2 py-0.5 rounded-full">
                               Paid
                             </span>
                           ) : (
-                            <span className="text-xs bg-yellow-500/20 text-yellow-400 px-2 py-0.5 rounded-full">
+                            <span className="text-xs bg-yellow-500/20 text-amber-600 px-2 py-0.5 rounded-full">
                               Unpaid
                             </span>
                           )}
                           {isPickedUp ? (
-                            <span className="text-xs text-gray-600 hidden sm:block">Picked up</span>
+                            <span className="text-xs text-[#8c8778] hidden sm:block">Picked up</span>
                           ) : (
                             <PickupControls
                               itemIds={[bid.item.id]}

@@ -112,7 +112,7 @@ export default function AdminSettingsPage() {
   if (loading || !org) {
     return (
       <div className="flex items-center justify-center h-64">
-        <p className="text-gray-500">Loading…</p>
+        <p className="text-[#8c8778]">Loading…</p>
       </div>
     );
   }
@@ -122,8 +122,8 @@ export default function AdminSettingsPage() {
       <h1 className="text-xl font-bold mb-6">Organization Settings</h1>
 
       {/* Logo section */}
-      <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 mb-5">
-        <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">Logo</h2>
+      <div className="bg-white border border-[#e5e0d5] rounded-2xl p-6 mb-5">
+        <h2 className="text-sm font-semibold text-[#6b6659] uppercase tracking-wider mb-4">Logo</h2>
         <div className="flex items-center gap-5">
           <OrgLogo name={name} logoUrl={logoUrl} size="xl" />
           <div className="space-y-2">
@@ -137,7 +137,7 @@ export default function AdminSettingsPage() {
             <button
               onClick={() => fileRef.current?.click()}
               disabled={uploading}
-              className="block bg-gray-800 hover:bg-gray-700 border border-gray-700 text-white text-sm px-4 py-2 rounded-xl disabled:opacity-50 transition-colors"
+              className="block bg-[#f2efe8] hover:bg-[#e8e4dc] border border-[#d4cfc4] text-[#1a1916] text-sm px-4 py-2 rounded-xl disabled:opacity-50 transition-colors"
             >
               {uploading ? "Uploading…" : logoUrl ? "Change Logo" : "Upload Logo"}
             </button>
@@ -145,49 +145,49 @@ export default function AdminSettingsPage() {
               <button
                 onClick={removeLogo}
                 disabled={saving}
-                className="block text-red-400 hover:text-red-300 text-sm px-4 py-2 rounded-xl hover:bg-red-500/10 transition-colors"
+                className="block text-red-600 hover:text-red-300 text-sm px-4 py-2 rounded-xl hover:bg-red-50 transition-colors"
               >
                 Remove Logo
               </button>
             )}
-            <p className="text-xs text-gray-600 px-4">PNG, JPG or WebP · Recommended 256×256px</p>
+            <p className="text-xs text-[#8c8778] px-4">PNG, JPG or WebP · Recommended 256×256px</p>
           </div>
         </div>
       </div>
 
       {/* Details section */}
-      <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 mb-5">
-        <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">Details</h2>
+      <div className="bg-white border border-[#e5e0d5] rounded-2xl p-6 mb-5">
+        <h2 className="text-sm font-semibold text-[#6b6659] uppercase tracking-wider mb-4">Details</h2>
         <div className="space-y-4">
           <div>
-            <label className="text-sm text-gray-400 mb-1.5 block">Organization Name</label>
+            <label className="text-sm text-[#6b6659] mb-1.5 block">Organization Name</label>
             <input
               type="text"
               value={name}
               onChange={e => setName(e.target.value)}
-              className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-emerald-500"
+              className="w-full bg-[#f2efe8] border border-[#d4cfc4] rounded-xl px-4 py-3 text-[#1a1916] placeholder-[#b0a99a] focus:outline-none focus:border-[#09a7ad]"
             />
           </div>
           <div>
-            <label className="text-sm text-gray-400 mb-1.5 block">Description <span className="text-gray-600">(optional)</span></label>
+            <label className="text-sm text-[#6b6659] mb-1.5 block">Description <span className="text-[#8c8778]">(optional)</span></label>
             <textarea
               value={description}
               onChange={e => setDescription(e.target.value)}
               rows={3}
               placeholder="Tell bidders about your organization…"
-              className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-emerald-500 resize-none"
+              className="w-full bg-[#f2efe8] border border-[#d4cfc4] rounded-xl px-4 py-3 text-[#1a1916] placeholder-[#b0a99a] focus:outline-none focus:border-[#09a7ad] resize-none"
             />
           </div>
         </div>
 
         <div className="mt-2">
-          <p className="text-xs text-gray-600 mb-4">
+          <p className="text-xs text-[#8c8778] mb-4">
             Public URL:{" "}
             <a
               href={`/${org.slug}`}
               target="_blank"
               rel="noreferrer"
-              className="font-mono text-emerald-500 hover:underline"
+              className="font-mono text-[#09a7ad] hover:underline"
             >
               {typeof window !== "undefined" ? window.location.origin : ""}/{org.slug}
             </a>
@@ -196,7 +196,7 @@ export default function AdminSettingsPage() {
       </div>
 
       {msg && (
-        <p className={`text-sm px-4 py-3 rounded-xl mb-4 ${msg.ok ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" : "bg-red-500/10 text-red-400 border border-red-500/20"}`}>
+        <p className={`text-sm px-4 py-3 rounded-xl mb-4 ${msg.ok ? "bg-[#09a7ad]/10 text-[#09a7ad] border border-[#09a7ad]/20" : "bg-red-50 text-red-600 border border-red-500/20"}`}>
           {msg.text}
         </p>
       )}
@@ -204,7 +204,7 @@ export default function AdminSettingsPage() {
       <button
         onClick={saveDetails}
         disabled={saving || !name.trim()}
-        className="bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-white font-semibold px-6 py-3 rounded-xl w-full sm:w-auto"
+        className="bg-[#09a7ad] hover:bg-[#09a7ad] disabled:opacity-50 text-white font-semibold px-6 py-3 rounded-xl w-full sm:w-auto"
       >
         {saving ? "Saving…" : "Save Settings"}
       </button>

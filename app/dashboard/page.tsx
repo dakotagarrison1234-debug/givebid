@@ -130,7 +130,7 @@ function Photo({ url, title }: { url: string | null; title: string }) {
   return url ? (
     <img src={url} alt={title} className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl object-cover shrink-0" />
   ) : (
-    <div className="w-12 h-12 sm:w-14 sm:h-14 bg-gray-800 rounded-xl flex items-center justify-center text-gray-600 text-xs shrink-0">—</div>
+    <div className="w-12 h-12 sm:w-14 sm:h-14 bg-[#f2efe8] rounded-xl flex items-center justify-center text-[#8c8778] text-xs shrink-0">—</div>
   );
 }
 
@@ -309,10 +309,10 @@ export default function BidderDashboard() {
 
   if (!isLoaded || loading) {
     return (
-      <main className="min-h-screen bg-gray-950 flex items-center justify-center">
+      <main className="min-h-screen bg-[#faf8f4] flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 rounded-full border-2 border-emerald-500/30 border-t-emerald-500 animate-spin" />
-          <p className="text-gray-500 text-sm">Loading your dashboard…</p>
+          <div className="w-8 h-8 rounded-full border-2 border-[#09a7ad]/30 border-t-[#09a7ad] animate-spin" />
+          <p className="text-[#8c8778] text-sm">Loading your dashboard…</p>
         </div>
       </main>
     );
@@ -334,15 +334,15 @@ export default function BidderDashboard() {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white flex flex-col md:flex-row">
+    <div className="min-h-screen bg-[#faf8f4] text-[#1a1916] flex flex-col md:flex-row">
 
       {/* ── Desktop sidebar ── */}
-      <aside className="hidden md:flex w-64 bg-gray-900/80 border-r border-gray-800/60 flex-col shrink-0">
-        <div className="px-5 py-5 border-b border-gray-800/60">
-          <Link href="/" className="text-xl font-extrabold tracking-tight bg-gradient-to-r from-emerald-400 to-emerald-300 bg-clip-text text-transparent">
+      <aside className="hidden md:flex w-64 bg-white/90 border-r border-[#e5e0d5]/60 flex-col shrink-0">
+        <div className="px-5 py-5 border-b border-[#e5e0d5]/60">
+          <Link href="/" className="text-xl font-extrabold tracking-tight bg-gradient-to-r from-[#09a7ad] to-[#0bbcc2] bg-clip-text text-transparent">
             PurposeBid
           </Link>
-          <p className="text-gray-600 text-xs mt-0.5">Bidder Dashboard</p>
+          <p className="text-[#8c8778] text-xs mt-0.5">Bidder Dashboard</p>
         </div>
         <nav className="flex-1 px-3 py-3 space-y-0.5">
           {navItems.map((item) => (
@@ -351,19 +351,19 @@ export default function BidderDashboard() {
               onClick={() => setTab(item.id)}
               className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl text-left transition-all ${
                 tab === item.id
-                  ? "bg-gray-800 text-white"
-                  : "text-gray-500 hover:text-white hover:bg-gray-800/50"
+                  ? "bg-[#f2efe8] text-[#1a1916]"
+                  : "text-[#8c8778] hover:text-[#1a1916] hover:bg-[#f2efe8]/50"
               }`}
             >
               <div className="flex items-center gap-3">
-                <span className={tab === item.id ? "text-emerald-400" : ""}>{item.icon}</span>
+                <span className={tab === item.id ? "text-[#09a7ad]" : ""}>{item.icon}</span>
                 <span className="text-sm font-medium">{item.label}</span>
               </div>
               {item.count !== undefined && item.count > 0 && (
                 <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${
                   item.id === "losing"
-                    ? "bg-red-500/15 text-red-400"
-                    : "bg-emerald-500/15 text-emerald-400"
+                    ? "bg-red-500/15 text-red-600"
+                    : "bg-[#09a7ad]/15 text-[#09a7ad]"
                 }`}>
                   {item.count}
                 </span>
@@ -371,27 +371,27 @@ export default function BidderDashboard() {
             </button>
           ))}
         </nav>
-        <div className="px-3 pb-4 border-t border-gray-800/60 pt-3 space-y-0.5">
+        <div className="px-3 pb-4 border-t border-[#e5e0d5]/60 pt-3 space-y-0.5">
           <Link
             href="/auctions"
-            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-500 hover:text-white hover:bg-gray-800/50 text-sm transition-colors"
+            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-[#8c8778] hover:text-[#1a1916] hover:bg-[#f2efe8]/50 text-sm transition-colors"
           >
             <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 20 20" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round"><circle cx="10" cy="10" r="8"/><path d="M10 6v4l2.5 2.5"/></svg>
             <span>Live Auctions Page</span>
           </Link>
           <Link
             href="/search"
-            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-500 hover:text-white hover:bg-gray-800/50 text-sm transition-colors"
+            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-[#8c8778] hover:text-[#1a1916] hover:bg-[#f2efe8]/50 text-sm transition-colors"
           >
             <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 20 20" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round"><circle cx="9" cy="9" r="6"/><path d="m17 17-3.5-3.5"/></svg>
             <span>Search</span>
           </Link>
         </div>
-        <div className="px-3 py-4 border-t border-gray-800/60 flex items-center gap-3">
+        <div className="px-3 py-4 border-t border-[#e5e0d5]/60 flex items-center gap-3">
           <UserMenu />
           <div className="min-w-0">
-            <div className="text-sm text-white font-semibold truncate">{user?.firstName || "Account"}</div>
-            <div className="text-xs text-gray-600 truncate">{user?.primaryEmailAddress?.emailAddress}</div>
+            <div className="text-sm text-[#1a1916] font-semibold truncate">{user?.firstName || "Account"}</div>
+            <div className="text-xs text-[#8c8778] truncate">{user?.primaryEmailAddress?.emailAddress}</div>
           </div>
         </div>
       </aside>
@@ -400,8 +400,8 @@ export default function BidderDashboard() {
       <div className="flex-1 flex flex-col min-w-0 pb-20 md:pb-0">
 
         {/* Mobile top bar */}
-        <header className="md:hidden flex items-center justify-between px-4 py-3 border-b border-gray-800/60 bg-gray-900/80">
-          <Link href="/" className="text-lg font-extrabold tracking-tight bg-gradient-to-r from-emerald-400 to-emerald-300 bg-clip-text text-transparent">
+        <header className="md:hidden flex items-center justify-between px-4 py-3 border-b border-[#e5e0d5]/60 bg-white/90">
+          <Link href="/" className="text-lg font-extrabold tracking-tight bg-gradient-to-r from-[#09a7ad] to-[#0bbcc2] bg-clip-text text-transparent">
             PurposeBid
           </Link>
           <div className="flex items-center gap-2">
@@ -420,11 +420,11 @@ export default function BidderDashboard() {
             <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-1">
               <div className="text-sm">
                 <span className="text-red-300 font-bold">Payment failed</span>
-                <span className="text-gray-400"> — we couldn&apos;t charge your card for {failedWins.length} item{failedWins.length !== 1 ? "s" : ""}.</span>
+                <span className="text-[#6b6659]"> — we couldn&apos;t charge your card for {failedWins.length} item{failedWins.length !== 1 ? "s" : ""}.</span>
               </div>
             </div>
             {retryMsg && (
-              <p className={`text-sm mt-1 ${retryMsg.ok ? "text-emerald-400" : "text-red-400"}`}>
+              <p className={`text-sm mt-1 ${retryMsg.ok ? "text-[#09a7ad]" : "text-red-600"}`}>
                 {retryMsg.text}
               </p>
             )}
@@ -436,14 +436,14 @@ export default function BidderDashboard() {
           <div className="bg-orange-500/8 border-b border-orange-500/20 px-4 sm:px-8 py-3">
             <div className="text-sm">
               <span className="text-orange-300 font-bold">{pendingWins.length} win{pendingWins.length !== 1 ? "s" : ""} pending payment</span>
-              <span className="text-gray-400"> · ${pendingWins.reduce((s, i) => s + (i.totalDue ?? i.amountOwed), 0).toLocaleString()} total{pendingWins.some((i) => (i.feeAmount ?? 0) + (i.taxAmount ?? 0) > 0) ? " (incl. fee & tax)" : ""}</span>
+              <span className="text-[#6b6659]"> · ${pendingWins.reduce((s, i) => s + (i.totalDue ?? i.amountOwed), 0).toLocaleString()} total{pendingWins.some((i) => (i.feeAmount ?? 0) + (i.taxAmount ?? 0) > 0) ? " (incl. fee & tax)" : ""}</span>
             </div>
-            <p className="text-xs text-gray-500 mt-1">Your auction organizer will process payment.</p>
+            <p className="text-xs text-[#8c8778] mt-1">Your auction organizer will process payment.</p>
           </div>
         )}
 
         {/* Desktop page title */}
-        <header className="hidden md:block border-b border-gray-800/60 px-8 py-4">
+        <header className="hidden md:block border-b border-[#e5e0d5]/60 px-8 py-4">
           <h1 className="text-lg font-bold">
             {tab === "overview"  && "Overview"}
             {tab === "auctions"  && "Current Auctions"}
@@ -465,26 +465,26 @@ export default function BidderDashboard() {
                 const awaitingPickup = past.filter(b => b.outcome === "won" && b.paid && !b.pickedUp);
                 if (awaitingPickup.length === 0) return null;
                 return (
-                  <div className="bg-emerald-500/8 border border-emerald-500/25 rounded-2xl px-5 py-4">
+                  <div className="bg-[#09a7ad]/8 border border-[#09a7ad]/25 rounded-2xl px-5 py-4">
                     <div className="flex items-center gap-2 mb-1">
                       <IcoPackage />
-                      <span className="font-bold text-emerald-300 text-sm">
+                      <span className="font-bold text-[#0bbcc2] text-sm">
                         {awaitingPickup.length} item{awaitingPickup.length !== 1 ? "s" : ""} ready for pickup
                       </span>
                     </div>
-                    <p className="text-gray-400 text-xs mb-4">Payment confirmed. Contact the organization to arrange collection.</p>
+                    <p className="text-[#6b6659] text-xs mb-4">Payment confirmed. Contact the organization to arrange collection.</p>
                     <div className="space-y-3">
                       {awaitingPickup.map((b) => (
                         <div key={b.itemId} className="flex items-center gap-3">
                           <Photo url={b.photo} title={b.itemTitle} />
                           <div className="min-w-0 flex-1">
                             <div className="text-sm font-semibold truncate">{b.itemTitle}</div>
-                            <div className="text-xs text-gray-500 truncate">{b.auctionTitle} · {b.orgName}</div>
+                            <div className="text-xs text-[#8c8778] truncate">{b.auctionTitle} · {b.orgName}</div>
                             {b.storageLocation && (
-                              <div className="text-xs text-gray-600 mt-0.5">Pickup: {b.storageLocation}</div>
+                              <div className="text-xs text-[#8c8778] mt-0.5">Pickup: {b.storageLocation}</div>
                             )}
                           </div>
-                          <div className="shrink-0 text-emerald-400 font-bold text-sm ml-auto">
+                          <div className="shrink-0 text-[#09a7ad] font-bold text-sm ml-auto">
                             ${b.finalBid.toLocaleString()}
                           </div>
                         </div>
@@ -496,39 +496,39 @@ export default function BidderDashboard() {
 
               {/* Stat cards */}
               <div className="grid grid-cols-3 gap-2 sm:gap-3">
-                <div className={`bg-gray-900 border rounded-2xl p-3 sm:p-5 transition-all ${winning.length > 0 ? "border-emerald-500/25 shadow-[0_0_20px_rgba(52,211,153,0.06)]" : "border-gray-800"}`}>
-                  <div className="text-gray-500 text-xs sm:text-sm mb-1">Winning</div>
-                  <div className={`text-xl sm:text-2xl font-extrabold ${winning.length > 0 ? "text-emerald-400" : "text-gray-400"}`}>{winning.length}</div>
+                <div className={`bg-white border rounded-2xl p-3 sm:p-5 transition-all ${winning.length > 0 ? "border-[#09a7ad]/25 shadow-[0_0_20px_rgba(9,167,173,0.06)]" : "border-[#e5e0d5]"}`}>
+                  <div className="text-[#8c8778] text-xs sm:text-sm mb-1">Winning</div>
+                  <div className={`text-xl sm:text-2xl font-extrabold ${winning.length > 0 ? "text-[#09a7ad]" : "text-[#6b6659]"}`}>{winning.length}</div>
                 </div>
-                <div className={`bg-gray-900 border rounded-2xl p-3 sm:p-5 transition-all ${losing.length > 0 ? "border-red-500/20 shadow-[0_0_20px_rgba(239,68,68,0.05)]" : "border-gray-800"}`}>
-                  <div className="text-gray-500 text-xs sm:text-sm mb-1">Outbid</div>
-                  <div className={`text-xl sm:text-2xl font-extrabold ${losing.length > 0 ? "text-red-400" : "text-gray-400"}`}>{losing.length}</div>
+                <div className={`bg-white border rounded-2xl p-3 sm:p-5 transition-all ${losing.length > 0 ? "border-red-500/20 shadow-[0_0_20px_rgba(239,68,68,0.05)]" : "border-[#e5e0d5]"}`}>
+                  <div className="text-[#8c8778] text-xs sm:text-sm mb-1">Outbid</div>
+                  <div className={`text-xl sm:text-2xl font-extrabold ${losing.length > 0 ? "text-red-600" : "text-[#6b6659]"}`}>{losing.length}</div>
                 </div>
-                <div className={`bg-gray-900 border rounded-2xl p-3 sm:p-5 transition-all ${totalOwed > 0 ? "border-orange-500/20 shadow-[0_0_20px_rgba(249,115,22,0.05)]" : "border-gray-800"}`}>
-                  <div className="text-gray-500 text-xs sm:text-sm mb-1">Owed</div>
-                  <div className={`text-xl sm:text-2xl font-extrabold ${totalOwed > 0 ? "text-orange-400" : "text-gray-400"}`}>${totalOwed.toLocaleString()}</div>
+                <div className={`bg-white border rounded-2xl p-3 sm:p-5 transition-all ${totalOwed > 0 ? "border-orange-500/20 shadow-[0_0_20px_rgba(249,115,22,0.05)]" : "border-[#e5e0d5]"}`}>
+                  <div className="text-[#8c8778] text-xs sm:text-sm mb-1">Owed</div>
+                  <div className={`text-xl sm:text-2xl font-extrabold ${totalOwed > 0 ? "text-orange-400" : "text-[#6b6659]"}`}>${totalOwed.toLocaleString()}</div>
                 </div>
               </div>
 
               {winning.length > 0 && (
                 <div>
                   <div className="flex items-center justify-between mb-3">
-                    <h2 className="font-bold text-gray-300 text-xs uppercase tracking-wider">Currently Winning</h2>
-                    <button onClick={() => setTab("winning")} className="text-emerald-400 text-sm hover:text-emerald-300 transition-colors flex items-center gap-1">
+                    <h2 className="font-bold text-[#4a4640] text-xs uppercase tracking-wider">Currently Winning</h2>
+                    <button onClick={() => setTab("winning")} className="text-[#09a7ad] text-sm hover:text-[#0bbcc2] transition-colors flex items-center gap-1">
                       View all <IcoArrow />
                     </button>
                   </div>
                   <div className="space-y-2">
                     {winning.slice(0, 3).map((b) => (
                       <Link key={b.itemId} href={`/${b.orgSlug}/${b.auctionSlug}/item/${b.itemId}`}
-                        className="flex items-center gap-3 bg-gray-900 border border-emerald-500/15 rounded-2xl px-4 py-3 hover:border-emerald-500/35 transition-all hover:shadow-[0_0_20px_rgba(52,211,153,0.05)]">
+                        className="flex items-center gap-3 bg-white border border-[#09a7ad]/15 rounded-2xl px-4 py-3 hover:border-[#09a7ad]/35 transition-all hover:shadow-[0_0_20px_rgba(9,167,173,0.05)]">
                         <Photo url={b.photo} title={b.itemTitle} />
                         <div className="flex-1 min-w-0">
                           <div className="font-semibold text-sm truncate">{b.itemTitle}</div>
-                          <div className="text-gray-500 text-xs truncate">{b.auctionTitle}</div>
+                          <div className="text-[#8c8778] text-xs truncate">{b.auctionTitle}</div>
                         </div>
                         <div className="text-right shrink-0">
-                          <div className="text-emerald-400 font-bold text-sm">${b.myBid.toLocaleString()}</div>
+                          <div className="text-[#09a7ad] font-bold text-sm">${b.myBid.toLocaleString()}</div>
                           <div className="text-xs text-emerald-600 mt-0.5">Winning</div>
                         </div>
                       </Link>
@@ -540,23 +540,23 @@ export default function BidderDashboard() {
               {losing.length > 0 && (
                 <div>
                   <div className="flex items-center justify-between mb-3">
-                    <h2 className="font-bold text-gray-300 text-xs uppercase tracking-wider">You&apos;ve Been Outbid</h2>
-                    <button onClick={() => setTab("losing")} className="text-red-400 text-sm hover:text-red-300 transition-colors flex items-center gap-1">
+                    <h2 className="font-bold text-[#4a4640] text-xs uppercase tracking-wider">You&apos;ve Been Outbid</h2>
+                    <button onClick={() => setTab("losing")} className="text-red-600 text-sm hover:text-red-300 transition-colors flex items-center gap-1">
                       View all <IcoArrow />
                     </button>
                   </div>
                   <div className="space-y-2">
                     {losing.slice(0, 3).map((b) => (
                       <Link key={b.itemId} href={`/${b.orgSlug}/${b.auctionSlug}/item/${b.itemId}`}
-                        className="flex items-center gap-3 bg-gray-900 border border-red-500/15 rounded-2xl px-4 py-3 hover:border-red-500/30 transition-all">
+                        className="flex items-center gap-3 bg-white border border-red-500/15 rounded-2xl px-4 py-3 hover:border-red-200 transition-all">
                         <Photo url={b.photo} title={b.itemTitle} />
                         <div className="flex-1 min-w-0">
                           <div className="font-semibold text-sm truncate">{b.itemTitle}</div>
-                          <div className="text-gray-500 text-xs truncate">{b.auctionTitle}</div>
+                          <div className="text-[#8c8778] text-xs truncate">{b.auctionTitle}</div>
                         </div>
                         <div className="text-right shrink-0">
-                          <div className="text-gray-400 font-semibold text-sm">${b.myBid.toLocaleString()}</div>
-                          <div className="text-red-400 text-xs mt-0.5">High: ${b.currentBid.toLocaleString()}</div>
+                          <div className="text-[#6b6659] font-semibold text-sm">${b.myBid.toLocaleString()}</div>
+                          <div className="text-red-600 text-xs mt-0.5">High: ${b.currentBid.toLocaleString()}</div>
                         </div>
                       </Link>
                     ))}
@@ -565,18 +565,18 @@ export default function BidderDashboard() {
               )}
 
               {winning.length === 0 && losing.length === 0 && unpaidWins.length === 0 && (
-                <div className="bg-gray-900 border border-gray-800 rounded-2xl p-12 text-center">
-                  <div className="text-gray-700 mb-4 flex justify-center">
+                <div className="bg-white border border-[#e5e0d5] rounded-2xl p-12 text-center">
+                  <div className="text-[#b0a99a] mb-4 flex justify-center">
                     <svg className="w-10 h-10" fill="none" viewBox="0 0 40 40" stroke="currentColor" strokeWidth={1.2} strokeLinecap="round" strokeLinejoin="round">
                       <circle cx="20" cy="20" r="16" />
                       <path d="M13 27c0-3.87 3.13-7 7-7s7 3.13 7 7" />
                       <circle cx="20" cy="15" r="4" />
                     </svg>
                   </div>
-                  <p className="text-gray-500 mb-5 text-sm">You haven&apos;t placed any bids yet.</p>
+                  <p className="text-[#8c8778] mb-5 text-sm">You haven&apos;t placed any bids yet.</p>
                   <button
                     onClick={() => setTab("auctions")}
-                    className="bg-emerald-500 hover:bg-emerald-400 text-white font-bold px-6 py-3 rounded-2xl text-sm transition-all hover:shadow-[0_0_25px_rgba(52,211,153,0.25)]"
+                    className="bg-[#09a7ad] hover:bg-[#09a7ad] text-white font-bold px-6 py-3 rounded-2xl text-sm transition-all hover:shadow-[0_0_25px_rgba(9,167,173,0.25)]"
                   >
                     Browse Live Auctions
                   </button>
@@ -589,11 +589,11 @@ export default function BidderDashboard() {
           {tab === "auctions" && (
             <div className="max-w-3xl">
               <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2 text-sm text-gray-500">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse inline-block" />
+                <div className="flex items-center gap-2 text-sm text-[#8c8778]">
+                  <span className="w-2 h-2 rounded-full bg-[#09a7ad] animate-pulse inline-block" />
                   {loadingAuctions ? "Loading…" : `${liveAuctions.length} live auction${liveAuctions.length !== 1 ? "s" : ""}`}
                 </div>
-                <Link href="/auctions" className="text-xs text-emerald-400 hover:text-emerald-300 font-medium transition-colors flex items-center gap-1">
+                <Link href="/auctions" className="text-xs text-[#09a7ad] hover:text-[#0bbcc2] font-medium transition-colors flex items-center gap-1">
                   Full page <IcoArrow />
                 </Link>
               </div>
@@ -601,34 +601,34 @@ export default function BidderDashboard() {
               {loadingAuctions ? (
                 <div className="space-y-3">
                   {[1,2,3].map(i => (
-                    <div key={i} className="bg-gray-900 border border-gray-800 rounded-2xl p-5 animate-pulse">
-                      <div className="h-4 bg-gray-800 rounded w-1/3 mb-3" />
-                      <div className="h-5 bg-gray-800 rounded w-2/3 mb-3" />
-                      <div className="h-3 bg-gray-800 rounded w-1/4" />
+                    <div key={i} className="bg-white border border-[#e5e0d5] rounded-2xl p-5 animate-pulse">
+                      <div className="h-4 bg-[#f2efe8] rounded w-1/3 mb-3" />
+                      <div className="h-5 bg-[#f2efe8] rounded w-2/3 mb-3" />
+                      <div className="h-3 bg-[#f2efe8] rounded w-1/4" />
                     </div>
                   ))}
                 </div>
               ) : liveAuctions.length === 0 ? (
-                <div className="bg-gray-900 border border-gray-800 rounded-2xl p-12 text-center">
-                  <p className="text-gray-500 mb-2 text-sm font-semibold">No live auctions right now</p>
-                  <p className="text-gray-600 text-xs">Check back soon — new auctions are added regularly.</p>
+                <div className="bg-white border border-[#e5e0d5] rounded-2xl p-12 text-center">
+                  <p className="text-[#8c8778] mb-2 text-sm font-semibold">No live auctions right now</p>
+                  <p className="text-[#8c8778] text-xs">Check back soon — new auctions are added regularly.</p>
                 </div>
               ) : (
                 <div className="space-y-3">
                   {liveAuctions.map((a) => (
                     <Link key={a.id} href={`/${a.org.slug}/${a.slug}`}
-                      className="flex items-center gap-4 bg-gray-900 border border-gray-800 hover:border-emerald-500/35 rounded-2xl px-4 sm:px-6 py-4 transition-all hover:shadow-[0_0_20px_rgba(52,211,153,0.05)] group">
+                      className="flex items-center gap-4 bg-white border border-[#e5e0d5] hover:border-[#09a7ad]/35 rounded-2xl px-4 sm:px-6 py-4 transition-all hover:shadow-[0_0_20px_rgba(9,167,173,0.05)] group">
                       <div className="flex-1 min-w-0">
-                        <div className="text-xs text-emerald-400 font-semibold mb-1 truncate">{a.org.name}</div>
-                        <div className="font-bold truncate group-hover:text-emerald-400 transition-colors">{a.title}</div>
-                        <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
+                        <div className="text-xs text-[#09a7ad] font-semibold mb-1 truncate">{a.org.name}</div>
+                        <div className="font-bold truncate group-hover:text-[#09a7ad] transition-colors">{a.title}</div>
+                        <div className="flex items-center gap-3 mt-1 text-xs text-[#8c8778]">
                           <span>{a.activeItems} item{a.activeItems !== 1 ? "s" : ""}</span>
-                          {a.raised > 0 && <span className="text-emerald-400 font-semibold">${a.raised.toLocaleString()} raised</span>}
+                          {a.raised > 0 && <span className="text-[#09a7ad] font-semibold">${a.raised.toLocaleString()} raised</span>}
                         </div>
                       </div>
                       <div className="text-right shrink-0">
-                        <span className="text-xs bg-emerald-500/15 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-full font-semibold">Live</span>
-                        <div className="text-xs text-gray-600 mt-2">
+                        <span className="text-xs bg-[#09a7ad]/15 text-[#09a7ad] border border-[#09a7ad]/20 px-2 py-0.5 rounded-full font-semibold">Live</span>
+                        <div className="text-xs text-[#8c8778] mt-2">
                           Ends {new Date(a.endAt).toLocaleDateString([], { month: "short", day: "numeric" })}
                         </div>
                       </div>
@@ -643,23 +643,23 @@ export default function BidderDashboard() {
           {tab === "winning" && (
             <div className="max-w-3xl">
               {winning.length === 0 ? (
-                <div className="bg-gray-900 border border-gray-800 rounded-2xl p-12 text-center">
-                  <p className="text-gray-500 mb-4 text-sm">Not currently winning any items.</p>
-                  <button onClick={() => setTab("auctions")} className="text-emerald-400 hover:text-emerald-300 text-sm transition-colors">Browse live auctions</button>
+                <div className="bg-white border border-[#e5e0d5] rounded-2xl p-12 text-center">
+                  <p className="text-[#8c8778] mb-4 text-sm">Not currently winning any items.</p>
+                  <button onClick={() => setTab("auctions")} className="text-[#09a7ad] hover:text-[#0bbcc2] text-sm transition-colors">Browse live auctions</button>
                 </div>
               ) : (
                 <div className="space-y-3">
                   {winning.map((b) => (
                     <Link key={b.itemId} href={`/${b.orgSlug}/${b.auctionSlug}/item/${b.itemId}`}
-                      className="flex items-center gap-4 bg-gray-900 border border-emerald-500/15 rounded-2xl px-4 sm:px-6 py-4 hover:border-emerald-500/35 transition-all hover:shadow-[0_0_20px_rgba(52,211,153,0.05)]">
+                      className="flex items-center gap-4 bg-white border border-[#09a7ad]/15 rounded-2xl px-4 sm:px-6 py-4 hover:border-[#09a7ad]/35 transition-all hover:shadow-[0_0_20px_rgba(9,167,173,0.05)]">
                       <Photo url={b.photo} title={b.itemTitle} />
                       <div className="flex-1 min-w-0">
                         <div className="font-bold truncate">{b.itemTitle}</div>
-                        <div className="text-gray-500 text-xs sm:text-sm mt-0.5 truncate">{b.auctionTitle} · {b.orgName}</div>
-                        <div className="text-gray-600 text-xs mt-1">Ends {formatEnd(b.itemEndAt ?? b.auctionEndAt)}</div>
+                        <div className="text-[#8c8778] text-xs sm:text-sm mt-0.5 truncate">{b.auctionTitle} · {b.orgName}</div>
+                        <div className="text-[#8c8778] text-xs mt-1">Ends {formatEnd(b.itemEndAt ?? b.auctionEndAt)}</div>
                       </div>
                       <div className="text-right shrink-0">
-                        <div className="text-emerald-400 font-extrabold text-lg">${b.myBid.toLocaleString()}</div>
+                        <div className="text-[#09a7ad] font-extrabold text-lg">${b.myBid.toLocaleString()}</div>
                         <div className="text-xs text-emerald-600 mt-0.5 font-semibold">Winning</div>
                       </div>
                     </Link>
@@ -673,25 +673,25 @@ export default function BidderDashboard() {
           {tab === "losing" && (
             <div className="max-w-3xl">
               {losing.length === 0 ? (
-                <div className="bg-gray-900 border border-gray-800 rounded-2xl p-12 text-center">
-                  <p className="text-gray-500 text-sm">You&apos;re not being outbid on anything right now.</p>
+                <div className="bg-white border border-[#e5e0d5] rounded-2xl p-12 text-center">
+                  <p className="text-[#8c8778] text-sm">You&apos;re not being outbid on anything right now.</p>
                 </div>
               ) : (
                 <div className="space-y-3">
                   {losing.map((b) => (
                     <Link key={b.itemId} href={`/${b.orgSlug}/${b.auctionSlug}/item/${b.itemId}`}
-                      className="flex items-center gap-4 bg-gray-900 border border-red-500/15 rounded-2xl px-4 sm:px-6 py-4 hover:border-red-500/30 transition-all">
+                      className="flex items-center gap-4 bg-white border border-red-500/15 rounded-2xl px-4 sm:px-6 py-4 hover:border-red-200 transition-all">
                       <Photo url={b.photo} title={b.itemTitle} />
                       <div className="flex-1 min-w-0">
                         <div className="font-bold truncate">{b.itemTitle}</div>
-                        <div className="text-gray-500 text-xs sm:text-sm mt-0.5 truncate">{b.auctionTitle} · {b.orgName}</div>
-                        <div className="text-gray-600 text-xs mt-1">Ends {formatEnd(b.itemEndAt ?? b.auctionEndAt)}</div>
+                        <div className="text-[#8c8778] text-xs sm:text-sm mt-0.5 truncate">{b.auctionTitle} · {b.orgName}</div>
+                        <div className="text-[#8c8778] text-xs mt-1">Ends {formatEnd(b.itemEndAt ?? b.auctionEndAt)}</div>
                       </div>
                       <div className="text-right shrink-0">
-                        <div className="text-gray-500 text-xs">your bid</div>
-                        <div className="text-gray-400 font-bold">${b.myBid.toLocaleString()}</div>
-                        <div className="text-gray-600 text-xs mt-1">high bid</div>
-                        <div className="text-red-400 font-extrabold">${b.currentBid.toLocaleString()}</div>
+                        <div className="text-[#8c8778] text-xs">your bid</div>
+                        <div className="text-[#6b6659] font-bold">${b.myBid.toLocaleString()}</div>
+                        <div className="text-[#8c8778] text-xs mt-1">high bid</div>
+                        <div className="text-red-600 font-extrabold">${b.currentBid.toLocaleString()}</div>
                       </div>
                     </Link>
                   ))}
@@ -704,26 +704,26 @@ export default function BidderDashboard() {
           {tab === "past" && (
             <div className="max-w-3xl">
               {past.length === 0 && unpaidWins.length === 0 ? (
-                <div className="bg-gray-900 border border-gray-800 rounded-2xl p-12 text-center">
-                  <p className="text-gray-500 text-sm">No bid history yet.</p>
+                <div className="bg-white border border-[#e5e0d5] rounded-2xl p-12 text-center">
+                  <p className="text-[#8c8778] text-sm">No bid history yet.</p>
                 </div>
               ) : (
                 <div className="space-y-2.5">
                   {unpaidWins.map((b) => (
                     <div key={b.itemId}
-                      className={`flex items-center gap-4 bg-gray-900 border rounded-2xl px-4 sm:px-6 py-4 ${b.paymentFailed ? "border-red-500/25" : "border-orange-500/25"}`}>
+                      className={`flex items-center gap-4 bg-white border rounded-2xl px-4 sm:px-6 py-4 ${b.paymentFailed ? "border-red-500/25" : "border-orange-500/25"}`}>
                       <Photo url={b.photo} title={b.itemTitle} />
                       <div className="flex-1 min-w-0">
                         <div className="font-bold truncate">{b.itemTitle}</div>
-                        <div className="text-gray-500 text-xs sm:text-sm mt-0.5 truncate">{b.auctionTitle} · {b.orgName}</div>
+                        <div className="text-[#8c8778] text-xs sm:text-sm mt-0.5 truncate">{b.auctionTitle} · {b.orgName}</div>
                         {b.paymentFailed && (
-                          <div className="text-xs text-red-400 mt-1">Card was declined. Update your card and retry.</div>
+                          <div className="text-xs text-red-600 mt-1">Card was declined. Update your card and retry.</div>
                         )}
                       </div>
                       <div className="text-right shrink-0 flex flex-col items-end gap-1.5">
-                        <div className="text-emerald-400 font-extrabold">${(b.totalDue ?? b.amountOwed).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                        <div className="text-[#09a7ad] font-extrabold">${(b.totalDue ?? b.amountOwed).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                         {(b.feeAmount ?? 0) + (b.taxAmount ?? 0) > 0 && (
-                          <div className="text-[11px] text-gray-500 leading-tight">
+                          <div className="text-[11px] text-[#8c8778] leading-tight">
                             ${b.amountOwed.toLocaleString()} bid
                             {b.feeAmount ? ` + $${b.feeAmount.toFixed(2)} fee` : ""}
                             {b.taxAmount ? ` + $${b.taxAmount.toFixed(2)} tax` : ""}
@@ -737,7 +737,7 @@ export default function BidderDashboard() {
                             </button>
                             {b.orgId && b.orgStripeAccountId && (
                               <button onClick={() => setCardModal({ orgId: b.orgId!, stripeAccountId: b.orgStripeAccountId! })}
-                                className="text-xs text-gray-400 hover:text-white border border-gray-700 hover:border-gray-500 px-3 py-1.5 rounded-lg transition-colors">
+                                className="text-xs text-[#6b6659] hover:text-[#1a1916] border border-[#d4cfc4] hover:border-[#b0a99a] px-3 py-1.5 rounded-lg transition-colors">
                                 Update Card
                               </button>
                             )}
@@ -750,27 +750,27 @@ export default function BidderDashboard() {
                   ))}
                   {past.map((b, i) => (
                     <div key={i}
-                      className={`flex items-center gap-4 bg-gray-900 border rounded-2xl px-4 sm:px-6 py-4 ${b.outcome === "won" ? "border-emerald-500/12" : "border-gray-800/60"}`}>
+                      className={`flex items-center gap-4 bg-white border rounded-2xl px-4 sm:px-6 py-4 ${b.outcome === "won" ? "border-[#09a7ad]/12" : "border-[#e5e0d5]/60"}`}>
                       <Photo url={b.photo} title={b.itemTitle} />
                       <div className="flex-1 min-w-0">
                         <div className="font-bold truncate">{b.itemTitle}</div>
-                        <div className="text-gray-500 text-xs sm:text-sm mt-0.5 truncate">{b.auctionTitle} · {b.orgName}</div>
+                        <div className="text-[#8c8778] text-xs sm:text-sm mt-0.5 truncate">{b.auctionTitle} · {b.orgName}</div>
                       </div>
                       <div className="text-right shrink-0">
-                        <div className={`font-extrabold ${b.outcome === "won" ? "text-emerald-400" : "text-gray-500"}`}>
+                        <div className={`font-extrabold ${b.outcome === "won" ? "text-[#09a7ad]" : "text-[#8c8778]"}`}>
                           ${b.myBid.toLocaleString()}
                         </div>
                         <div className={`text-xs mt-0.5 font-medium ${
                           b.outcome === "won"
-                            ? b.pickedUp ? "text-gray-500" : "text-emerald-600"
-                            : "text-gray-600"
+                            ? b.pickedUp ? "text-[#8c8778]" : "text-emerald-600"
+                            : "text-[#8c8778]"
                         }`}>
                           {b.outcome === "won"
                             ? b.pickedUp ? "Picked up" : b.paid ? "Paid — awaiting pickup" : "Won"
                             : b.outcome === "unsold" ? "Went unsold" : `Lost · $${b.finalBid.toLocaleString()}`}
                         </div>
                         {b.outcome === "won" && b.paid && !b.pickedUp && b.storageLocation && (
-                          <div className="text-xs text-gray-600 mt-0.5">Pickup: {b.storageLocation}</div>
+                          <div className="text-xs text-[#8c8778] mt-0.5">Pickup: {b.storageLocation}</div>
                         )}
                       </div>
                     </div>
@@ -783,11 +783,11 @@ export default function BidderDashboard() {
           {/* ── Profile & Settings ── */}
           {tab === "profile" && (
             <div className="max-w-lg">
-              <div className="flex items-center gap-4 mb-6 pb-6 border-b border-gray-800/60">
+              <div className="flex items-center gap-4 mb-6 pb-6 border-b border-[#e5e0d5]/60">
                 <UserMenu />
                 <div>
                   <div className="font-bold">{user?.fullName || "Your Account"}</div>
-                  <div className="text-gray-500 text-sm">{user?.primaryEmailAddress?.emailAddress}</div>
+                  <div className="text-[#8c8778] text-sm">{user?.primaryEmailAddress?.emailAddress}</div>
                 </div>
               </div>
               <div className="space-y-4">
@@ -797,48 +797,48 @@ export default function BidderDashboard() {
                   { label: "Phone Number", type: "tel", value: editPhone, set: setEditPhone, placeholder: "+1 (555) 000-0000", hint: "Used for SMS notifications." },
                 ].map((f) => (
                   <div key={f.label}>
-                    <label className="text-sm text-gray-400 mb-1.5 block font-medium">{f.label}</label>
+                    <label className="text-sm text-[#6b6659] mb-1.5 block font-medium">{f.label}</label>
                     <input
                       type={f.type}
                       value={f.value}
                       onChange={(e) => f.set(e.target.value)}
                       placeholder={f.placeholder}
-                      className="w-full bg-gray-900 border border-gray-700/80 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-emerald-500/60 transition-colors"
+                      className="w-full bg-white border border-[#d4cfc4]/80 rounded-xl px-4 py-3 text-[#1a1916] placeholder-[#b0a99a] focus:outline-none focus:border-[#09a7ad]/60 transition-colors"
                     />
-                    {f.hint && <p className="text-gray-600 text-xs mt-1.5">{f.hint}</p>}
+                    {f.hint && <p className="text-[#8c8778] text-xs mt-1.5">{f.hint}</p>}
                   </div>
                 ))}
                 {profileMsg && (
                   <p className={`text-sm px-4 py-3 rounded-xl font-medium ${
                     profileMsg.ok
-                      ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-                      : "bg-red-500/10 text-red-400 border border-red-500/20"
+                      ? "bg-[#09a7ad]/10 text-[#09a7ad] border border-[#09a7ad]/20"
+                      : "bg-red-50 text-red-600 border border-red-500/20"
                   }`}>
                     {profileMsg.text}
                   </p>
                 )}
                 <button onClick={saveProfile} disabled={savingProfile}
-                  className="bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-white font-bold px-6 py-3 rounded-2xl w-full transition-all hover:shadow-[0_0_25px_rgba(52,211,153,0.2)]">
+                  className="bg-[#09a7ad] hover:bg-[#09a7ad] disabled:opacity-50 text-white font-bold px-6 py-3 rounded-2xl w-full transition-all hover:shadow-[0_0_25px_rgba(9,167,173,0.2)]">
                   {savingProfile ? "Saving…" : "Save Profile"}
                 </button>
 
                 {/* Payment Methods */}
-                <div className="pt-4 border-t border-gray-800/60">
-                  <h3 className="text-sm font-semibold text-gray-300 mb-3">Payment Methods</h3>
+                <div className="pt-4 border-t border-[#e5e0d5]/60">
+                  <h3 className="text-sm font-semibold text-[#4a4640] mb-3">Payment Methods</h3>
                   {loadingPMs ? (
-                    <div className="text-gray-600 text-sm py-2">Loading…</div>
+                    <div className="text-[#8c8778] text-sm py-2">Loading…</div>
                   ) : paymentMethods.length === 0 ? (
-                    <div className="bg-gray-900 border border-gray-800 rounded-xl px-4 py-4 text-sm text-gray-500">
+                    <div className="bg-white border border-[#e5e0d5] rounded-xl px-4 py-4 text-sm text-[#8c8778]">
                       No payment methods saved yet. A card will be requested when you place your first bid.
                     </div>
                   ) : (
                     <div className="space-y-2">
                       {paymentMethods.map((pm) => (
-                        <div key={pm.orgId} className="bg-gray-900 border border-gray-800 rounded-xl px-4 py-3 flex items-center justify-between gap-3">
+                        <div key={pm.orgId} className="bg-white border border-[#e5e0d5] rounded-xl px-4 py-3 flex items-center justify-between gap-3">
                           <div className="min-w-0">
-                            <div className="text-sm font-medium text-white truncate">{pm.orgName}</div>
+                            <div className="text-sm font-medium text-[#1a1916] truncate">{pm.orgName}</div>
                             {pm.hasCard ? (
-                              <div className="text-xs text-gray-400 mt-0.5 flex items-center gap-1">
+                              <div className="text-xs text-[#6b6659] mt-0.5 flex items-center gap-1">
                                 <svg className="w-3 h-3 shrink-0" fill="none" viewBox="0 0 16 16" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round">
                                   <rect x="1" y="3" width="14" height="10" rx="1.5" />
                                   <path d="M1 7h14" />
@@ -856,7 +856,7 @@ export default function BidderDashboard() {
                           {pm.stripeAccountId && pm.stripeChargesEnabled && (
                             <button
                               onClick={() => setCardModal({ orgId: pm.orgId, stripeAccountId: pm.stripeAccountId! })}
-                              className="text-xs text-emerald-400 hover:text-emerald-300 font-medium shrink-0 transition-colors"
+                              className="text-xs text-[#09a7ad] hover:text-[#0bbcc2] font-medium shrink-0 transition-colors"
                             >
                               {pm.hasCard ? "Update" : "Add card"}
                             </button>
@@ -867,8 +867,8 @@ export default function BidderDashboard() {
                   )}
                 </div>
 
-                <div className="pt-2 border-t border-gray-800/60">
-                  <Link href="/auctions" className="flex items-center justify-center gap-2 text-gray-600 hover:text-white text-sm py-2 transition-colors">
+                <div className="pt-2 border-t border-[#e5e0d5]/60">
+                  <Link href="/auctions" className="flex items-center justify-center gap-2 text-[#8c8778] hover:text-[#1a1916] text-sm py-2 transition-colors">
                     Browse Live Auctions <IcoArrow />
                   </Link>
                 </div>
@@ -894,20 +894,20 @@ export default function BidderDashboard() {
       )}
 
       {/* ── Mobile bottom tab bar ── */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-gray-900/95 backdrop-blur-md border-t border-gray-800/60 flex z-50 safe-area-pb">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-[#e5e0d5]/60 flex z-50 safe-area-pb">
         {navItems.map((item) => (
           <button
             key={item.id}
             onClick={() => setTab(item.id)}
             className={`flex-1 flex flex-col items-center justify-center py-2.5 gap-1 relative transition-colors ${
-              tab === item.id ? "text-emerald-400" : "text-gray-600 hover:text-gray-400"
+              tab === item.id ? "text-[#09a7ad]" : "text-[#8c8778] hover:text-[#6b6659]"
             }`}
           >
             {item.icon}
             <span className="text-[9px] font-semibold leading-none tracking-wide uppercase">{item.shortLabel}</span>
             {item.count !== undefined && item.count > 0 && (
               <span className={`absolute top-1.5 right-[10%] text-[9px] w-3.5 h-3.5 rounded-full flex items-center justify-center font-bold ${
-                item.id === "losing" ? "bg-red-500 text-white" : "bg-emerald-500 text-white"
+                item.id === "losing" ? "bg-red-500 text-white" : "bg-[#09a7ad] text-white"
               }`}>
                 {item.count}
               </span>

@@ -47,7 +47,7 @@ function JoinPageInner() {
   if (!isLoaded) {
     return (
       <main className="flex-1 flex items-center justify-center">
-        <p className="text-gray-400">Loading...</p>
+        <p className="text-[#6b6659]">Loading...</p>
       </main>
     );
   }
@@ -58,12 +58,12 @@ function JoinPageInner() {
         {!token ? (
           <>
             <h1 className="text-2xl font-bold mb-3">Invalid Invite</h1>
-            <p className="text-gray-400 mb-8">This invite link is missing a token. Please ask for a new invite.</p>
+            <p className="text-[#6b6659] mb-8">This invite link is missing a token. Please ask for a new invite.</p>
             <div className="flex flex-col gap-2.5">
-              <Link href="/auctions" className="w-full bg-emerald-500 hover:bg-emerald-400 text-white font-semibold py-3 rounded-xl transition-colors">
+              <Link href="/auctions" className="w-full bg-[#09a7ad] hover:bg-[#09a7ad] text-white font-semibold py-3 rounded-xl transition-colors">
                 Browse auctions
               </Link>
-              <Link href="/" className="w-full border border-gray-700 hover:border-gray-500 text-gray-300 hover:text-white font-medium py-3 rounded-xl transition-colors">
+              <Link href="/" className="w-full border border-[#d4cfc4] hover:border-[#b0a99a] text-[#4a4640] hover:text-[#1a1916] font-medium py-3 rounded-xl transition-colors">
                 Go home
               </Link>
             </div>
@@ -73,37 +73,37 @@ function JoinPageInner() {
             <div className="flex justify-center mb-5">
               <svg width="56" height="56" viewBox="0 0 56 56" fill="none">
                 <circle cx="28" cy="28" r="26" stroke="#374151" strokeWidth="1.5"/>
-                <circle cx="28" cy="28" r="18" stroke="#10b981" strokeWidth="1.2" strokeOpacity="0.4"/>
-                <circle cx="28" cy="28" r="12" fill="rgba(16,185,129,0.12)" stroke="#10b981" strokeWidth="1.5"/>
-                <path d="M21 28l5 5 9-9" stroke="#10b981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <circle cx="28" cy="28" r="18" stroke="#09a7ad" strokeWidth="1.2" strokeOpacity="0.4"/>
+                <circle cx="28" cy="28" r="12" fill="rgba(9,167,173,0.12)" stroke="#09a7ad" strokeWidth="1.5"/>
+                <path d="M21 28l5 5 9-9" stroke="#09a7ad" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </div>
             <h1 className="text-2xl font-bold mb-2">You&apos;re in!</h1>
-            <p className="text-gray-400 mb-6">Redirecting to your dashboard...</p>
-            <Link href="/admin/dashboard" className="w-full inline-block bg-emerald-500 hover:bg-emerald-400 text-white font-semibold py-3 rounded-xl transition-colors">
+            <p className="text-[#6b6659] mb-6">Redirecting to your dashboard...</p>
+            <Link href="/admin/dashboard" className="w-full inline-block bg-[#09a7ad] hover:bg-[#09a7ad] text-white font-semibold py-3 rounded-xl transition-colors">
               Go to dashboard
             </Link>
           </>
         ) : (
           <>
             <h1 className="text-2xl font-bold mb-3">You&apos;ve Been Invited</h1>
-            <p className="text-gray-400 mb-8">
+            <p className="text-[#6b6659] mb-8">
               You&apos;ve been invited to join an organization on PurposeBid. Accept below to access the dashboard.
             </p>
 
             {status === "error" && (
-              <p className="text-red-400 text-sm mb-4 bg-red-500/10 border border-red-500/30 rounded-lg px-4 py-3">{message}</p>
+              <p className="text-red-600 text-sm mb-4 bg-red-50 border border-red-200 rounded-lg px-4 py-3">{message}</p>
             )}
 
             <button
               onClick={handleAccept}
               disabled={status === "joining"}
-              className="w-full bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-white font-semibold py-3 rounded-xl"
+              className="w-full bg-[#09a7ad] hover:bg-[#09a7ad] disabled:opacity-50 text-white font-semibold py-3 rounded-xl"
             >
               {status === "joining" ? "Joining..." : "Accept Invite"}
             </button>
             {status === "error" && (
-              <Link href="/auctions" className="block mt-3 text-sm text-gray-400 hover:text-white transition-colors">
+              <Link href="/auctions" className="block mt-3 text-sm text-[#6b6659] hover:text-[#1a1916] transition-colors">
                 Browse auctions instead
               </Link>
             )}
@@ -116,11 +116,11 @@ function JoinPageInner() {
 
 export default function JoinPage() {
   return (
-    <div className="min-h-screen bg-gray-950 text-white flex flex-col">
+    <div className="min-h-screen bg-[#faf8f4] text-[#1a1916] flex flex-col">
       <HomeHeader />
       <Suspense fallback={
         <main className="flex-1 flex items-center justify-center">
-          <p className="text-gray-400">Loading...</p>
+          <p className="text-[#6b6659]">Loading...</p>
         </main>
       }>
         <JoinPageInner />

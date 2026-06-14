@@ -85,7 +85,7 @@ export default function AuctionStatusButtons({ auctionId, status }: Props) {
   };
 
   if (loading) {
-    return <span className="text-gray-400 text-sm">Updating...</span>;
+    return <span className="text-[#6b6659] text-sm">Updating...</span>;
   }
 
   return (
@@ -95,13 +95,13 @@ export default function AuctionStatusButtons({ auctionId, status }: Props) {
         <>
           <button
             onClick={() => updateStatus("OPEN")}
-            className="bg-emerald-500 hover:bg-emerald-400 text-white text-sm px-4 py-2 rounded-lg font-medium"
+            className="bg-[#09a7ad] hover:bg-[#09a7ad] text-white text-sm px-4 py-2 rounded-lg font-medium"
           >
             Open Auction
           </button>
           <button
             onClick={deleteAuction}
-            className="bg-transparent hover:bg-red-500/10 text-red-400 hover:text-red-300 border border-red-500/30 text-sm px-3 py-2 rounded-lg font-medium"
+            className="bg-transparent hover:bg-red-50 text-red-600 hover:text-red-300 border border-red-200 text-sm px-3 py-2 rounded-lg font-medium"
           >
             Delete
           </button>
@@ -111,7 +111,7 @@ export default function AuctionStatusButtons({ auctionId, status }: Props) {
         <>
           <button
             onClick={() => updateStatus("CLOSING")}
-            className="bg-yellow-500 hover:bg-yellow-400 text-black text-sm px-4 py-2 rounded-lg font-medium"
+            className="bg-yellow-500 hover:bg-amber-400 text-black text-sm px-4 py-2 rounded-lg font-medium"
           >
             Mark Closing Soon
           </button>
@@ -140,7 +140,7 @@ export default function AuctionStatusButtons({ auctionId, status }: Props) {
         </button>
       )}
     </div>
-    {error && <p className="text-red-400 text-sm mt-2">{error}</p>}
+    {error && <p className="text-red-600 text-sm mt-2">{error}</p>}
     </div>
   );
 }

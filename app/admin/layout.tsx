@@ -80,7 +80,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   ];
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white flex flex-col">
+    <div className="min-h-screen bg-[#faf8f4] text-[#1a1916] flex flex-col">
       {/* Act-as banner */}
       {actingAsOrg && (
         <div className="bg-orange-500/20 border-b border-orange-500/40 px-4 sm:px-6 py-2 flex items-center justify-between text-xs sm:text-sm gap-2">
@@ -101,13 +101,13 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       />
 
       <div className="flex flex-1 min-h-0">
-        <aside className="hidden md:flex w-64 bg-gray-900 border-r border-gray-800 flex-col shrink-0">
-          <div className="px-6 py-5 border-b border-gray-800">
+        <aside className="hidden md:flex w-64 bg-white border-r border-[#e5e0d5] flex-col shrink-0">
+          <div className="px-6 py-5 border-b border-[#e5e0d5]">
             <Link href="/admin/dashboard" className="flex items-center gap-3 mb-1">
               <OrgLogo name={org.name} logoUrl={org.logoUrl} size="sm" />
               <div className="min-w-0">
-                <p className="text-white font-semibold text-sm truncate">{org.name}</p>
-                <span className="text-xs text-gray-600 capitalize">{membership.role.toLowerCase()}</span>
+                <p className="text-[#1a1916] font-semibold text-sm truncate">{org.name}</p>
+                <span className="text-xs text-[#8c8778] capitalize">{membership.role.toLowerCase()}</span>
               </div>
             </Link>
           </div>
@@ -124,7 +124,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
               <Link
                 key={item.href}
                 href={item.href}
-                className="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+                className="flex items-center gap-3 px-4 py-3 rounded-xl text-[#6b6659] hover:text-[#1a1916] hover:bg-[#f2efe8] transition-colors"
               >
                 <span className="w-5 flex items-center justify-center shrink-0">
                   <AdminNavIcon name={item.icon} />
@@ -132,10 +132,10 @@ export default async function AdminLayout({ children }: { children: React.ReactN
                 <span>{item.label}</span>
               </Link>
             ))}
-            <div className="pt-2 border-t border-gray-800 mt-2">
+            <div className="pt-2 border-t border-[#e5e0d5] mt-2">
               <Link
                 href="/dashboard"
-                className="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+                className="flex items-center gap-3 px-4 py-3 rounded-xl text-[#6b6659] hover:text-[#1a1916] hover:bg-[#f2efe8] transition-colors"
               >
                 <span className="w-5 flex items-center justify-center shrink-0">
                   <AdminNavIcon name="mybids" />
@@ -159,9 +159,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             </div>
           )}
 
-          <div className="px-4 py-4 border-t border-gray-800 flex items-center gap-3">
+          <div className="px-4 py-4 border-t border-[#e5e0d5] flex items-center gap-3">
             <UserMenu />
-            <div className="text-sm text-gray-500 truncate">Account</div>
+            <div className="text-sm text-[#8c8778] truncate">Account</div>
           </div>
         </aside>
 

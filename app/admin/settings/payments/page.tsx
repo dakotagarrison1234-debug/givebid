@@ -17,7 +17,7 @@ function StatusDot({ enabled }: { enabled: boolean }) {
   return (
     <span
       className={`inline-block w-2.5 h-2.5 rounded-full mr-2 ${
-        enabled ? "bg-emerald-400" : "bg-gray-600"
+        enabled ? "bg-[#09a7ad]" : "bg-[#d4cfc4]"
       }`}
     />
   );
@@ -126,7 +126,7 @@ function PaymentsContent() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <p className="text-gray-500">Loading…</p>
+        <p className="text-[#8c8778]">Loading…</p>
       </div>
     );
   }
@@ -134,7 +134,7 @@ function PaymentsContent() {
   if (!org) {
     return (
       <div className="flex items-center justify-center h-64">
-        <p className="text-gray-500">Could not load payment settings.</p>
+        <p className="text-[#8c8778]">Could not load payment settings.</p>
       </div>
     );
   }
@@ -148,8 +148,8 @@ function PaymentsContent() {
       <h1 className="text-xl font-bold mb-6">Payments</h1>
 
       {/* Connection status card */}
-      <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 mb-5">
-        <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">
+      <div className="bg-white border border-[#e5e0d5] rounded-2xl p-6 mb-5">
+        <h2 className="text-sm font-semibold text-[#6b6659] uppercase tracking-wider mb-4">
           Stripe Connection
         </h2>
 
@@ -158,9 +158,9 @@ function PaymentsContent() {
           <div className="space-y-4">
             <div className="flex items-center">
               <StatusDot enabled={true} />
-              <span className="text-white font-semibold">Connected and live</span>
+              <span className="text-[#1a1916] font-semibold">Connected and live</span>
             </div>
-            <div className="text-sm text-gray-400 space-y-1">
+            <div className="text-sm text-[#6b6659] space-y-1">
               <div className="flex items-center">
                 <StatusDot enabled={org.stripeChargesEnabled} />
                 Accepting charges
@@ -170,13 +170,13 @@ function PaymentsContent() {
                 Payouts enabled
               </div>
             </div>
-            <p className="text-xs text-gray-600">
+            <p className="text-xs text-[#8c8778]">
               Platform fee: {org.platformFeePercent}% per transaction
             </p>
             <button
               onClick={handleDashboard}
               disabled={connecting}
-              className="bg-gray-800 hover:bg-gray-700 border border-gray-700 text-white text-sm px-5 py-2.5 rounded-xl disabled:opacity-50 transition-colors"
+              className="bg-[#f2efe8] hover:bg-[#e8e4dc] border border-[#d4cfc4] text-[#1a1916] text-sm px-5 py-2.5 rounded-xl disabled:opacity-50 transition-colors"
             >
               {connecting ? "Opening…" : "Manage payout details"}
             </button>
@@ -186,19 +186,19 @@ function PaymentsContent() {
           <div className="space-y-4">
             <div className="flex items-center">
               <StatusDot enabled={false} />
-              <span className="text-yellow-400 font-semibold">Onboarding incomplete</span>
+              <span className="text-amber-600 font-semibold">Onboarding incomplete</span>
             </div>
-            <p className="text-sm text-gray-400">
+            <p className="text-sm text-[#6b6659]">
               You started connecting Stripe but haven&apos;t finished. Resume to start accepting
               payments.
             </p>
-            <p className="text-xs text-gray-600">
+            <p className="text-xs text-[#8c8778]">
               Platform fee: {org.platformFeePercent}% per transaction
             </p>
             <button
               onClick={handleConnect}
               disabled={connecting}
-              className="bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-white font-semibold px-5 py-2.5 rounded-xl transition-colors"
+              className="bg-[#09a7ad] hover:bg-[#09a7ad] disabled:opacity-50 text-white font-semibold px-5 py-2.5 rounded-xl transition-colors"
             >
               {connecting ? "Loading…" : "Resume Stripe setup"}
             </button>
@@ -208,19 +208,19 @@ function PaymentsContent() {
           <div className="space-y-4">
             <div className="flex items-center">
               <StatusDot enabled={false} />
-              <span className="text-gray-300 font-semibold">Not connected</span>
+              <span className="text-[#4a4640] font-semibold">Not connected</span>
             </div>
-            <p className="text-sm text-gray-400">
+            <p className="text-sm text-[#6b6659]">
               Connect a Stripe account to accept payments from bidders. GiveBid uses Stripe Connect
               — your organization is the merchant of record and receives funds directly.
             </p>
-            <p className="text-xs text-gray-600">
+            <p className="text-xs text-[#8c8778]">
               Platform fee: {org.platformFeePercent}% per transaction
             </p>
             <button
               onClick={handleConnect}
               disabled={connecting}
-              className="bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-white font-semibold px-5 py-2.5 rounded-xl transition-colors"
+              className="bg-[#09a7ad] hover:bg-[#09a7ad] disabled:opacity-50 text-white font-semibold px-5 py-2.5 rounded-xl transition-colors"
             >
               {connecting ? "Loading…" : "Connect Stripe"}
             </button>
@@ -232,8 +232,8 @@ function PaymentsContent() {
         <p
           className={`text-sm px-4 py-3 rounded-xl mb-4 ${
             msg.ok
-              ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-              : "bg-yellow-500/10 text-yellow-400 border border-yellow-500/20"
+              ? "bg-[#09a7ad]/10 text-[#09a7ad] border border-[#09a7ad]/20"
+              : "bg-yellow-500/10 text-amber-600 border border-yellow-500/20"
           }`}
         >
           {msg.text}
@@ -241,16 +241,16 @@ function PaymentsContent() {
       )}
 
       {/* Tax status — read-only, set at approval by ForPurpose */}
-      <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 mb-5">
-        <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-1">
+      <div className="bg-white border border-[#e5e0d5] rounded-2xl p-6 mb-5">
+        <h2 className="text-sm font-semibold text-[#6b6659] uppercase tracking-wider mb-1">
           Sales Tax
         </h2>
-        <p className="text-xs text-gray-600 mb-3">
+        <p className="text-xs text-[#8c8778] mb-3">
           Tax status is set by ForPurpose when your organization is approved.
         </p>
         <div className="flex items-center gap-2">
-          <span className={`inline-block w-2 h-2 rounded-full ${org.taxExempt ? "bg-emerald-400" : "bg-yellow-400"}`} />
-          <span className="text-sm text-gray-300">
+          <span className={`inline-block w-2 h-2 rounded-full ${org.taxExempt ? "bg-[#09a7ad]" : "bg-amber-400"}`} />
+          <span className="text-sm text-[#4a4640]">
             {org.taxExempt
               ? "Tax exempt — no sales tax collected"
               : `Sales tax: ${Number(org.taxPercent)}% added to each winning bid`}
@@ -259,11 +259,11 @@ function PaymentsContent() {
       </div>
 
       {/* Info block */}
-      <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6">
-        <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">
+      <div className="bg-white border border-[#e5e0d5] rounded-2xl p-6">
+        <h2 className="text-sm font-semibold text-[#6b6659] uppercase tracking-wider mb-3">
           How it works
         </h2>
-        <ul className="text-sm text-gray-400 space-y-2">
+        <ul className="text-sm text-[#6b6659] space-y-2">
           <li>Bidders pay your organization directly through Stripe.</li>
           <li>
             GiveBid collects a {org.platformFeePercent}% platform fee automatically on each
@@ -282,7 +282,7 @@ function PaymentsContent() {
 
 export default function PaymentsSettingsPage() {
   return (
-    <Suspense fallback={<div className="flex items-center justify-center h-64"><p className="text-gray-500">Loading…</p></div>}>
+    <Suspense fallback={<div className="flex items-center justify-center h-64"><p className="text-[#8c8778]">Loading…</p></div>}>
       <PaymentsContent />
     </Suspense>
   );

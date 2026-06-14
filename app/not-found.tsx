@@ -2,18 +2,18 @@ import Link from "next/link";
 
 export default function NotFound() {
   return (
-    <main className="min-h-screen bg-gray-950 text-white flex items-center justify-center px-5">
+    <main className="min-h-screen bg-[#faf8f4] text-[#1a1916] flex items-center justify-center px-5">
       <div className="text-center max-w-sm w-full">
-        <div className="text-emerald-400 font-extrabold text-xl mb-6">PurposeBid</div>
+        <div className="text-[#09a7ad] font-extrabold text-xl mb-6">PurposeBid</div>
         <h1 className="text-3xl font-extrabold mb-2">Page not found</h1>
-        <p className="text-gray-400 text-sm mb-8">
+        <p className="text-[#6b6659] text-sm mb-8">
           The page you&apos;re looking for doesn&apos;t exist or may have moved.
         </p>
         <div className="flex flex-col gap-2.5">
-          <Link href="/auctions" className="w-full bg-emerald-500 hover:bg-emerald-400 text-white font-semibold py-3 rounded-xl transition-colors">
+          <Link href="/auctions" className="w-full bg-[#09a7ad] hover:bg-[#09a7ad] text-white font-semibold py-3 rounded-xl transition-colors">
             Browse auctions
           </Link>
-          <Link href="/" className="w-full border border-gray-700 hover:border-gray-500 text-gray-300 hover:text-white font-medium py-3 rounded-xl transition-colors">
+          <Link href="/" className="w-full border border-[#d4cfc4] hover:border-[#b0a99a] text-[#4a4640] hover:text-[#1a1916] font-medium py-3 rounded-xl transition-colors">
             Go home
           </Link>
         </div>

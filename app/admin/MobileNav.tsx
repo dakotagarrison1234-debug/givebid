@@ -40,9 +40,9 @@ export default function MobileNav({ navItems, orgName, role, superAdmin, showSup
   return (
     <>
       {/* Mobile top bar */}
-      <div className="md:hidden flex items-center justify-between px-4 py-3 bg-gray-900 border-b border-gray-800">
-        <Link href="/admin/dashboard" className="text-emerald-400 font-bold text-lg">PurposeBid</Link>
-        <button onClick={() => setOpen(true)} className="text-gray-400 hover:text-white p-1" aria-label="Open menu">
+      <div className="md:hidden flex items-center justify-between px-4 py-3 bg-white border-b border-[#e5e0d5]">
+        <Link href="/admin/dashboard" className="text-[#09a7ad] font-bold text-lg">PurposeBid</Link>
+        <button onClick={() => setOpen(true)} className="text-[#6b6659] hover:text-[#1a1916] p-1" aria-label="Open menu">
           <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
             <line x1="3" y1="6" x2="21" y2="6" />
             <line x1="3" y1="12" x2="21" y2="12" />
@@ -57,14 +57,14 @@ export default function MobileNav({ navItems, orgName, role, superAdmin, showSup
           {/* Backdrop */}
           <div className="absolute inset-0 bg-black/60" onClick={() => setOpen(false)} />
           {/* Drawer */}
-          <div className="relative w-72 bg-gray-900 flex flex-col h-full shadow-2xl">
-            <div className="px-6 py-5 border-b border-gray-800 flex items-center justify-between">
+          <div className="relative w-72 bg-white flex flex-col h-full shadow-2xl">
+            <div className="px-6 py-5 border-b border-[#e5e0d5] flex items-center justify-between">
               <div>
-                <span className="text-emerald-400 font-bold text-xl">PurposeBid</span>
-                <p className="text-gray-300 text-sm mt-0.5 font-medium truncate">{orgName}</p>
+                <span className="text-[#09a7ad] font-bold text-xl">PurposeBid</span>
+                <p className="text-[#4a4640] text-sm mt-0.5 font-medium truncate">{orgName}</p>
                 <span className="text-xs text-emerald-600 capitalize">{role}</span>
               </div>
-              <button onClick={() => setOpen(false)} className="text-gray-500 hover:text-white p-1">
+              <button onClick={() => setOpen(false)} className="text-[#8c8778] hover:text-[#1a1916] p-1">
                 <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
                   <line x1="4" y1="4" x2="16" y2="16" />
                   <line x1="16" y1="4" x2="4" y2="16" />
@@ -78,18 +78,18 @@ export default function MobileNav({ navItems, orgName, role, superAdmin, showSup
                   key={item.href}
                   href={item.href}
                   onClick={() => setOpen(false)}
-                  className="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-400 hover:text-white hover:bg-gray-800 transition-colors text-sm"
+                  className="flex items-center gap-3 px-4 py-3 rounded-xl text-[#6b6659] hover:text-[#1a1916] hover:bg-[#f2efe8] transition-colors text-sm"
                 >
                   <span className="w-5 flex items-center justify-center shrink-0"><NavIcon name={item.icon} /></span>
                   <span>{item.label}</span>
                 </Link>
               ))}
 
-              <div className="pt-2 border-t border-gray-800 mt-2 space-y-1">
+              <div className="pt-2 border-t border-[#e5e0d5] mt-2 space-y-1">
                 <Link
                   href="/dashboard"
                   onClick={() => setOpen(false)}
-                  className="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-400 hover:text-white hover:bg-gray-800 transition-colors text-sm"
+                  className="flex items-center gap-3 px-4 py-3 rounded-xl text-[#6b6659] hover:text-[#1a1916] hover:bg-[#f2efe8] transition-colors text-sm"
                 >
                   <span className="w-5 flex items-center justify-center shrink-0"><NavIcon name="mybids" /></span>
                   <span>My Bids</span>
@@ -97,7 +97,7 @@ export default function MobileNav({ navItems, orgName, role, superAdmin, showSup
                 <Link
                   href="/auctions"
                   onClick={() => setOpen(false)}
-                  className="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-400 hover:text-white hover:bg-gray-800 transition-colors text-sm"
+                  className="flex items-center gap-3 px-4 py-3 rounded-xl text-[#6b6659] hover:text-[#1a1916] hover:bg-[#f2efe8] transition-colors text-sm"
                 >
                   <span className="w-5 flex items-center justify-center shrink-0"><NavIcon name="home" /></span>
                   <span>Browse Auctions</span>
@@ -105,7 +105,7 @@ export default function MobileNav({ navItems, orgName, role, superAdmin, showSup
               </div>
 
               {showSuperAdmin && (
-                <div className="pt-2 border-t border-gray-800 mt-2">
+                <div className="pt-2 border-t border-[#e5e0d5] mt-2">
                   <Link
                     href="/superadmin"
                     onClick={() => setOpen(false)}
@@ -119,10 +119,10 @@ export default function MobileNav({ navItems, orgName, role, superAdmin, showSup
             </nav>
 
             {/* Sign out */}
-            <div className="px-4 pb-5 pt-3 border-t border-gray-800">
+            <div className="px-4 pb-5 pt-3 border-t border-[#e5e0d5]">
               <button
                 onClick={handleSignOut}
-                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors text-sm"
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-600 hover:text-red-300 hover:bg-red-50 transition-colors text-sm"
               >
                 <span>→</span>
                 <span>Sign Out</span>

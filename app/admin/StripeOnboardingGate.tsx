@@ -33,8 +33,8 @@ export default function StripeOnboardingGate({ orgId, hasStripeAccount, chargesE
   // Full-screen interstitial — shown once, before they start onboarding
   if (!hasStripeAccount) {
     return (
-      <div className="fixed inset-0 z-50 bg-gray-950/95 backdrop-blur-sm flex items-center justify-center p-6">
-        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-8 max-w-md w-full text-center space-y-5">
+      <div className="fixed inset-0 z-50 bg-[#faf8f4]/95 backdrop-blur-sm flex items-center justify-center p-6">
+        <div className="bg-white border border-[#e5e0d5] rounded-2xl p-8 max-w-md w-full text-center space-y-5">
           {/* Stripe icon */}
           <div className="w-14 h-14 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl flex items-center justify-center mx-auto">
             <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -46,24 +46,24 @@ export default function StripeOnboardingGate({ orgId, hasStripeAccount, chargesE
           </div>
 
           <div>
-            <h2 className="text-xl font-bold text-white mb-2">Connect Stripe to go live</h2>
-            <p className="text-sm text-gray-400">
+            <h2 className="text-xl font-bold text-[#1a1916] mb-2">Connect Stripe to go live</h2>
+            <p className="text-sm text-[#6b6659]">
               PurposeBid uses Stripe Connect so bidders pay your organization directly. You keep the
               funds — we collect a 20% platform fee automatically.
             </p>
           </div>
 
-          <div className="text-left bg-gray-800/60 rounded-xl p-4 space-y-2 text-sm text-gray-400">
+          <div className="text-left bg-[#f2efe8]/60 rounded-xl p-4 space-y-2 text-sm text-[#6b6659]">
             <div className="flex gap-2.5">
-              <span className="text-emerald-400 shrink-0">✓</span>
+              <span className="text-[#09a7ad] shrink-0">✓</span>
               <span>Bidders pay you directly — you&apos;re the merchant of record</span>
             </div>
             <div className="flex gap-2.5">
-              <span className="text-emerald-400 shrink-0">✓</span>
+              <span className="text-[#09a7ad] shrink-0">✓</span>
               <span>Funds deposited daily to your bank account</span>
             </div>
             <div className="flex gap-2.5">
-              <span className="text-emerald-400 shrink-0">✓</span>
+              <span className="text-[#09a7ad] shrink-0">✓</span>
               <span>Takes about 5 minutes to set up</span>
             </div>
           </div>
@@ -71,14 +71,14 @@ export default function StripeOnboardingGate({ orgId, hasStripeAccount, chargesE
           <button
             onClick={handleConnect}
             disabled={loading}
-            className="w-full bg-indigo-500 hover:bg-indigo-400 disabled:opacity-50 text-white font-semibold py-3 px-6 rounded-xl transition-colors"
+            className="w-full bg-indigo-500 hover:bg-indigo-400 disabled:opacity-50 text-[#1a1916] font-semibold py-3 px-6 rounded-xl transition-colors"
           >
             {loading ? "Loading…" : "Connect Stripe — Get Started"}
           </button>
 
-          <p className="text-xs text-gray-600">
+          <p className="text-xs text-[#8c8778]">
             You can also set this up later in{" "}
-            <Link href="/admin/settings/payments" className="text-gray-500 hover:text-gray-400 underline">
+            <Link href="/admin/settings/payments" className="text-[#8c8778] hover:text-[#6b6659] underline">
               Settings → Payments
             </Link>
           </p>
@@ -92,7 +92,7 @@ export default function StripeOnboardingGate({ orgId, hasStripeAccount, chargesE
 
   return (
     <div className="bg-yellow-500/10 border-b border-yellow-500/30 px-4 sm:px-6 py-3 flex items-center justify-between gap-4 text-sm">
-      <span className="text-yellow-300">
+      <span className="text-amber-500">
         <span className="font-semibold">Stripe setup incomplete.</span>{" "}
         Finish connecting your account to publish auctions.
       </span>
@@ -100,13 +100,13 @@ export default function StripeOnboardingGate({ orgId, hasStripeAccount, chargesE
         <button
           onClick={handleConnect}
           disabled={loading}
-          className="bg-yellow-500 hover:bg-yellow-400 disabled:opacity-50 text-gray-950 font-semibold px-4 py-1.5 rounded-lg text-xs transition-colors"
+          className="bg-yellow-500 hover:bg-amber-400 disabled:opacity-50 text-gray-950 font-semibold px-4 py-1.5 rounded-lg text-xs transition-colors"
         >
           {loading ? "Loading…" : "Resume setup"}
         </button>
         <button
           onClick={() => setDismissed(true)}
-          className="text-yellow-500/60 hover:text-yellow-400 transition-colors"
+          className="text-yellow-500/60 hover:text-amber-600 transition-colors"
           aria-label="Dismiss"
         >
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
