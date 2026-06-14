@@ -8,6 +8,7 @@ import Pusher from "pusher-js";
 import Countdown from "@/app/components/Countdown";
 import { getNextValidBid, getProxySuggestions } from "@/lib/bidIncrements";
 import CardSetupModal from "@/app/components/CardSetupModal";
+import MaxBidExplainerModal from "@/app/components/MaxBidExplainerModal";
 
 interface Item {
   id: string;
@@ -67,6 +68,7 @@ export default function ItemPage() {
   const [cardLast4, setCardLast4] = useState<string | null>(null);
   const [cardBrand, setCardBrand] = useState<string | null>(null);
   const [showCardModal, setShowCardModal] = useState(false);
+  const [showMaxBidExplainer, setShowMaxBidExplainer] = useState(false);
 
   // Stable bidder anonymization map
   const bidderMapRef = useRef<Map<string, string>>(new Map());
@@ -538,13 +540,14 @@ export default function ItemPage() {
             )}
           </div>
 
-          {/* Current bid + bidding UI */}
-          <div className="bg-white border border-[#e5e0d5] rounded-2xl p-6 mb-4 shadow-[0_0_25px_rgba(9,167,173,0.04)]">
-            <div className="flex items-center justify-between mb-2">
+          {/* ── Unified bidding card: Max Bid (primary) + manual bid (secondary) ── */}
+          <div className="bg-white border border-[#e5e0d5] rounded-2xl p-6 mb-6 shadow-[0_0_25px_rgba(9,167,173,0.04)]">
+
+            {/* Current bid header */}
+            <div className="flex items-center justify-between mb-4">
               <div>
                 <div className="text-[#8c8778] text-sm">Current Bid</div>
                 <div className="text-[#09a7ad] font-bold text-3xl sm:text-4xl">${currentBid.toLocaleString()}</div>
-                {/* Fix #4: You're Winning badge */}
                 {showWinning && (
                   <div className="mt-1.5">
                     <span className="inline-flex items-center gap-1.5 text-xs bg-[#09a7ad]/20 text-[#0bbcc2] border border-[#09a7ad]/30 px-2.5 py-0.5 rounded-full font-semibold">
@@ -562,11 +565,9 @@ export default function ItemPage() {
                   <div className="text-[#1a1916] font-bold text-xl">{liveBids.length}</div>
                 </div>
                 {hasActiveProxy && (
-                  <div className="flex items-center gap-1">
-                    <span className="text-xs bg-[#09a7ad]/15 text-[#0a8a8f] px-2 py-0.5 rounded-full font-medium">
-                      Max Bid Active
-                    </span>
-                  </div>
+                  <span className="text-xs bg-[#09a7ad]/15 text-[#0a8a8f] px-2 py-0.5 rounded-full font-medium">
+                    Max Bid Active
+                  </span>
                 )}
               </div>
             </div>
@@ -592,77 +593,217 @@ export default function ItemPage() {
               </div>
             ) : (
               <>
-                <div className="text-[#8c8778] text-sm mb-4 mt-4">Minimum next bid: ${minBid.toLocaleString()}</div>
-                {message && (
-                  <div className={`text-sm mb-3 px-3 py-2 rounded-lg ${
-                    message.type === "success" ? "bg-[#09a7ad]/20 text-[#09a7ad]" : "bg-red-500/20 text-red-600"
-                  }`}>
-                    {message.text}
-                  </div>
-                )}
-                <div className="flex gap-3">
-                  <input
-                    type="number"
-                    value={bidAmount}
-                    min={minBid}
-                    step="1"
-                    onChange={e => setBidAmount(e.target.value)}
-                    onKeyDown={e => e.key === "Enter" && !placing && handleBid()}
-                    placeholder={`Enter $${minBid.toLocaleString()} or more`}
-                    className="flex-1 bg-[#f2efe8] border border-[#d4cfc4] rounded-xl px-4 py-3 text-[#1a1916] placeholder-[#b0a99a] focus:outline-none focus:border-[#09a7ad]"
-                  />
-                  <button
-                    onClick={handleBid}
-                    disabled={placing}
-                    className="bg-[#09a7ad] hover:bg-[#0898a0] disabled:opacity-50 text-white font-bold px-6 py-3 rounded-xl transition-all hover:shadow-[0_0_20px_rgba(9,167,173,0.3)] shrink-0"
-                  >
-                    {placing ? "Placing…" : "Place Bid"}
-                  </button>
-                </div>
-                {/* Total-due preview — live breakdown of what the bidder actually commits to */}
-                {(() => {
-                  const feePct = item.org?.platformFeePercent ?? 0;
-                  const taxPct = item.org?.taxPercent ?? 0;
-                  const entered = parseFloat(bidAmount);
-                  const baseBid = Number.isFinite(entered) && entered > 0 ? entered : minBid;
-                  // Same cent math as the auto-charge
-                  const bidCents = Math.round(baseBid * 100);
-                  const feeCents = Math.round(baseBid * feePct / 100 * 100);
-                  const taxCents = Math.round(baseBid * taxPct / 100 * 100);
-                  const totalCents = bidCents + feeCents + taxCents;
-                  const fmt = (c: number) =>
-                    (c / 100).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                  return (
-                    <div className="mt-3 bg-[#f2efe8]/60 border border-[#d4cfc4]/60 rounded-xl px-4 py-3 text-xs space-y-1">
-                      <div className="flex justify-between text-[#6b6659]">
-                        <span>{Number.isFinite(entered) && entered > 0 ? "Your bid" : "Minimum bid"}</span>
-                        <span className="tabular-nums">${fmt(bidCents)}</span>
-                      </div>
-                      {feePct > 0 && (
-                        <div className="flex justify-between text-[#6b6659]">
-                          <span>Buyer premium ({feePct}%)</span>
-                          <span className="tabular-nums">${fmt(feeCents)}</span>
-                        </div>
-                      )}
-                      {taxPct > 0 && (
-                        <div className="flex justify-between text-[#6b6659]">
-                          <span>Tax ({taxPct}%)</span>
-                          <span className="tabular-nums">${fmt(taxCents)}</span>
-                        </div>
-                      )}
-                      <div className="flex justify-between text-[#1a1916] font-bold border-t border-[#d4cfc4]/60 pt-1.5 mt-1.5">
-                        <span>Total if you win</span>
-                        <span className="tabular-nums">${fmt(totalCents)}</span>
-                      </div>
-                      <p className="text-[#8c8778] pt-0.5">
-                        Charged automatically to your card on file when the auction closes.
-                      </p>
+                {/* ═══════════════════════════════════════════════════════════
+                    MAX BID — PRIMARY option
+                ═══════════════════════════════════════════════════════════ */}
+                <div className="bg-[#f0fafa] border border-[#09a7ad]/25 rounded-2xl p-4 mb-4">
+                  {/* section header */}
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <svg className="w-4 h-4 text-[#09a7ad]" fill="none" viewBox="0 0 16 16" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round">
+                        <path d="M8 1v6l3 3" /><circle cx="8" cy="8" r="7" />
+                      </svg>
+                      <h3 className="font-bold text-sm text-[#1a1916]">Set a Max Bid</h3>
+                      {/* "?" explainer bubble */}
+                      <button
+                        onClick={() => setShowMaxBidExplainer(true)}
+                        aria-label="Learn how max bidding works"
+                        className="w-5 h-5 rounded-full bg-[#09a7ad]/20 text-[#09a7ad] text-xs font-bold flex items-center justify-center hover:bg-[#09a7ad]/35 transition-colors leading-none"
+                      >
+                        ?
+                      </button>
                     </div>
-                  );
-                })()}
-                {/* Payment method indicator */}
+                    <span className="text-xs font-semibold text-[#09a7ad] bg-[#09a7ad]/10 px-2.5 py-0.5 rounded-full">
+                      Recommended
+                    </span>
+                  </div>
+
+                  {proxyMessage && (
+                    <div className={`text-sm mb-3 px-3 py-2 rounded-lg ${
+                      proxyMessage.type === "success" ? "bg-[#09a7ad]/20 text-[#09a7ad]" : "bg-red-500/20 text-red-600"
+                    }`}>
+                      {proxyMessage.text}
+                    </div>
+                  )}
+
+                  {userProxy ? (
+                    /* Active max bid display */
+                    <div className="flex items-center justify-between bg-white rounded-xl px-4 py-3">
+                      <div>
+                        <p className="text-[#4a4640] text-sm font-medium">
+                          Your max bid:{" "}
+                          <span className="text-[#09a7ad] font-bold text-base">${userProxy.maxAmount.toLocaleString()}</span>
+                        </p>
+                        <p className="text-[#8c8778] text-xs mt-0.5">We&apos;re auto-bidding on your behalf up to this amount.</p>
+                      </div>
+                      <div className="flex gap-2 shrink-0 ml-3">
+                        <button
+                          onClick={() => { setProxyAmount(String(userProxy.maxAmount)); setUserProxy(null); }}
+                          className="text-xs text-[#6b6659] hover:text-[#1a1916] border border-[#d4cfc4] hover:border-[#b0a99a] px-3 py-1.5 rounded-lg transition-colors"
+                        >
+                          Update
+                        </button>
+                        <button
+                          onClick={handleCancelProxy}
+                          disabled={cancellingProxy}
+                          className="text-xs text-red-600 hover:text-red-400 border border-red-200 hover:border-red-300 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
+                        >
+                          {cancellingProxy ? "Cancelling…" : "Cancel"}
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    /* Set max bid form */
+                    <div>
+                      {proxyWasBeaten && (
+                        <div className="bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-3 text-xs text-red-600">
+                          Your max bid was outbid. Set a new maximum to get back in the lead.
+                        </div>
+                      )}
+                      <p className="text-[#8c8778] text-xs mb-2.5">Quick picks:</p>
+                      <div className="flex gap-2 mb-3 flex-wrap">
+                        {proxySuggestions.map(s => (
+                          <button
+                            key={s}
+                            onClick={() => setProxyAmount(String(s))}
+                            className={`text-xs px-3 py-1.5 rounded-lg border transition-colors ${
+                              proxyAmount === String(s)
+                                ? "bg-[#09a7ad] border-[#09a7ad] text-white"
+                                : "bg-white border-[#d4cfc4] text-[#4a4640] hover:bg-[#f2efe8]"
+                            }`}
+                          >
+                            ${s.toLocaleString()}
+                          </button>
+                        ))}
+                      </div>
+                      <div className="flex gap-3">
+                        <input
+                          type="number"
+                          value={proxyAmount}
+                          min={minProxy}
+                          step="1"
+                          onChange={e => setProxyAmount(e.target.value)}
+                          onKeyDown={e => e.key === "Enter" && !proxyPlacing && handleSetProxy()}
+                          placeholder={`$${minProxy.toLocaleString()} or more`}
+                          className="flex-1 bg-white border border-[#d4cfc4] rounded-xl px-4 py-3 text-[#1a1916] placeholder-[#b0a99a] focus:outline-none focus:border-[#09a7ad]"
+                        />
+                        <button
+                          onClick={handleSetProxy}
+                          disabled={proxyPlacing}
+                          className="bg-[#09a7ad] hover:bg-[#0898a0] disabled:opacity-50 text-white font-bold px-6 py-3 rounded-xl transition-all hover:shadow-[0_0_20px_rgba(9,167,173,0.3)] shrink-0"
+                        >
+                          {proxyPlacing ? "Setting…" : "Set Max Bid"}
+                        </button>
+                      </div>
+                      {/* Worst-case commitment preview */}
+                      {(() => {
+                        const amt = parseFloat(proxyAmount);
+                        if (!Number.isFinite(amt) || amt <= 0) return null;
+                        const feePct = item.org?.platformFeePercent ?? 0;
+                        const taxPct = item.org?.taxPercent ?? 0;
+                        const totalCents =
+                          Math.round(amt * 100) +
+                          Math.round(amt * feePct / 100 * 100) +
+                          Math.round(amt * taxPct / 100 * 100);
+                        return (
+                          <p className="text-xs text-[#8c8778] mt-2">
+                            Worst case if your max wins:{" "}
+                            <span className="text-[#4a4640] font-semibold tabular-nums">
+                              ${(totalCents / 100).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </span>
+                            {feePct > 0 ? ` (incl. ${feePct}% premium${taxPct > 0 ? ` + ${taxPct}% tax` : ""})` : ""}.
+                          </p>
+                        );
+                      })()}
+                    </div>
+                  )}
+                </div>
+
+                {/* ═══════════════════════════════════════════════════════════
+                    Divider
+                ═══════════════════════════════════════════════════════════ */}
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="flex-1 h-px bg-[#e5e0d5]" />
+                  <span className="text-xs text-[#b0a99a]">or bid a specific amount</span>
+                  <div className="flex-1 h-px bg-[#e5e0d5]" />
+                </div>
+
+                {/* ═══════════════════════════════════════════════════════════
+                    MANUAL BID — secondary option
+                ═══════════════════════════════════════════════════════════ */}
+                <div>
+                  <div className="text-[#8c8778] text-xs mb-3">Minimum next bid: ${minBid.toLocaleString()}</div>
+                  {message && (
+                    <div className={`text-sm mb-3 px-3 py-2 rounded-lg ${
+                      message.type === "success" ? "bg-[#09a7ad]/20 text-[#09a7ad]" : "bg-red-500/20 text-red-600"
+                    }`}>
+                      {message.text}
+                    </div>
+                  )}
+                  <div className="flex gap-3">
+                    <input
+                      type="number"
+                      value={bidAmount}
+                      min={minBid}
+                      step="1"
+                      onChange={e => setBidAmount(e.target.value)}
+                      onKeyDown={e => e.key === "Enter" && !placing && handleBid()}
+                      placeholder={`Enter $${minBid.toLocaleString()} or more`}
+                      className="flex-1 bg-[#f2efe8] border border-[#d4cfc4] rounded-xl px-4 py-3 text-[#1a1916] placeholder-[#b0a99a] focus:outline-none focus:border-[#09a7ad]"
+                    />
+                    <button
+                      onClick={handleBid}
+                      disabled={placing}
+                      className="bg-[#4a4640] hover:bg-[#1a1916] disabled:opacity-50 text-white font-bold px-6 py-3 rounded-xl transition-colors shrink-0"
+                    >
+                      {placing ? "Placing…" : "Place Bid"}
+                    </button>
+                  </div>
+                  {/* Total-due preview */}
+                  {(() => {
+                    const feePct = item.org?.platformFeePercent ?? 0;
+                    const taxPct = item.org?.taxPercent ?? 0;
+                    const entered = parseFloat(bidAmount);
+                    const baseBid = Number.isFinite(entered) && entered > 0 ? entered : minBid;
+                    const bidCents = Math.round(baseBid * 100);
+                    const feeCents = Math.round(baseBid * feePct / 100 * 100);
+                    const taxCents = Math.round(baseBid * taxPct / 100 * 100);
+                    const totalCents = bidCents + feeCents + taxCents;
+                    const fmt = (c: number) =>
+                      (c / 100).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                    return (
+                      <div className="mt-3 bg-[#f2efe8]/60 border border-[#d4cfc4]/60 rounded-xl px-4 py-3 text-xs space-y-1">
+                        <div className="flex justify-between text-[#6b6659]">
+                          <span>{Number.isFinite(entered) && entered > 0 ? "Your bid" : "Minimum bid"}</span>
+                          <span className="tabular-nums">${fmt(bidCents)}</span>
+                        </div>
+                        {feePct > 0 && (
+                          <div className="flex justify-between text-[#6b6659]">
+                            <span>Buyer premium ({feePct}%)</span>
+                            <span className="tabular-nums">${fmt(feeCents)}</span>
+                          </div>
+                        )}
+                        {taxPct > 0 && (
+                          <div className="flex justify-between text-[#6b6659]">
+                            <span>Tax ({taxPct}%)</span>
+                            <span className="tabular-nums">${fmt(taxCents)}</span>
+                          </div>
+                        )}
+                        <div className="flex justify-between text-[#1a1916] font-bold border-t border-[#d4cfc4]/60 pt-1.5 mt-1.5">
+                          <span>Total if you win</span>
+                          <span className="tabular-nums">${fmt(totalCents)}</span>
+                        </div>
+                        <p className="text-[#8c8778] pt-0.5">
+                          Charged automatically to your card on file when the auction closes.
+                        </p>
+                      </div>
+                    );
+                  })()}
+                </div>
+
+                {/* Payment method indicator (shared) */}
                 {item.org?.stripeChargesEnabled && hasCard !== null && (
-                  <div className="flex items-center justify-between mt-3 px-1">
+                  <div className="flex items-center justify-between mt-4 px-1">
                     <div className="flex items-center gap-1.5 text-xs text-[#8c8778]">
                       <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 20 20" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round">
                         <rect x="2" y="5" width="16" height="12" rx="2" />
@@ -687,123 +828,9 @@ export default function ItemPage() {
             )}
           </div>
 
-          {/* Max Bid section */}
-          {!biddingLocked && isLoaded && isSignedIn && (
-            <div className="bg-white border border-[#e5e0d5] rounded-2xl p-6 mb-6">
-              <div className="flex items-center gap-2 mb-3">
-                <h3 className="font-semibold text-sm">Max Bid</h3>
-              </div>
-
-              <div className="bg-[#f2efe8]/60 rounded-xl px-4 py-3 mb-4 text-xs text-[#6b6659] leading-relaxed">
-                <p className="font-medium text-[#4a4640] mb-1">How max bidding works</p>
-                Set your maximum and we&apos;ll automatically bid for you in the smallest increments needed to keep you in the lead — up to your limit. Your max stays private. If someone else sets a higher max, you&apos;ll be notified so you can decide whether to bid again.
-              </div>
-
-              {proxyMessage && (
-                <div className={`text-sm mb-3 px-3 py-2 rounded-lg ${
-                  proxyMessage.type === "success" ? "bg-[#09a7ad]/20 text-[#09a7ad]" : "bg-red-500/20 text-red-600"
-                }`}>
-                  {proxyMessage.text}
-                </div>
-              )}
-
-              {userProxy ? (
-                /* User has an active proxy */
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-[#6b6659] text-sm">
-                      Your max bid:{" "}
-                      <span className="text-[#09a7ad] font-semibold">${userProxy.maxAmount.toLocaleString()}</span>
-                    </p>
-                    <p className="text-[#8c8778] text-xs mt-0.5">We&apos;re auto-bidding up to your max on your behalf.</p>
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => {
-                        setProxyAmount(String(userProxy.maxAmount));
-                        setUserProxy(null);
-                      }}
-                      className="text-xs text-[#6b6659] hover:text-[#1a1916] border border-[#d4cfc4] hover:border-[#b0a99a] px-3 py-1.5 rounded-lg transition-colors"
-                    >
-                      Update
-                    </button>
-                    <button
-                      onClick={handleCancelProxy}
-                      disabled={cancellingProxy}
-                      className="text-xs text-red-600 hover:text-red-300 border border-red-900 hover:border-red-700 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
-                    >
-                      {cancellingProxy ? "Cancelling..." : "Cancel"}
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                /* Fix #5: No proxy — show set form. If proxy was beaten, show alert. */
-                <div>
-                  {proxyWasBeaten && (
-                    <div className="bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-3 text-xs text-red-600">
-                      Your max bid was outbid. Set a new maximum to get back in the lead.
-                    </div>
-                  )}
-                  <p className="text-[#8c8778] text-xs mb-3">
-                    Set a max bid and we&apos;ll bid for you. Quick picks:
-                  </p>
-                  <div className="flex gap-2 mb-3 flex-wrap">
-                    {proxySuggestions.map(s => (
-                      <button
-                        key={s}
-                        onClick={() => setProxyAmount(String(s))}
-                        className={`text-xs px-3 py-1.5 rounded-lg border transition-colors ${
-                          proxyAmount === String(s)
-                            ? "bg-[#09a7ad] border-[#09a7ad] text-white"
-                            : "bg-[#f2efe8] border-[#d4cfc4] text-[#4a4640] hover:bg-[#e8e4dc]"
-                        }`}
-                      >
-                        ${s.toLocaleString()}
-                      </button>
-                    ))}
-                  </div>
-                  <div className="flex gap-3">
-                    <input
-                      type="number"
-                      value={proxyAmount}
-                      min={minProxy}
-                      step="1"
-                      onChange={e => setProxyAmount(e.target.value)}
-                      onKeyDown={e => e.key === "Enter" && !proxyPlacing && handleSetProxy()}
-                      placeholder={`Max $${minProxy.toLocaleString()} or more`}
-                      className="flex-1 bg-[#f2efe8] border border-[#d4cfc4] rounded-xl px-4 py-3 text-[#1a1916] placeholder-[#b0a99a] focus:outline-none focus:border-[#09a7ad]"
-                    />
-                    <button
-                      onClick={handleSetProxy}
-                      disabled={proxyPlacing}
-                      className="bg-[#09a7ad] hover:bg-[#0898a0] disabled:opacity-50 text-white font-semibold px-6 py-3 rounded-xl transition-colors"
-                    >
-                      {proxyPlacing ? "Setting..." : "Set Max Bid"}
-                    </button>
-                  </div>
-                  {/* Worst-case commitment preview for the proxy max */}
-                  {(() => {
-                    const amt = parseFloat(proxyAmount);
-                    if (!Number.isFinite(amt) || amt <= 0) return null;
-                    const feePct = item.org?.platformFeePercent ?? 0;
-                    const taxPct = item.org?.taxPercent ?? 0;
-                    const totalCents =
-                      Math.round(amt * 100) +
-                      Math.round(amt * feePct / 100 * 100) +
-                      Math.round(amt * taxPct / 100 * 100);
-                    return (
-                      <p className="text-xs text-[#8c8778] mt-2">
-                        If your max bid wins at its max, your total would be{" "}
-                        <span className="text-[#4a4640] font-semibold tabular-nums">
-                          ${(totalCents / 100).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </span>
-                        {feePct > 0 ? ` (incl. ${feePct}% buyer premium${taxPct > 0 ? ` + ${taxPct}% tax` : ""})` : ""}.
-                      </p>
-                    );
-                  })()}
-                </div>
-              )}
-            </div>
+          {/* Max Bid explainer modal */}
+          {showMaxBidExplainer && (
+            <MaxBidExplainerModal onClose={() => setShowMaxBidExplainer(false)} />
           )}
 
           {/* Bid history — Fix #1: capped at 5 via state */}
@@ -816,7 +843,7 @@ export default function ItemPage() {
                     <div className="flex items-center gap-2">
                       <span className="text-[#6b6659]">{bid.user}</span>
                       {bid.isProxy && (
-                        <span className="text-xs text-indigo-400 bg-indigo-500/10 px-1.5 py-0.5 rounded">auto</span>
+                        <span className="text-xs text-[#09a7ad] bg-[#09a7ad]/10 px-1.5 py-0.5 rounded">auto</span>
                       )}
                     </div>
                     <span className="text-[#09a7ad] font-semibold">${bid.amount.toLocaleString()}</span>
