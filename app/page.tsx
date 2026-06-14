@@ -116,7 +116,7 @@ export default async function HomePage() {
         </div>
         <div className="relative max-w-5xl mx-auto text-center">
           {activeAuctions.length > 0 && (
-            <a href="#live-auctions" className="inline-flex items-center gap-2 bg-[#09a7ad]/10 border border-[#09a7ad]/25 text-[#09a7ad] text-xs font-bold px-4 py-2 rounded-full mb-6 hover:bg-[#09a7ad]/15 transition-colors">
+            <a href="#live-auctions" className="inline-flex items-center gap-2 bg-[#09a7ad]/10 border border-[#09a7ad]/25 text-[#09a7ad] text-xs font-bold px-4 py-2 rounded-full mb-6 hover:bg-[#0898a0]/15 transition-colors">
               <span className="w-2 h-2 rounded-full bg-[#09a7ad] animate-pulse inline-block" />
               {activeAuctions.length} live auction{activeAuctions.length !== 1 ? "s" : ""} happening now
             </a>

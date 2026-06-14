@@ -95,13 +95,13 @@ export default function AuctionStatusButtons({ auctionId, status }: Props) {
         <>
           <button
             onClick={() => updateStatus("OPEN")}
-            className="bg-[#09a7ad] hover:bg-[#09a7ad] text-white text-sm px-4 py-2 rounded-lg font-medium"
+            className="bg-[#09a7ad] hover:bg-[#0898a0] text-white text-sm px-4 py-2 rounded-lg font-medium transition-colors"
           >
             Open Auction
           </button>
           <button
             onClick={deleteAuction}
-            className="bg-transparent hover:bg-red-50 text-red-600 hover:text-red-300 border border-red-200 text-sm px-3 py-2 rounded-lg font-medium"
+            className="bg-transparent hover:bg-red-50 text-red-600 border border-red-200 hover:border-red-300 text-sm px-3 py-2 rounded-lg font-medium transition-colors"
           >
             Delete
           </button>
@@ -111,13 +111,13 @@ export default function AuctionStatusButtons({ auctionId, status }: Props) {
         <>
           <button
             onClick={() => updateStatus("CLOSING")}
-            className="bg-yellow-500 hover:bg-amber-400 text-black text-sm px-4 py-2 rounded-lg font-medium"
+            className="bg-amber-500 hover:bg-amber-400 text-white text-sm px-4 py-2 rounded-lg font-medium transition-colors"
           >
             Mark Closing Soon
           </button>
           <button
             onClick={closeAuction}
-            className="bg-red-500 hover:bg-red-400 text-white text-sm px-4 py-2 rounded-lg font-medium"
+            className="bg-red-500 hover:bg-red-400 text-white text-sm px-4 py-2 rounded-lg font-medium transition-colors"
           >
             Close Auction
           </button>
@@ -126,7 +126,7 @@ export default function AuctionStatusButtons({ auctionId, status }: Props) {
       {status === "CLOSING" && (
         <button
           onClick={closeAuction}
-          className="bg-red-500 hover:bg-red-400 text-white text-sm px-4 py-2 rounded-lg font-medium"
+          className="bg-red-500 hover:bg-red-400 text-white text-sm px-4 py-2 rounded-lg font-medium transition-colors"
         >
           Close Auction
         </button>
@@ -134,7 +134,7 @@ export default function AuctionStatusButtons({ auctionId, status }: Props) {
       {status === "CLOSED" && (
         <button
           onClick={() => updateStatus("SETTLED")}
-          className="bg-purple-500 hover:bg-purple-400 text-white text-sm px-4 py-2 rounded-lg font-medium"
+          className="bg-[#4a4640] hover:bg-[#1a1916] text-white text-sm px-4 py-2 rounded-lg font-medium transition-colors"
         >
           Mark Settled
         </button>

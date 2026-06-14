@@ -87,7 +87,7 @@ function RegisterForm() {
           <button
             onClick={handleSubmit}
             disabled={saving}
-            className="w-full bg-[#09a7ad] hover:bg-[#09a7ad] disabled:opacity-50 text-white font-semibold py-3 rounded-xl"
+            className="w-full bg-[#09a7ad] hover:bg-[#0898a0] disabled:opacity-50 text-white font-semibold py-3 rounded-xl"
           >
             {saving ? "Saving..." : "Save & Continue"}
           </button>

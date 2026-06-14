@@ -83,9 +83,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     <div className="min-h-screen bg-[#faf8f4] text-[#1a1916] flex flex-col">
       {/* Act-as banner */}
       {actingAsOrg && (
-        <div className="bg-orange-500/20 border-b border-orange-500/40 px-4 sm:px-6 py-2 flex items-center justify-between text-xs sm:text-sm gap-2">
-          <span className="text-orange-300 truncate">
-            Acting as <span className="font-semibold text-orange-200">{actingAsOrg.name}</span>
+        <div className="bg-amber-100 border-b border-amber-200 px-4 sm:px-6 py-2.5 flex items-center justify-between text-xs sm:text-sm gap-2">
+          <span className="text-amber-900 truncate">
+            Acting as <span className="font-bold text-amber-950">{actingAsOrg.name}</span>
           </span>
           <ActAsExitButton />
         </div>
@@ -124,7 +124,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
               <Link
                 key={item.href}
                 href={item.href}
-                className="flex items-center gap-3 px-4 py-3 rounded-xl text-[#6b6659] hover:text-[#1a1916] hover:bg-[#f2efe8] transition-colors"
+                className="flex items-center gap-3 px-4 py-3 rounded-xl text-[#4a4640] font-medium hover:text-[#1a1916] hover:bg-[#f2efe8] transition-colors"
               >
                 <span className="w-5 flex items-center justify-center shrink-0">
                   <AdminNavIcon name={item.icon} />
@@ -135,7 +135,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             <div className="pt-2 border-t border-[#e5e0d5] mt-2">
               <Link
                 href="/dashboard"
-                className="flex items-center gap-3 px-4 py-3 rounded-xl text-[#6b6659] hover:text-[#1a1916] hover:bg-[#f2efe8] transition-colors"
+                className="flex items-center gap-3 px-4 py-3 rounded-xl text-[#4a4640] font-medium hover:text-[#1a1916] hover:bg-[#f2efe8] transition-colors"
               >
                 <span className="w-5 flex items-center justify-center shrink-0">
                   <AdminNavIcon name="mybids" />

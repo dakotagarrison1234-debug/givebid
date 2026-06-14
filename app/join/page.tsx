@@ -60,7 +60,7 @@ function JoinPageInner() {
             <h1 className="text-2xl font-bold mb-3">Invalid Invite</h1>
             <p className="text-[#6b6659] mb-8">This invite link is missing a token. Please ask for a new invite.</p>
             <div className="flex flex-col gap-2.5">
-              <Link href="/auctions" className="w-full bg-[#09a7ad] hover:bg-[#09a7ad] text-white font-semibold py-3 rounded-xl transition-colors">
+              <Link href="/auctions" className="w-full bg-[#09a7ad] hover:bg-[#0898a0] text-white font-semibold py-3 rounded-xl transition-colors">
                 Browse auctions
               </Link>
               <Link href="/" className="w-full border border-[#d4cfc4] hover:border-[#b0a99a] text-[#4a4640] hover:text-[#1a1916] font-medium py-3 rounded-xl transition-colors">
@@ -80,7 +80,7 @@ function JoinPageInner() {
             </div>
             <h1 className="text-2xl font-bold mb-2">You&apos;re in!</h1>
             <p className="text-[#6b6659] mb-6">Redirecting to your dashboard...</p>
-            <Link href="/admin/dashboard" className="w-full inline-block bg-[#09a7ad] hover:bg-[#09a7ad] text-white font-semibold py-3 rounded-xl transition-colors">
+            <Link href="/admin/dashboard" className="w-full inline-block bg-[#09a7ad] hover:bg-[#0898a0] text-white font-semibold py-3 rounded-xl transition-colors">
               Go to dashboard
             </Link>
           </>
@@ -98,7 +98,7 @@ function JoinPageInner() {
             <button
               onClick={handleAccept}
               disabled={status === "joining"}
-              className="w-full bg-[#09a7ad] hover:bg-[#09a7ad] disabled:opacity-50 text-white font-semibold py-3 rounded-xl"
+              className="w-full bg-[#09a7ad] hover:bg-[#0898a0] disabled:opacity-50 text-white font-semibold py-3 rounded-xl"
             >
               {status === "joining" ? "Joining..." : "Accept Invite"}
             </button>

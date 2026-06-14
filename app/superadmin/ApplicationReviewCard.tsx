@@ -143,7 +143,7 @@ export default function ApplicationReviewCard({ application }: { application: Ap
           <button
             onClick={() => handleAction("approve")}
             disabled={loading !== null}
-            className="flex-1 bg-[#09a7ad] hover:bg-[#09a7ad] disabled:opacity-50 text-white font-bold py-2.5 rounded-xl text-sm transition-colors"
+            className="flex-1 bg-[#09a7ad] hover:bg-[#0898a0] disabled:opacity-50 text-white font-bold py-2.5 rounded-xl text-sm transition-colors"
           >
             {loading === "approve" ? "Approving…" : "Approve"}
           </button>

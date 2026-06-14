@@ -227,7 +227,7 @@ export default function StaffPage() {
               <button
                 onClick={handleInvite}
                 disabled={sending}
-                className="w-full bg-[#09a7ad] hover:bg-[#09a7ad] disabled:opacity-50 text-white font-semibold py-3 rounded-xl"
+                className="w-full bg-[#09a7ad] hover:bg-[#0898a0] disabled:opacity-50 text-white font-semibold py-3 rounded-xl"
               >
                 {sending ? "Generating Invite..." : "Generate Invite Link"}
               </button>

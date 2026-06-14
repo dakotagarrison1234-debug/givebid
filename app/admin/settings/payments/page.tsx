@@ -198,7 +198,7 @@ function PaymentsContent() {
             <button
               onClick={handleConnect}
               disabled={connecting}
-              className="bg-[#09a7ad] hover:bg-[#09a7ad] disabled:opacity-50 text-white font-semibold px-5 py-2.5 rounded-xl transition-colors"
+              className="bg-[#09a7ad] hover:bg-[#0898a0] disabled:opacity-50 text-white font-semibold px-5 py-2.5 rounded-xl transition-colors"
             >
               {connecting ? "Loading…" : "Resume Stripe setup"}
             </button>
@@ -220,7 +220,7 @@ function PaymentsContent() {
             <button
               onClick={handleConnect}
               disabled={connecting}
-              className="bg-[#09a7ad] hover:bg-[#09a7ad] disabled:opacity-50 text-white font-semibold px-5 py-2.5 rounded-xl transition-colors"
+              className="bg-[#09a7ad] hover:bg-[#0898a0] disabled:opacity-50 text-white font-semibold px-5 py-2.5 rounded-xl transition-colors"
             >
               {connecting ? "Loading…" : "Connect Stripe"}
             </button>

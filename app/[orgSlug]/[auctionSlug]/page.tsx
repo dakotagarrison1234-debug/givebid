@@ -151,7 +151,7 @@ export default async function AuctionPage({ params }: Props) {
                 : "No items in this auction yet"}
             </p>
             <div className="flex flex-col sm:flex-row gap-2.5 justify-center max-w-sm mx-auto">
-              <Link href={`/${orgSlug}`} className="bg-[#09a7ad] hover:bg-[#09a7ad] text-white font-semibold py-2.5 px-5 rounded-xl transition-colors">
+              <Link href={`/${orgSlug}`} className="bg-[#09a7ad] hover:bg-[#0898a0] text-white font-semibold py-2.5 px-5 rounded-xl transition-colors">
                 More from {orgSlug.replace(/-/g, " ")}
               </Link>
               <Link href="/auctions" className="border border-[#d4cfc4] hover:border-[#b0a99a] text-[#4a4640] hover:text-[#1a1916] font-medium py-2.5 px-5 rounded-xl transition-colors">
@@ -168,7 +168,7 @@ export default async function AuctionPage({ params }: Props) {
               const bidLabel = isItemUnsold ? "Ended" : isItemSold ? "Sold" : isClosed ? "Closed" : "Bid Now";
               const bidClass = isClosed || isItemClosed
                 ? "bg-[#f2efe8] text-[#8c8778] text-xs px-3 py-1.5 rounded-xl font-medium"
-                : "bg-[#09a7ad] hover:bg-[#09a7ad] text-white text-xs px-3 py-1.5 rounded-xl font-bold transition-colors";
+                : "bg-[#09a7ad] hover:bg-[#0898a0] text-white text-xs px-3 py-1.5 rounded-xl font-bold transition-colors";
 
               const primaryPhoto = item.photos.find(p => p.isPrimary)?.url || item.photos[0]?.url;
 

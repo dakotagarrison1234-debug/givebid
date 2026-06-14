@@ -237,7 +237,7 @@ export default function UserMenu() {
       {/* Avatar trigger button */}
       <button
         onClick={() => setOpen(true)}
-        className="w-9 h-9 rounded-full overflow-hidden bg-[#09a7ad]/10 border border-[#09a7ad]/20 flex items-center justify-center text-[#09a7ad] font-semibold text-sm hover:bg-[#09a7ad]/20 transition-colors shrink-0"
+        className="w-9 h-9 rounded-full overflow-hidden bg-[#09a7ad]/10 border border-[#09a7ad]/20 flex items-center justify-center text-[#09a7ad] font-semibold text-sm hover:bg-[#0898a0]/20 transition-colors shrink-0"
         aria-label="Open account menu"
       >
         {user?.imageUrl ? (

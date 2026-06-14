@@ -49,7 +49,7 @@ export default function SuperAdminUsersPage() {
             placeholder="Search name or email…"
             className="bg-[#f2efe8] border border-[#d4cfc4] rounded-xl px-4 py-2 text-sm text-[#1a1916] placeholder-[#b0a99a] focus:outline-none focus:border-[#09a7ad] w-56"
           />
-          <button type="submit" className="bg-[#07878d] hover:bg-[#09a7ad] text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors">
+          <button type="submit" className="bg-[#07878d] hover:bg-[#0898a0] text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors">
             Search
           </button>
           {query && (

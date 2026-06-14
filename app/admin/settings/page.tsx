@@ -204,7 +204,7 @@ export default function AdminSettingsPage() {
       <button
         onClick={saveDetails}
         disabled={saving || !name.trim()}
-        className="bg-[#09a7ad] hover:bg-[#09a7ad] disabled:opacity-50 text-white font-semibold px-6 py-3 rounded-xl w-full sm:w-auto"
+        className="bg-[#09a7ad] hover:bg-[#0898a0] disabled:opacity-50 text-white font-semibold px-6 py-3 rounded-xl w-full sm:w-auto"
       >
         {saving ? "Saving…" : "Save Settings"}
       </button>

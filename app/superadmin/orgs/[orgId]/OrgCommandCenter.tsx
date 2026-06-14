@@ -223,7 +223,7 @@ export default function OrgCommandCenter({ org: initial }: { org: Org }) {
               <label htmlFor="active" className="text-sm text-[#4a4640]">Organization is active</label>
             </div>
             <button onClick={saveOrg} disabled={savingOrg}
-              className="bg-[#09a7ad] hover:bg-[#09a7ad] disabled:opacity-50 text-white font-semibold px-6 py-2.5 rounded-xl text-sm">
+              className="bg-[#09a7ad] hover:bg-[#0898a0] disabled:opacity-50 text-white font-semibold px-6 py-2.5 rounded-xl text-sm">
               {savingOrg ? "Saving..." : "Save Changes"}
             </button>
 

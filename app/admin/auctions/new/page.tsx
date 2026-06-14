@@ -62,7 +62,7 @@ export default function NewAuctionPage() {
           <h1 className="text-lg sm:text-xl font-semibold">New Auction</h1>
         </div>
         <button onClick={handleSave} disabled={saving}
-          className="bg-[#09a7ad] hover:bg-[#09a7ad] disabled:opacity-50 text-white text-sm px-4 sm:px-6 py-2 rounded-lg font-semibold shrink-0">
+          className="bg-[#09a7ad] hover:bg-[#0898a0] disabled:opacity-50 text-white text-sm px-4 sm:px-6 py-2 rounded-lg font-semibold shrink-0">
           {saving ? "Creating..." : "Create Auction"}
         </button>
       </header>

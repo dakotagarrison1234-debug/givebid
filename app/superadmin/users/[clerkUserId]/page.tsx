@@ -162,7 +162,7 @@ export default function UserDetailPage() {
             <button
               onClick={saveProfile}
               disabled={saving}
-              className="bg-[#09a7ad] hover:bg-[#09a7ad] disabled:opacity-50 text-white font-semibold px-6 py-2.5 rounded-xl text-sm"
+              className="bg-[#09a7ad] hover:bg-[#0898a0] disabled:opacity-50 text-white font-semibold px-6 py-2.5 rounded-xl text-sm"
             >
               {saving ? "Saving…" : "Save Profile"}
             </button>

@@ -166,7 +166,7 @@ export default function CardSetupModal({ orgId, stripeAccountId, onSuccess, onCl
         <button
           onClick={handleSave}
           disabled={saving || !ready}
-          className="w-full bg-[#09a7ad] hover:bg-[#09a7ad] disabled:opacity-50 text-white font-semibold py-3 rounded-xl text-sm transition-colors"
+          className="w-full bg-[#09a7ad] hover:bg-[#0898a0] disabled:opacity-50 text-white font-semibold py-3 rounded-xl text-sm transition-colors"
         >
           {saving ? "Saving…" : "Save Card & Continue"}
         </button>

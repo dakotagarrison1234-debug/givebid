@@ -24,7 +24,7 @@ export default function Error({
         <div className="flex flex-col gap-2.5">
           <button
             onClick={reset}
-            className="w-full bg-[#09a7ad] hover:bg-[#09a7ad] text-white font-semibold py-3 rounded-xl transition-colors"
+            className="w-full bg-[#09a7ad] hover:bg-[#0898a0] text-white font-semibold py-3 rounded-xl transition-colors"
           >
             Try again
           </button>

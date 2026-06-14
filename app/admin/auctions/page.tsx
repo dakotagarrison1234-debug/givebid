@@ -21,7 +21,7 @@ export default async function AuctionsPage() {
     <>
       <header className="border-b border-[#e5e0d5] px-4 sm:px-8 py-4 flex items-center justify-between">
         <h1 className="text-xl font-semibold">Auctions ({auctions.length})</h1>
-        <Link href="/admin/auctions/new" className="bg-[#09a7ad] hover:bg-[#09a7ad] text-white text-sm px-4 py-2 rounded-lg">
+        <Link href="/admin/auctions/new" className="bg-[#09a7ad] hover:bg-[#0898a0] text-white text-sm px-4 py-2 rounded-lg">
           + New Auction
         </Link>
       </header>
@@ -30,7 +30,7 @@ export default async function AuctionsPage() {
         {auctions.length === 0 ? (
           <div className="text-center py-20 text-[#8c8778]">
             <p className="text-lg mb-4">No auctions yet</p>
-            <Link href="/admin/auctions/new" className="bg-[#09a7ad] hover:bg-[#09a7ad] text-white px-6 py-3 rounded-lg">
+            <Link href="/admin/auctions/new" className="bg-[#09a7ad] hover:bg-[#0898a0] text-white px-6 py-3 rounded-lg">
               Create your first auction
             </Link>
           </div>

@@ -17,7 +17,7 @@ export default function ActAsExitButton() {
     <button
       onClick={exit}
       disabled={exiting}
-      className="text-orange-300 hover:text-[#1a1916] border border-orange-500/40 hover:border-orange-400 text-xs px-3 py-1 rounded-lg transition-colors"
+      className="bg-amber-200 hover:bg-amber-300 text-amber-900 font-semibold text-xs px-3 py-1.5 rounded-lg transition-colors border border-amber-300 hover:border-amber-400"
     >
       {exiting ? "Exiting..." : "Exit Org View"}
     </button>

@@ -351,7 +351,7 @@ export default function ItemPage() {
           <h1 className="text-2xl font-bold mb-2">Item not found</h1>
           <p className="text-[#6b6659] text-sm mb-6">This item may have been removed or the link is incorrect.</p>
           <div className="flex flex-col gap-2.5">
-            <Link href={`/${orgSlug}/${auctionSlug}`} className="w-full bg-[#09a7ad] hover:bg-[#09a7ad] text-white font-semibold py-3 rounded-xl transition-colors">
+            <Link href={`/${orgSlug}/${auctionSlug}`} className="w-full bg-[#09a7ad] hover:bg-[#0898a0] text-white font-semibold py-3 rounded-xl transition-colors">
               Back to auction
             </Link>
             <Link href="/auctions" className="w-full border border-[#d4cfc4] hover:border-[#b0a99a] text-[#4a4640] hover:text-[#1a1916] font-medium py-3 rounded-xl transition-colors">
@@ -521,7 +521,7 @@ export default function ItemPage() {
               <div className="text-center">
                 <p className="text-[#6b6659] text-sm mb-3">You must be signed in to place a bid.</p>
                 <SignInButton mode="modal">
-                  <button className="w-full bg-[#09a7ad] hover:bg-[#09a7ad] text-white font-semibold py-3 rounded-xl">
+                  <button className="w-full bg-[#09a7ad] hover:bg-[#0898a0] text-white font-semibold py-3 rounded-xl">
                     Sign In to Bid
                   </button>
                 </SignInButton>
@@ -550,7 +550,7 @@ export default function ItemPage() {
                   <button
                     onClick={handleBid}
                     disabled={placing}
-                    className="bg-[#09a7ad] hover:bg-[#09a7ad] disabled:opacity-50 text-white font-bold px-6 py-3 rounded-xl transition-all hover:shadow-[0_0_20px_rgba(9,167,173,0.3)] shrink-0"
+                    className="bg-[#09a7ad] hover:bg-[#0898a0] disabled:opacity-50 text-white font-bold px-6 py-3 rounded-xl transition-all hover:shadow-[0_0_20px_rgba(9,167,173,0.3)] shrink-0"
                   >
                     {placing ? "Placing…" : "Place Bid"}
                   </button>

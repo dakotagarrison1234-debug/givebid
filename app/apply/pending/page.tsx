@@ -63,7 +63,7 @@ export default function ApplyPendingPage() {
             <p className="text-[#6b6659] mb-6">
               Your organization <span className="text-[#1a1916] font-semibold">{orgName}</span> is ready to go.
             </p>
-            <Link href="/admin/dashboard" className="bg-[#09a7ad] hover:bg-[#09a7ad] text-white font-semibold px-8 py-3 rounded-xl inline-block">
+            <Link href="/admin/dashboard" className="bg-[#09a7ad] hover:bg-[#0898a0] text-white font-semibold px-8 py-3 rounded-xl inline-block">
               Go to Dashboard
             </Link>
           </>

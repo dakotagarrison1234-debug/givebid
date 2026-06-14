@@ -576,7 +576,7 @@ export default function BidderDashboard() {
                   <p className="text-[#8c8778] mb-5 text-sm">You haven&apos;t placed any bids yet.</p>
                   <button
                     onClick={() => setTab("auctions")}
-                    className="bg-[#09a7ad] hover:bg-[#09a7ad] text-white font-bold px-6 py-3 rounded-2xl text-sm transition-all hover:shadow-[0_0_25px_rgba(9,167,173,0.25)]"
+                    className="bg-[#09a7ad] hover:bg-[#0898a0] text-white font-bold px-6 py-3 rounded-2xl text-sm transition-all hover:shadow-[0_0_25px_rgba(9,167,173,0.25)]"
                   >
                     Browse Live Auctions
                   </button>
@@ -818,7 +818,7 @@ export default function BidderDashboard() {
                   </p>
                 )}
                 <button onClick={saveProfile} disabled={savingProfile}
-                  className="bg-[#09a7ad] hover:bg-[#09a7ad] disabled:opacity-50 text-white font-bold px-6 py-3 rounded-2xl w-full transition-all hover:shadow-[0_0_25px_rgba(9,167,173,0.2)]">
+                  className="bg-[#09a7ad] hover:bg-[#0898a0] disabled:opacity-50 text-white font-bold px-6 py-3 rounded-2xl w-full transition-all hover:shadow-[0_0_25px_rgba(9,167,173,0.2)]">
                   {savingProfile ? "Saving…" : "Save Profile"}
                 </button>
 

@@ -30,7 +30,7 @@ export default function NotFoundCard({ title, message, actions }: Props) {
               href={a.href}
               className={
                 a.primary
-                  ? "w-full bg-[#09a7ad] hover:bg-[#09a7ad] text-white font-semibold py-3 rounded-xl transition-colors"
+                  ? "w-full bg-[#09a7ad] hover:bg-[#0898a0] text-white font-semibold py-3 rounded-xl transition-colors"
                   : "w-full border border-[#d4cfc4] hover:border-[#b0a99a] text-[#4a4640] hover:text-[#1a1916] font-medium py-3 rounded-xl transition-colors"
               }
             >

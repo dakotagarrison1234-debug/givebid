@@ -57,7 +57,7 @@ export default async function AdminDashboard() {
         <h1 className="text-xl font-semibold">Dashboard</h1>
         <Link
           href="/admin/auctions/new"
-          className="bg-[#09a7ad] hover:bg-[#09a7ad] text-white text-sm px-4 py-2 rounded-lg"
+          className="bg-[#09a7ad] hover:bg-[#0898a0] text-white text-sm px-4 py-2 rounded-lg"
         >
           + New Auction
         </Link>
@@ -121,7 +121,7 @@ export default async function AdminDashboard() {
               <p className="text-[#8c8778] text-sm mb-4">No auctions yet.</p>
               <Link
                 href="/admin/auctions/new"
-                className="block text-center bg-[#09a7ad] hover:bg-[#09a7ad] text-white text-sm px-4 py-2 rounded-lg"
+                className="block text-center bg-[#09a7ad] hover:bg-[#0898a0] text-white text-sm px-4 py-2 rounded-lg"
               >
                 Create Auction
               </Link>
