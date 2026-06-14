@@ -169,7 +169,7 @@ export default async function AuctionPage({ params }: Props) {
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
             {visibleItems.map((item) => {
               const isItemSold = SOLD_STATUSES.includes(item.status);
               const isItemUnsold = item.status === "UNSOLD";
@@ -203,11 +203,12 @@ export default async function AuctionPage({ params }: Props) {
                   }`}
                 >
                   {/* Photo */}
-                  <div className="w-full h-48 bg-[#f2efe8] flex items-center justify-center text-[#8c8778] overflow-hidden relative">
+                  <div className="w-full aspect-square bg-[#f2efe8] flex items-center justify-center text-[#8c8778] overflow-hidden relative">
                     {primaryPhoto ? (
                       <img
                         src={primaryPhoto}
                         alt={item.title}
+                        loading="lazy"
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       />
                     ) : (
@@ -242,29 +243,16 @@ export default async function AuctionPage({ params }: Props) {
                   </div>
 
                   {/* Info */}
-                  <div className="p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      {item.category && (
-                        <span className="text-xs text-[#8c8778] bg-[#f2efe8] px-2 py-0.5 rounded-lg font-medium">
-                          {item.category}
-                        </span>
-                      )}
-                      <span className="text-xs text-[#8c8778] ml-auto">
-                        {item.condition.replace("_", " ").toLowerCase()}
-                      </span>
-                    </div>
-                    <h3 className="font-bold text-base mt-1 mb-1 leading-tight group-hover:text-[#09a7ad] transition-colors line-clamp-2">
+                  <div className="p-3">
+                    <h3 className="font-bold text-sm leading-tight group-hover:text-[#09a7ad] transition-colors line-clamp-2 mb-2">
                       {item.title}
                     </h3>
-                    {item.retailValue && (
-                      <p className="text-[#8c8778] text-xs mb-3">Retail: ${Number(item.retailValue).toLocaleString()}</p>
-                    )}
-                    <div className="flex items-center justify-between mt-3">
+                    <div className="flex items-center justify-between">
                       <div>
-                        <div className="text-xs text-[#8c8778]">
-                          {isItemSold ? "Winning bid" : isItemUnsold ? "Final bid" : "Current bid"}
+                        <div className="text-[10px] text-[#8c8778] uppercase tracking-wide">
+                          {isItemSold ? "Sold" : isItemUnsold ? "Final" : "Bid"}
                         </div>
-                        <div className={`font-extrabold text-xl ${isItemUnsold ? "text-[#8c8778]" : "text-[#09a7ad]"}`}>
+                        <div className={`font-extrabold text-base ${isItemUnsold ? "text-[#8c8778]" : "text-[#09a7ad]"}`}>
                           ${(Number(item.currentBid) || Number(item.startingBid)).toLocaleString()}
                         </div>
                       </div>

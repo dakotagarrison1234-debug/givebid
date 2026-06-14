@@ -62,7 +62,7 @@ export default function MobileNav({ navItems, orgName, role, superAdmin, showSup
               <div>
                 <span className="text-[#09a7ad] font-bold text-xl">PurposeBid</span>
                 <p className="text-[#4a4640] text-sm mt-0.5 font-medium truncate">{orgName}</p>
-                <span className="text-xs text-emerald-600 capitalize">{role}</span>
+                <span className="text-xs text-[#8c8778] capitalize">{role}</span>
               </div>
               <button onClick={() => setOpen(false)} className="text-[#8c8778] hover:text-[#1a1916] p-1">
                 <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">

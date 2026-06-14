@@ -92,10 +92,10 @@ export default async function WinnersPage() {
                           )}
                         </td>
                         <td className="px-6 py-4">
-                          <span className={`text-xs px-2 py-1 rounded-full ${
-                            bid.item.status === "SOLD" ? "bg-blue-500/20 text-blue-600"
-                            : (bid.item.status as string) === "PENDING_PICKUP" ? "bg-yellow-500/20 text-amber-600"
-                            : (bid.item.status as string) === "PICKED_UP" ? "bg-purple-500/20 text-purple-400"
+                          <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                            bid.item.status === "SOLD" ? "bg-[#09a7ad]/15 text-[#0a8a8f]"
+                            : (bid.item.status as string) === "PENDING_PICKUP" ? "bg-amber-50 text-amber-700"
+                            : (bid.item.status as string) === "PICKED_UP" ? "bg-[#f2efe8] text-[#4a4640]"
                             : "bg-[#e8e4dc] text-[#6b6659]"
                           }`}>
                             {bid.item.status.replace("_", " ").toLowerCase()}

@@ -84,6 +84,10 @@ export default function ItemPage() {
   const userProxyRef = useRef<{ maxAmount: number } | null>(null);
   userProxyRef.current = userProxy;
 
+  // Photo carousel
+  const [selectedPhotoIdx, setSelectedPhotoIdx] = useState(0);
+  const touchStartXRef = useRef<number | null>(null);
+
   // Load item data
   useEffect(() => {
     fetch(`/api/items/${itemId}`)
@@ -91,6 +95,8 @@ export default function ItemPage() {
       .then(d => {
         if (d.item) {
           setItem(d.item);
+          const primaryIdx = d.item.photos.findIndex((p: { isPrimary: boolean }) => p.isPrimary);
+          setSelectedPhotoIdx(primaryIdx >= 0 ? primaryIdx : 0);
           const end = d.item.itemEndAt ?? d.item.auction?.endAt ?? null;
           setEffectiveEndAt(end);
           if (end && new Date(end) <= new Date()) setBiddingEnded(true);
@@ -235,7 +241,7 @@ export default function ItemPage() {
       if (data.success) {
         setBidAmount("");
         if (data.proxyFired) {
-          setMessage({ text: `Bid of $${amount.toLocaleString()} placed — instantly outbid by an active proxy.`, type: "error" });
+          setMessage({ text: `Bid of $${amount.toLocaleString()} placed — instantly outbid by an active max bid.`, type: "error" });
         } else {
           setMessage({ text: `Bid of $${amount.toLocaleString()} placed!`, type: "success" });
         }
@@ -267,7 +273,7 @@ export default function ItemPage() {
     const currentBid = item?.currentBid || 0;
     const minProxy = currentBid > 0 ? getNextValidBid(currentBid) : (item?.startingBid || 1);
     if (!proxyAmount || isNaN(amount) || amount < minProxy) {
-      setProxyMessage({ text: `Proxy max must be at least $${minProxy.toLocaleString()}`, type: "error" });
+      setProxyMessage({ text: `Max bid must be at least $${minProxy.toLocaleString()}`, type: "error" });
       return;
     }
 
@@ -293,8 +299,8 @@ export default function ItemPage() {
         setProxyAmount("");
         setProxyMessage({
           text: data.proxyFired
-            ? `Proxy set at $${amount.toLocaleString()} — auto-bid placed!`
-            : `Proxy set at $${amount.toLocaleString()}. We'll bid for you automatically.`,
+            ? `Max bid set at $${amount.toLocaleString()} — auto-bid placed!`
+            : `Max bid set at $${amount.toLocaleString()}. We'll bid for you automatically.`,
           type: "success",
         });
         if (data.newEndAt) {
@@ -325,7 +331,7 @@ export default function ItemPage() {
       if (data.success) {
         setUserProxy(null);
         setProxyWasBeaten(false);
-        setProxyMessage({ text: "Proxy cancelled. Your existing bids remain active.", type: "success" });
+        setProxyMessage({ text: "Max bid cancelled. Your existing bids remain active.", type: "success" });
       } else {
         setProxyMessage({ text: data.error || "Failed to cancel proxy", type: "error" });
       }
@@ -401,23 +407,81 @@ export default function ItemPage() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-10 grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-12">
         {/* Left: photos */}
         <div>
-          <div className="w-full aspect-square bg-white rounded-2xl overflow-hidden mb-3 flex items-center justify-center">
+          {/* Main photo with swipe support */}
+          <div
+            className="w-full aspect-square bg-white rounded-2xl overflow-hidden mb-3 flex items-center justify-center relative select-none"
+            onTouchStart={(e) => { touchStartXRef.current = e.touches[0].clientX; }}
+            onTouchEnd={(e) => {
+              if (touchStartXRef.current === null || item.photos.length < 2) return;
+              const delta = e.changedTouches[0].clientX - touchStartXRef.current;
+              if (Math.abs(delta) > 40) {
+                setSelectedPhotoIdx(prev =>
+                  delta < 0
+                    ? (prev + 1) % item.photos.length
+                    : (prev - 1 + item.photos.length) % item.photos.length
+                );
+              }
+              touchStartXRef.current = null;
+            }}
+          >
             {item.photos.length > 0 ? (
               <img
-                src={item.photos.find(p => p.isPrimary)?.url || item.photos[0].url}
+                src={item.photos[selectedPhotoIdx]?.url || item.photos[0].url}
                 alt={item.title}
                 className="w-full h-full object-contain"
               />
             ) : (
               <div className="text-[#8c8778] text-sm">No photo</div>
             )}
-          </div>
-          {item.photos.length > 1 && (
-            <div className="grid grid-cols-4 gap-2">
-              {item.photos.slice(0, 4).map((photo, i) => (
-                <div key={i} className="aspect-square bg-white rounded-lg overflow-hidden flex items-center justify-center">
-                  <img src={photo.url} alt={`Photo ${i + 1}`} className="w-full h-full object-contain" />
+            {/* Prev / Next arrows */}
+            {item.photos.length > 1 && (
+              <>
+                <button
+                  onClick={() => setSelectedPhotoIdx(prev => (prev - 1 + item.photos.length) % item.photos.length)}
+                  className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/80 hover:bg-white rounded-full flex items-center justify-center shadow-sm transition-colors"
+                  aria-label="Previous photo"
+                >
+                  <svg className="w-4 h-4 text-[#4a4640]" fill="none" viewBox="0 0 16 16" stroke="currentColor" strokeWidth={2} strokeLinecap="round">
+                    <path d="M10 4L6 8l4 4" />
+                  </svg>
+                </button>
+                <button
+                  onClick={() => setSelectedPhotoIdx(prev => (prev + 1) % item.photos.length)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/80 hover:bg-white rounded-full flex items-center justify-center shadow-sm transition-colors"
+                  aria-label="Next photo"
+                >
+                  <svg className="w-4 h-4 text-[#4a4640]" fill="none" viewBox="0 0 16 16" stroke="currentColor" strokeWidth={2} strokeLinecap="round">
+                    <path d="M6 4l4 4-4 4" />
+                  </svg>
+                </button>
+                {/* Dot indicators */}
+                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5">
+                  {item.photos.map((_, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setSelectedPhotoIdx(i)}
+                      className={`w-1.5 h-1.5 rounded-full transition-colors ${i === selectedPhotoIdx ? "bg-[#09a7ad]" : "bg-[#b0a99a]"}`}
+                      aria-label={`Go to photo ${i + 1}`}
+                    />
+                  ))}
                 </div>
+              </>
+            )}
+          </div>
+          {/* Thumbnails */}
+          {item.photos.length > 1 && (
+            <div className="grid grid-cols-5 gap-1.5">
+              {item.photos.map((photo, i) => (
+                <button
+                  key={i}
+                  onClick={() => setSelectedPhotoIdx(i)}
+                  className={`aspect-square bg-white rounded-lg overflow-hidden flex items-center justify-center border-2 transition-colors ${
+                    i === selectedPhotoIdx ? "border-[#09a7ad]" : "border-transparent hover:border-[#09a7ad]/40"
+                  }`}
+                  aria-label={`Photo ${i + 1}`}
+                >
+                  <img src={photo.url} alt={`Photo ${i + 1}`} className="w-full h-full object-contain" loading="lazy" />
+                </button>
               ))}
             </div>
           )}
@@ -499,8 +563,8 @@ export default function ItemPage() {
                 </div>
                 {hasActiveProxy && (
                   <div className="flex items-center gap-1">
-                    <span className="text-xs bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded-full font-medium">
-                      Proxy Active
+                    <span className="text-xs bg-[#09a7ad]/15 text-[#0a8a8f] px-2 py-0.5 rounded-full font-medium">
+                      Max Bid Active
                     </span>
                   </div>
                 )}
@@ -608,7 +672,7 @@ export default function ItemPage() {
                         ? cardBrand
                           ? <span className="text-[#6b6659]">{cardBrand.charAt(0).toUpperCase() + cardBrand.slice(1)} ···· {cardLast4}</span>
                           : <span className="text-[#6b6659]">Card on file</span>
-                        : <span className="text-yellow-500">No card — required to bid</span>
+                        : <span className="text-amber-600 font-medium">No card on file — add one to bid</span>
                       }
                     </div>
                     <button
@@ -623,16 +687,15 @@ export default function ItemPage() {
             )}
           </div>
 
-          {/* Proxy bidding section */}
+          {/* Max Bid section */}
           {!biddingLocked && isLoaded && isSignedIn && (
             <div className="bg-white border border-[#e5e0d5] rounded-2xl p-6 mb-6">
               <div className="flex items-center gap-2 mb-3">
-                <h3 className="font-semibold text-sm">Proxy Bidding</h3>
+                <h3 className="font-semibold text-sm">Max Bid</h3>
               </div>
 
-              {/* Fix #8: Proper proxy explanation (always visible) */}
               <div className="bg-[#f2efe8]/60 rounded-xl px-4 py-3 mb-4 text-xs text-[#6b6659] leading-relaxed">
-                <p className="font-medium text-[#4a4640] mb-1">How proxy bidding works</p>
+                <p className="font-medium text-[#4a4640] mb-1">How max bidding works</p>
                 Set your maximum and we&apos;ll automatically bid for you in the smallest increments needed to keep you in the lead — up to your limit. Your max stays private. If someone else sets a higher max, you&apos;ll be notified so you can decide whether to bid again.
               </div>
 
@@ -649,10 +712,10 @@ export default function ItemPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-[#6b6659] text-sm">
-                      Your max:{" "}
-                      <span className="text-indigo-300 font-semibold">${userProxy.maxAmount.toLocaleString()}</span>
+                      Your max bid:{" "}
+                      <span className="text-[#09a7ad] font-semibold">${userProxy.maxAmount.toLocaleString()}</span>
                     </p>
-                    <p className="text-[#8c8778] text-xs mt-0.5">We&apos;re bidding automatically on your behalf.</p>
+                    <p className="text-[#8c8778] text-xs mt-0.5">We&apos;re auto-bidding up to your max on your behalf.</p>
                   </div>
                   <div className="flex gap-2">
                     <button
@@ -678,11 +741,11 @@ export default function ItemPage() {
                 <div>
                   {proxyWasBeaten && (
                     <div className="bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-3 text-xs text-red-600">
-                      Your proxy was outbid. Set a new maximum to get back in the lead.
+                      Your max bid was outbid. Set a new maximum to get back in the lead.
                     </div>
                   )}
                   <p className="text-[#8c8778] text-xs mb-3">
-                    Set a max and we&apos;ll bid for you. Quick picks:
+                    Set a max bid and we&apos;ll bid for you. Quick picks:
                   </p>
                   <div className="flex gap-2 mb-3 flex-wrap">
                     {proxySuggestions.map(s => (
@@ -691,7 +754,7 @@ export default function ItemPage() {
                         onClick={() => setProxyAmount(String(s))}
                         className={`text-xs px-3 py-1.5 rounded-lg border transition-colors ${
                           proxyAmount === String(s)
-                            ? "bg-indigo-600 border-indigo-500 text-[#1a1916]"
+                            ? "bg-[#09a7ad] border-[#09a7ad] text-white"
                             : "bg-[#f2efe8] border-[#d4cfc4] text-[#4a4640] hover:bg-[#e8e4dc]"
                         }`}
                       >
@@ -708,14 +771,14 @@ export default function ItemPage() {
                       onChange={e => setProxyAmount(e.target.value)}
                       onKeyDown={e => e.key === "Enter" && !proxyPlacing && handleSetProxy()}
                       placeholder={`Max $${minProxy.toLocaleString()} or more`}
-                      className="flex-1 bg-[#f2efe8] border border-[#d4cfc4] rounded-xl px-4 py-3 text-[#1a1916] placeholder-[#b0a99a] focus:outline-none focus:border-indigo-500"
+                      className="flex-1 bg-[#f2efe8] border border-[#d4cfc4] rounded-xl px-4 py-3 text-[#1a1916] placeholder-[#b0a99a] focus:outline-none focus:border-[#09a7ad]"
                     />
                     <button
                       onClick={handleSetProxy}
                       disabled={proxyPlacing}
-                      className="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-[#1a1916] font-semibold px-6 py-3 rounded-xl"
+                      className="bg-[#09a7ad] hover:bg-[#0898a0] disabled:opacity-50 text-white font-semibold px-6 py-3 rounded-xl transition-colors"
                     >
-                      {proxyPlacing ? "Setting..." : "Set Proxy"}
+                      {proxyPlacing ? "Setting..." : "Set Max Bid"}
                     </button>
                   </div>
                   {/* Worst-case commitment preview for the proxy max */}
@@ -730,7 +793,7 @@ export default function ItemPage() {
                       Math.round(amt * taxPct / 100 * 100);
                     return (
                       <p className="text-xs text-[#8c8778] mt-2">
-                        If your proxy wins at its max, your total would be{" "}
+                        If your max bid wins at its max, your total would be{" "}
                         <span className="text-[#4a4640] font-semibold tabular-nums">
                           ${(totalCents / 100).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </span>

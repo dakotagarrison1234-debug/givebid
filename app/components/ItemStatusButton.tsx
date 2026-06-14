@@ -8,9 +8,9 @@ interface Props {
 }
 
 const transitions: Record<string, { label: string; next: string; color: string }> = {
-  SOLD: { label: "Ready for Pickup →", next: "PENDING_PICKUP", color: "bg-yellow-500 hover:bg-amber-400 text-black" },
+  SOLD: { label: "Ready for Pickup", next: "PENDING_PICKUP", color: "bg-[#09a7ad] hover:bg-[#0898a0] text-white" },
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  PENDING_PICKUP: { label: "Mark Picked Up", next: "PICKED_UP" as any, color: "bg-purple-500 hover:bg-purple-400 text-white" },
+  PENDING_PICKUP: { label: "Mark Picked Up", next: "PICKED_UP" as any, color: "bg-[#4a4640] hover:bg-[#1a1916] text-white" },
 };
 
 export default function ItemStatusButton({ itemId, currentStatus }: Props) {
@@ -45,7 +45,7 @@ export default function ItemStatusButton({ itemId, currentStatus }: Props) {
     <button
       onClick={handleClick}
       disabled={loading}
-      className={`text-xs px-3 py-1 rounded-lg font-medium disabled:opacity-50 ${transition.color}`}
+      className={`text-xs px-3 py-1.5 rounded-lg font-medium disabled:opacity-50 whitespace-nowrap transition-colors ${transition.color}`}
     >
       {loading ? "..." : transition.label}
     </button>

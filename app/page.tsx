@@ -249,7 +249,7 @@ export default async function HomePage() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 mb-10">
             {[
               { icon: <IconSearch />, title: "Find an auction", desc: "Browse live auctions and watch the countdown. When the timer hits zero, the highest bid wins." },
-              { icon: <IconBid />, title: "Place your bid", desc: "Bid in real time or set a proxy max — we auto-bid for you. Instant alerts when you are outbid." },
+              { icon: <IconBid />, title: "Place your bid", desc: "Bid in real time or set a max bid — we auto-bid for you. Instant alerts when you are outbid." },
               { icon: <IconTrophy />, title: "Win & pick up", desc: "Win and your card is charged automatically. Arrange pickup with the organization." },
             ].map(({ icon, title, desc }) => (
               <div key={title} className="flex items-start gap-4">
@@ -262,7 +262,7 @@ export default async function HomePage() {
             ))}
           </div>
           <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-sm text-[#8c8778]">
-            <span className="flex items-center gap-2"><span className="text-[#09a7ad]"><IconBot /></span> Proxy bidding</span>
+            <span className="flex items-center gap-2"><span className="text-[#09a7ad]"><IconBot /></span> Max bidding</span>
             <span className="flex items-center gap-2"><span className="text-[#09a7ad]"><IconBell /></span> Outbid alerts</span>
             <span className="flex items-center gap-2"><span className="text-[#09a7ad]"><IconClock /></span> Anti-sniping timer</span>
             <span className="flex items-center gap-2"><span className="text-[#09a7ad]"><IconShield /></span> Secure Stripe checkout</span>
