@@ -529,7 +529,7 @@ export default function BidderDashboard() {
                         </div>
                         <div className="text-right shrink-0">
                           <div className="text-[#09a7ad] font-bold text-sm">${b.myBid.toLocaleString()}</div>
-                          <div className="text-xs text-emerald-600 mt-0.5">Winning</div>
+                          <div className="text-xs text-[#0a8a8f] font-semibold mt-0.5">✓ Winning</div>
                         </div>
                       </Link>
                     ))}
@@ -660,7 +660,7 @@ export default function BidderDashboard() {
                       </div>
                       <div className="text-right shrink-0">
                         <div className="text-[#09a7ad] font-extrabold text-lg">${b.myBid.toLocaleString()}</div>
-                        <div className="text-xs text-emerald-600 mt-0.5 font-semibold">Winning</div>
+                        <div className="text-xs bg-[#09a7ad]/15 text-[#0a8a8f] font-bold px-2 py-0.5 rounded-full mt-0.5 inline-block">✓ Winning</div>
                       </div>
                     </Link>
                   ))}

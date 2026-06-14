@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@clerk/nextjs/server";
 import LocalDate from "@/app/components/LocalDate";
 import UserMenu from "@/app/components/UserMenu";
 import ItemCardTimer from "@/app/components/ItemCardTimer";
@@ -30,6 +31,7 @@ function IcoClock() {
 
 export default async function AuctionPage({ params }: Props) {
   const { orgSlug, auctionSlug } = await params;
+  const { userId } = await auth();
 
   const org = await prisma.organization.findUnique({
     where: { slug: orgSlug },
@@ -60,6 +62,13 @@ export default async function AuctionPage({ params }: Props) {
   const isClosed = auction.status === "CLOSED" || auction.status === "SETTLED";
   const isClosing = auction.status === "CLOSING";
   const isLive = !isClosed;
+
+  // Helper: is the current user the top bidder on this item?
+  const isUserWinning = (bids: { clerkUserId: string | null; amount: unknown }[]) => {
+    if (!userId || bids.length === 0) return false;
+    const topBid = [...bids].sort((a, b) => Number(b.amount) - Number(a.amount))[0];
+    return topBid.clerkUserId === userId;
+  };
 
   const SOLD_STATUSES = ["SOLD", "PENDING_PICKUP", "PICKED_UP"];
 
@@ -165,9 +174,12 @@ export default async function AuctionPage({ params }: Props) {
               const isItemSold = SOLD_STATUSES.includes(item.status);
               const isItemUnsold = item.status === "UNSOLD";
               const isItemClosed = isItemSold || isItemUnsold;
-              const bidLabel = isItemUnsold ? "Ended" : isItemSold ? "Sold" : isClosed ? "Closed" : "Bid Now";
+              const winning = isLive && !isItemClosed && isUserWinning(item.bids);
+              const bidLabel = isItemUnsold ? "Ended" : isItemSold ? "Sold" : isClosed ? "Closed" : winning ? "Raise Bid" : "Bid Now";
               const bidClass = isClosed || isItemClosed
                 ? "bg-[#f2efe8] text-[#8c8778] text-xs px-3 py-1.5 rounded-xl font-medium"
+                : winning
+                ? "bg-[#e0f5f5] text-[#0a8a8f] text-xs px-3 py-1.5 rounded-xl font-bold border border-[#09a7ad]/30"
                 : "bg-[#09a7ad] hover:bg-[#0898a0] text-white text-xs px-3 py-1.5 rounded-xl font-bold transition-colors";
 
               const primaryPhoto = item.photos.find(p => p.isPrimary)?.url || item.photos[0]?.url;
@@ -183,7 +195,9 @@ export default async function AuctionPage({ params }: Props) {
                   key={item.id}
                   href={`/${orgSlug}/${auctionSlug}/item/${item.id}`}
                   className={`bg-white border rounded-2xl overflow-hidden transition-all group ${
-                    isClosed || isItemClosed
+                    winning
+                      ? "border-[#09a7ad]/50 shadow-[0_0_0_1px_rgba(9,167,173,0.15),0_0_20px_rgba(9,167,173,0.08)]"
+                      : isClosed || isItemClosed
                       ? "border-[#e5e0d5]/60 opacity-80 hover:border-[#d4cfc4]"
                       : "border-[#e5e0d5] hover:border-[#09a7ad]/40 hover:shadow-[0_0_25px_rgba(9,167,173,0.06)]"
                   }`}
@@ -207,6 +221,14 @@ export default async function AuctionPage({ params }: Props) {
                       </div>
                     )}
                     {isItemLive && <ItemCardTimer itemId={item.id} endAt={itemEndAtIso} />}
+                    {winning && (
+                      <div className="absolute top-2.5 left-2.5 bg-[#09a7ad] text-white text-xs px-2.5 py-1 rounded-full font-bold flex items-center gap-1 shadow-sm">
+                        <svg className="w-3 h-3" fill="none" viewBox="0 0 12 12" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M2 4.5H1V2.5h1M10 4.5h1V2.5h-1M2 4.5h8v2.5a4 4 0 0 1-8 0V4.5zM3.5 10h5M6 7.5V10"/>
+                        </svg>
+                        Winning
+                      </div>
+                    )}
                     {isItemSold && (
                       <div className="absolute top-2.5 right-2.5 bg-[#faf8f4]/80 backdrop-blur-sm text-[#4a4640] text-xs px-2.5 py-1 rounded-full font-semibold">
                         Sold
