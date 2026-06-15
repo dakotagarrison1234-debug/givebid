@@ -45,11 +45,6 @@ export async function GET(req: NextRequest) {
     else if (rawCat.includes("home") || rawCat.includes("garden") || rawCat.includes("kitchen") || rawCat.includes("furniture") || rawCat.includes("appliance")) category = "Home & Garden";
     else if (rawCat.includes("art") || rawCat.includes("book") || rawCat.includes("toy") || rawCat.includes("collectible")) category = "Art & Collectibles";
 
-    // Use avg of high/low for retail value
-    const retailValue = item.highest_recorded_price
-      ? Math.round((item.highest_recorded_price + (item.lowest_recorded_price ?? item.highest_recorded_price)) / 2)
-      : null;
-
     return NextResponse.json({
       found: true,
       product: {
@@ -57,8 +52,8 @@ export async function GET(req: NextRequest) {
         description: item.description ?? "",
         brand: item.brand ?? "",
         category,
-        retailValue,
-        images: (item.images ?? []).slice(0, 6), // first 6 images
+        retailValue: null,
+        images: (item.images ?? []).slice(0, 3),
       },
     });
   } catch {

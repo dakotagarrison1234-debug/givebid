@@ -172,7 +172,6 @@ function BarcodeScanner({ onFill }: { onFill: (r: BarcodeResult) => void }) {
               {result.brand && <div className="text-xs text-[#8c8778] mt-0.5">{result.brand}</div>}
               <div className="flex flex-wrap gap-2 mt-1.5">
                 {result.category && <span className="text-[10px] bg-[#09a7ad]/10 text-[#09a7ad] px-2 py-0.5 rounded-full font-medium">{result.category}</span>}
-                {result.retailValue && <span className="text-[10px] bg-[#f2efe8] text-[#6b6659] px-2 py-0.5 rounded-full font-medium">Retail ~${result.retailValue}</span>}
               </div>
             </div>
           </div>
@@ -258,7 +257,6 @@ function NewItemForm() {
       title: result.title || prev.title,
       description: result.description || prev.description,
       category: result.category || prev.category,
-      retailValue: result.retailValue ? String(result.retailValue) : prev.retailValue,
     }));
     // Import first image if provided
     if (result.images[0]) {
