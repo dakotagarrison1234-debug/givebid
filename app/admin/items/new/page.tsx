@@ -22,15 +22,13 @@ function BarcodeScanner({ onFill }: { onFill: (r: BarcodeResult) => void }) {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<BarcodeResult | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [cameraSupported] = useState(() => typeof window !== "undefined" && "BarcodeDetector" in window);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const rafRef = useRef<number | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const readerRef = useRef<any>(null);
 
   const stopCamera = () => {
-    if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
-    streamRef.current?.getTracks().forEach(t => t.stop());
-    streamRef.current = null;
+    try { readerRef.current?.reset(); } catch { /* ignore */ }
+    readerRef.current = null;
     setScanning(false);
   };
 
@@ -39,29 +37,28 @@ function BarcodeScanner({ onFill }: { onFill: (r: BarcodeResult) => void }) {
     setResult(null);
     setScanning(true);
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment", width: 640 } });
-      streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play();
-      }
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const detector = new (window as any).BarcodeDetector({ formats: ["ean_13","ean_8","upc_a","upc_e","code_128","code_39"] });
-      const scan = async () => {
-        if (!videoRef.current || !streamRef.current) return;
-        try {
-          const barcodes = await detector.detect(videoRef.current);
-          if (barcodes.length > 0) {
-            const code = barcodes[0].rawValue;
-            stopCamera();
-            setBarcode(code);
-            doLookup(code);
-            return;
-          }
-        } catch { /* ignore detection errors */ }
-        rafRef.current = requestAnimationFrame(scan);
-      };
-      rafRef.current = requestAnimationFrame(scan);
+      const { BrowserMultiFormatReader } = await import("@zxing/browser");
+      const codeReader = new BrowserMultiFormatReader();
+      readerRef.current = codeReader;
+
+      const devices = await BrowserMultiFormatReader.listVideoInputDevices();
+      // Prefer rear camera on mobile
+      const deviceId = devices.find(d =>
+        d.label.toLowerCase().includes("back") ||
+        d.label.toLowerCase().includes("rear") ||
+        d.label.toLowerCase().includes("environment")
+      )?.deviceId ?? devices[devices.length - 1]?.deviceId ?? undefined;
+
+      await codeReader.decodeFromVideoDevice(deviceId, videoRef.current!, (res, err) => {
+        if (res) {
+          const code = res.getText();
+          stopCamera();
+          setBarcode(code);
+          doLookup(code);
+        }
+        // ignore err — ZXing fires continuously even when no barcode in frame
+        void err;
+      });
     } catch {
       setError("Camera not available. Enter the barcode number manually.");
       setScanning(false);
@@ -91,6 +88,7 @@ function BarcodeScanner({ onFill }: { onFill: (r: BarcodeResult) => void }) {
   };
 
   // cleanup on unmount
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => () => stopCamera(), []);
 
   const applyResult = (imgOverride?: string) => {
@@ -114,23 +112,21 @@ function BarcodeScanner({ onFill }: { onFill: (r: BarcodeResult) => void }) {
 
       {/* Input row */}
       <div className="flex gap-2">
-        {cameraSupported && (
-          <button
-            type="button"
-            onClick={scanning ? stopCamera : startCamera}
-            className={`flex items-center gap-1.5 px-3 py-2.5 rounded-lg text-sm font-semibold border shrink-0 transition-colors ${
-              scanning
-                ? "bg-red-50 text-red-600 border-red-200 hover:bg-red-100"
-                : "bg-[#09a7ad]/10 text-[#09a7ad] border-[#09a7ad]/25 hover:bg-[#09a7ad]/20"
-            }`}
-          >
-            {scanning ? (
-              <><svg className="w-4 h-4" fill="none" viewBox="0 0 16 16" stroke="currentColor" strokeWidth={2} strokeLinecap="round"><rect x="2" y="2" width="12" height="12" rx="2"/></svg> Stop</>
-            ) : (
-              <><svg className="w-4 h-4" fill="none" viewBox="0 0 16 16" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round"><rect x="1" y="3" width="14" height="11" rx="1.5"/><circle cx="8" cy="8.5" r="2.5"/><path d="M6 3V1.5M10 3V1.5"/></svg> Scan</>
-            )}
-          </button>
-        )}
+        <button
+          type="button"
+          onClick={scanning ? stopCamera : startCamera}
+          className={`flex items-center gap-1.5 px-3 py-2.5 rounded-lg text-sm font-semibold border shrink-0 transition-colors ${
+            scanning
+              ? "bg-red-50 text-red-600 border-red-200 hover:bg-red-100"
+              : "bg-[#09a7ad]/10 text-[#09a7ad] border-[#09a7ad]/25 hover:bg-[#09a7ad]/20"
+          }`}
+        >
+          {scanning ? (
+            <><svg className="w-4 h-4" fill="none" viewBox="0 0 16 16" stroke="currentColor" strokeWidth={2} strokeLinecap="round"><rect x="2" y="2" width="12" height="12" rx="2"/></svg> Stop</>
+          ) : (
+            <><svg className="w-4 h-4" fill="none" viewBox="0 0 16 16" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round"><rect x="1" y="3" width="14" height="11" rx="1.5"/><circle cx="8" cy="8.5" r="2.5"/><path d="M6 3V1.5M10 3V1.5"/></svg> Scan</>
+          )}
+        </button>
         <input
           type="text"
           value={barcode}
