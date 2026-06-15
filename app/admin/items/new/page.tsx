@@ -1,8 +1,228 @@
 "use client";
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 
+// ── Category list ─────────────────────────────────────────────────────────────
+const CATEGORIES = ["Electronics","Sports","Experiences","Food & Drink","Outdoors","Home & Garden","Art & Collectibles","Gift Cards","Other"];
+
+// ── Barcode scanner card ───────────────────────────────────────────────────────
+interface BarcodeResult {
+  title: string;
+  description: string;
+  brand: string;
+  category: string;
+  retailValue: number | null;
+  images: string[];
+}
+
+function BarcodeScanner({ onFill }: { onFill: (r: BarcodeResult) => void }) {
+  const [barcode, setBarcode] = useState("");
+  const [scanning, setScanning] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<BarcodeResult | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [cameraSupported] = useState(() => typeof window !== "undefined" && "BarcodeDetector" in window);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const rafRef = useRef<number | null>(null);
+
+  const stopCamera = () => {
+    if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
+    streamRef.current?.getTracks().forEach(t => t.stop());
+    streamRef.current = null;
+    setScanning(false);
+  };
+
+  const startCamera = async () => {
+    setError(null);
+    setResult(null);
+    setScanning(true);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment", width: 640 } });
+      streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play();
+      }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const detector = new (window as any).BarcodeDetector({ formats: ["ean_13","ean_8","upc_a","upc_e","code_128","code_39"] });
+      const scan = async () => {
+        if (!videoRef.current || !streamRef.current) return;
+        try {
+          const barcodes = await detector.detect(videoRef.current);
+          if (barcodes.length > 0) {
+            const code = barcodes[0].rawValue;
+            stopCamera();
+            setBarcode(code);
+            doLookup(code);
+            return;
+          }
+        } catch { /* ignore detection errors */ }
+        rafRef.current = requestAnimationFrame(scan);
+      };
+      rafRef.current = requestAnimationFrame(scan);
+    } catch {
+      setError("Camera not available. Enter the barcode number manually.");
+      setScanning(false);
+    }
+  };
+
+  const doLookup = async (code: string) => {
+    const clean = code.replace(/\D/g, "");
+    if (!clean || clean.length < 6) { setError("Enter a valid barcode (6+ digits)."); return; }
+    setLoading(true);
+    setError(null);
+    setResult(null);
+    try {
+      const res = await fetch(`/api/admin/barcode-lookup?upc=${clean}`);
+      const data = await res.json();
+      if (!res.ok || !data.found) {
+        setError(data.message || data.error || "No product found. Fill in manually.");
+      } else {
+        setResult(data.product);
+      }
+    } catch { setError("Lookup failed. Fill in manually."); }
+    finally { setLoading(false); }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") doLookup(barcode);
+  };
+
+  // cleanup on unmount
+  useEffect(() => () => stopCamera(), []);
+
+  const applyResult = (imgOverride?: string) => {
+    if (!result) return;
+    onFill({ ...result, images: imgOverride ? [imgOverride] : result.images });
+    setResult(null);
+    setBarcode("");
+  };
+
+  return (
+    <div className="bg-gradient-to-br from-[#09a7ad]/8 to-[#f0fafa] border border-[#09a7ad]/25 rounded-xl p-5 mb-6">
+      <div className="flex items-center gap-2 mb-3">
+        <svg className="w-5 h-5 text-[#09a7ad] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round">
+          <path d="M3 9V5a2 2 0 0 1 2-2h4M3 15v4a2 2 0 0 0 2 2h4M21 9V5a2 2 0 0 0-2-2h-4M21 15v4a2 2 0 0 1-2 2h-4"/>
+          <line x1="7" y1="12" x2="7" y2="12.01"/><line x1="10" y1="9" x2="10" y2="15"/><line x1="13" y1="12" x2="13" y2="12.01"/><line x1="16" y1="9" x2="16" y2="15"/>
+        </svg>
+        <span className="font-bold text-[#1a1916] text-sm">Barcode Auto-Fill</span>
+        <span className="text-[10px] text-[#09a7ad] bg-[#09a7ad]/10 border border-[#09a7ad]/20 px-2 py-0.5 rounded-full font-semibold uppercase tracking-wide ml-1">New</span>
+      </div>
+      <p className="text-xs text-[#6b6659] mb-3">Scan or type a barcode to auto-fill title, description, category, and retail value.</p>
+
+      {/* Input row */}
+      <div className="flex gap-2">
+        {cameraSupported && (
+          <button
+            type="button"
+            onClick={scanning ? stopCamera : startCamera}
+            className={`flex items-center gap-1.5 px-3 py-2.5 rounded-lg text-sm font-semibold border shrink-0 transition-colors ${
+              scanning
+                ? "bg-red-50 text-red-600 border-red-200 hover:bg-red-100"
+                : "bg-[#09a7ad]/10 text-[#09a7ad] border-[#09a7ad]/25 hover:bg-[#09a7ad]/20"
+            }`}
+          >
+            {scanning ? (
+              <><svg className="w-4 h-4" fill="none" viewBox="0 0 16 16" stroke="currentColor" strokeWidth={2} strokeLinecap="round"><rect x="2" y="2" width="12" height="12" rx="2"/></svg> Stop</>
+            ) : (
+              <><svg className="w-4 h-4" fill="none" viewBox="0 0 16 16" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round"><rect x="1" y="3" width="14" height="11" rx="1.5"/><circle cx="8" cy="8.5" r="2.5"/><path d="M6 3V1.5M10 3V1.5"/></svg> Scan</>
+            )}
+          </button>
+        )}
+        <input
+          type="text"
+          value={barcode}
+          onChange={e => setBarcode(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder="Type or scan barcode number…"
+          className="flex-1 bg-white border border-[#d4cfc4] rounded-lg px-4 py-2.5 text-[#1a1916] placeholder-[#b0a99a] focus:outline-none focus:border-[#09a7ad] text-sm"
+          inputMode="numeric"
+        />
+        <button
+          type="button"
+          onClick={() => doLookup(barcode)}
+          disabled={loading || !barcode.trim()}
+          className="bg-[#09a7ad] hover:bg-[#0898a0] disabled:opacity-40 text-white px-4 py-2.5 rounded-lg text-sm font-semibold shrink-0 transition-colors"
+        >
+          {loading ? "…" : "Look Up"}
+        </button>
+      </div>
+
+      {/* Camera preview */}
+      {scanning && (
+        <div className="mt-3 rounded-xl overflow-hidden border-2 border-[#09a7ad]/30 relative bg-black">
+          <video ref={videoRef} className="w-full max-h-48 object-cover" playsInline muted />
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="w-48 h-24 border-2 border-[#09a7ad] rounded-lg opacity-60" />
+          </div>
+          <div className="absolute bottom-2 left-0 right-0 text-center text-white/80 text-xs">Point at barcode</div>
+        </div>
+      )}
+
+      {/* Error */}
+      {error && !loading && (
+        <p className="mt-2.5 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">{error}</p>
+      )}
+
+      {/* Result preview */}
+      {result && (
+        <div className="mt-3 bg-white border border-[#09a7ad]/25 rounded-xl p-4">
+          <div className="flex items-start justify-between gap-3 mb-3">
+            <div className="min-w-0">
+              <div className="text-xs text-[#09a7ad] font-semibold mb-0.5">Found product</div>
+              <div className="font-bold text-[#1a1916] text-sm leading-snug">{result.title}</div>
+              {result.brand && <div className="text-xs text-[#8c8778] mt-0.5">{result.brand}</div>}
+              <div className="flex flex-wrap gap-2 mt-1.5">
+                {result.category && <span className="text-[10px] bg-[#09a7ad]/10 text-[#09a7ad] px-2 py-0.5 rounded-full font-medium">{result.category}</span>}
+                {result.retailValue && <span className="text-[10px] bg-[#f2efe8] text-[#6b6659] px-2 py-0.5 rounded-full font-medium">Retail ~${result.retailValue}</span>}
+              </div>
+            </div>
+          </div>
+
+          {/* Image picker */}
+          {result.images.length > 0 && (
+            <div className="mb-3">
+              <div className="text-xs text-[#8c8778] mb-1.5 font-medium">Pick a photo (optional)</div>
+              <div className="flex gap-2 overflow-x-auto pb-1">
+                {result.images.map((img, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => applyResult(img)}
+                    className="w-16 h-16 shrink-0 rounded-lg overflow-hidden border-2 border-transparent hover:border-[#09a7ad] transition-colors bg-[#f2efe8]"
+                  >
+                    <img src={img} alt="" className="w-full h-full object-contain" />
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => applyResult()}
+              className="flex-1 bg-[#09a7ad] hover:bg-[#0898a0] text-white text-sm font-bold py-2 rounded-lg transition-colors"
+            >
+              Auto-fill form
+            </button>
+            <button
+              type="button"
+              onClick={() => { setResult(null); setBarcode(""); }}
+              className="text-[#8c8778] hover:text-[#4a4640] text-sm px-3 py-2 border border-[#d4cfc4] rounded-lg transition-colors"
+            >
+              Dismiss
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Main form ─────────────────────────────────────────────────────────────────
 function NewItemForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -21,16 +241,11 @@ function NewItemForm() {
   });
 
   useEffect(() => {
-    fetch("/api/me").then(r => r.json()).then(d => {
-      if (d.orgId) setOrgId(d.orgId);
-    }).catch(() => {});
+    fetch("/api/me").then(r => r.json()).then(d => { if (d.orgId) setOrgId(d.orgId); }).catch(() => {});
     fetch("/api/auctions").then(r => r.json()).then(d => {
-      if (d.auctions) {
-        // Only show auctions that can accept new items (not closed/settled)
-        setAuctions(d.auctions.filter((a: { id: string; title: string; status: string }) =>
-          ["DRAFT", "OPEN", "CLOSING"].includes(a.status)
-        ));
-      }
+      if (d.auctions) setAuctions(d.auctions.filter((a: { id: string; title: string; status: string }) =>
+        ["DRAFT","OPEN","CLOSING"].includes(a.status)
+      ));
     }).catch(() => {});
   }, []);
 
@@ -40,29 +255,44 @@ function NewItemForm() {
     setFormData({ ...formData, [e.target.name]: value });
   };
 
+  // Called when barcode scan succeeds — auto-fill form fields
+  const handleBarcodeFill = (result: BarcodeResult) => {
+    setFormData(prev => ({
+      ...prev,
+      title: result.title || prev.title,
+      description: result.description || prev.description,
+      category: result.category || prev.category,
+      retailValue: result.retailValue ? String(result.retailValue) : prev.retailValue,
+    }));
+    // Import first image if provided
+    if (result.images[0]) {
+      importImageFromUrl(result.images[0]);
+    }
+  };
+
+  const importImageFromUrl = async (url: string) => {
+    try {
+      const res = await fetch(`/api/admin/import-image?url=${encodeURIComponent(url)}`);
+      if (!res.ok) return;
+      const { publicUrl } = await res.json();
+      if (publicUrl) setPhotos(prev => prev.includes(publicUrl) ? prev : [...prev, publicUrl]);
+    } catch { /* non-critical */ }
+  };
+
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (photos.length + files.length > 10) { alert("Maximum 10 photos per item"); return; }
     setUploading(true);
     const failed: string[] = [];
     for (const file of files) {
-      // Derive MIME type from extension when browser doesn't populate file.type (common on mobile)
       let fileType = file.type;
       if (!fileType) {
         const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
-        const extMap: Record<string, string> = {
-          jpg: "image/jpeg", jpeg: "image/jpeg", png: "image/png",
-          webp: "image/webp", gif: "image/gif", heic: "image/heic",
-          heif: "image/heif", avif: "image/avif",
-        };
+        const extMap: Record<string, string> = { jpg: "image/jpeg", jpeg: "image/jpeg", png: "image/png", webp: "image/webp", gif: "image/gif", heic: "image/heic", heif: "image/heif", avif: "image/avif" };
         fileType = extMap[ext] ?? "image/jpeg";
       }
       try {
-        const res = await fetch("/api/upload", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ fileName: file.name, fileType }),
-        });
+        const res = await fetch("/api/upload", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ fileName: file.name, fileType }) });
         if (!res.ok) throw new Error(`Server error ${res.status}`);
         const { signedUrl, publicUrl } = await res.json();
         const putRes = await fetch(signedUrl, { method: "PUT", body: file, headers: { "Content-Type": fileType } });
@@ -75,7 +305,7 @@ function NewItemForm() {
     }
     e.target.value = "";
     setUploading(false);
-    if (failed.length) alert(`Failed to upload: ${failed.join(", ")}\n\nCheck that files are under 10MB and a supported format (JPG, PNG, WebP, HEIC).`);
+    if (failed.length) alert(`Failed to upload: ${failed.join(", ")}`);
   };
 
   const handleSave = async () => {
@@ -92,12 +322,7 @@ function NewItemForm() {
       });
       const data = await res.json();
       if (data.success) {
-        // Redirect back to the auction if we came from one
-        if (preselectedAuctionId) {
-          router.push(`/admin/auctions/${preselectedAuctionId}`);
-        } else {
-          router.push("/admin/auctions");
-        }
+        router.push(preselectedAuctionId ? `/admin/auctions/${preselectedAuctionId}` : "/admin/auctions");
       } else {
         alert("Error saving item: " + data.error);
       }
@@ -110,9 +335,7 @@ function NewItemForm() {
       <header className="border-b border-[#e5e0d5] px-4 sm:px-8 py-4 flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2 min-w-0">
           {preselectedAuctionId ? (
-            <Link href={`/admin/auctions/${preselectedAuctionId}`} className="text-[#6b6659] hover:text-[#1a1916] text-sm shrink-0">
-              ← Auction
-            </Link>
+            <Link href={`/admin/auctions/${preselectedAuctionId}`} className="text-[#6b6659] hover:text-[#1a1916] text-sm shrink-0">← Auction</Link>
           ) : (
             <Link href="/admin/items" className="text-[#6b6659] hover:text-[#1a1916] text-sm shrink-0">← Items</Link>
           )}
@@ -127,12 +350,17 @@ function NewItemForm() {
 
       <div className="flex-1 px-4 sm:px-8 py-6 grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 overflow-auto">
         <div className="lg:col-span-2 space-y-6">
+
+          {/* ── Barcode scanner ── */}
+          <BarcodeScanner onFill={handleBarcodeFill} />
+
+          {/* ── Item details ── */}
           <div className="bg-white border border-[#e5e0d5] rounded-xl p-6">
             <h2 className="font-semibold mb-4">Item Details</h2>
             <div className="space-y-4">
               <div>
                 <label className="text-sm text-[#6b6659] mb-1 block">Item Title *</label>
-                <input name="title" value={formData.title} onChange={handleChange} placeholder="e.g. Apple iPad Pro 12.9&quot;"
+                <input name="title" value={formData.title} onChange={handleChange} placeholder='e.g. Apple iPad Pro 12.9"'
                   className="w-full bg-[#f2efe8] border border-[#d4cfc4] rounded-lg px-4 py-3 text-[#1a1916] placeholder-[#b0a99a] focus:outline-none focus:border-[#09a7ad]" />
               </div>
               <div>
@@ -158,15 +386,14 @@ function NewItemForm() {
                   <select name="category" value={formData.category} onChange={handleChange}
                     className="w-full bg-[#f2efe8] border border-[#d4cfc4] rounded-lg px-4 py-3 text-[#1a1916] focus:outline-none focus:border-[#09a7ad]">
                     <option value="">Select category</option>
-                    {["Electronics","Sports","Experiences","Food & Drink","Outdoors","Home & Garden","Art & Collectibles","Gift Cards","Other"].map(c => (
-                      <option key={c} value={c}>{c}</option>
-                    ))}
+                    {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
                   </select>
                 </div>
               </div>
             </div>
           </div>
 
+          {/* ── Pricing ── */}
           <div className="bg-white border border-[#e5e0d5] rounded-xl p-6">
             <h2 className="font-semibold mb-4">Pricing</h2>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -188,12 +415,17 @@ function NewItemForm() {
             </div>
           </div>
 
+          {/* ── Photos ── */}
           <div className="bg-white border border-[#e5e0d5] rounded-xl p-6">
             <h2 className="font-semibold mb-4">Photos <span className="text-[#8c8778] text-sm font-normal">(up to 10)</span></h2>
             <input type="file" accept="image/*" multiple id="photo-upload" className="hidden" onChange={handlePhotoUpload} disabled={uploading} />
             <label htmlFor="photo-upload"
-              className="border-2 border-dashed border-[#d4cfc4] rounded-xl p-10 text-center hover:border-[#09a7ad] transition-colors cursor-pointer block">
-              <div className="text-[#8c8778] mb-2 flex justify-center"><svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="6" width="20" height="15" rx="2"/><circle cx="12" cy="13.5" r="4"/><path d="M9 6l1.5-3h3L15 6"/></svg></div>
+              className="border-2 border-dashed border-[#d4cfc4] rounded-xl p-8 text-center hover:border-[#09a7ad] transition-colors cursor-pointer block">
+              <div className="text-[#8c8778] mb-2 flex justify-center">
+                <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="2" y="6" width="20" height="15" rx="2"/><circle cx="12" cy="13.5" r="4"/><path d="M9 6l1.5-3h3L15 6"/>
+                </svg>
+              </div>
               <div className="text-[#6b6659] text-sm">{uploading ? "Uploading..." : "Click to upload photos"}</div>
               <div className="text-[#8c8778] text-xs mt-1">PNG, JPG up to 10MB each</div>
             </label>
@@ -211,6 +443,7 @@ function NewItemForm() {
           </div>
         </div>
 
+        {/* ── Sidebar ── */}
         <div className="space-y-6">
           <div className="bg-white border border-[#e5e0d5] rounded-xl p-6">
             <h2 className="font-semibold mb-4">Donor Info</h2>
