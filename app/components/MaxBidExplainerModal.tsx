@@ -45,7 +45,7 @@ function S1() {
         <div className="flex-1 bg-white border-2 border-[#09a7ad]/30 rounded-2xl p-3 text-center">
           <Avatar initial="Y" color="#09a7ad" size={34} />
           <div className="mt-1.5 text-[10px] text-[#8c8778] uppercase tracking-wide">Your max</div>
-          <div className="text-2xl font-black text-[#09a7ad] leading-none mt-0.5">$300</div>
+          <div className="text-2xl font-black text-[#09a7ad] leading-none mt-0.5">$85</div>
           <div className="mt-1 text-[10px] text-[#8c8778]">🔒 private</div>
         </div>
 
@@ -55,7 +55,7 @@ function S1() {
         <div className="flex-1 bg-[#f2efe8] border border-[#d4cfc4] rounded-2xl p-3 text-center flex flex-col items-center">
           <BotIcon size={34} />
           <div className="mt-1 text-[10px] text-[#8c8778] uppercase tracking-wide">We auto-bid</div>
-          <div className="text-2xl font-black text-[#1a1916] leading-none mt-0.5">$100</div>
+          <div className="text-2xl font-black text-[#1a1916] leading-none mt-0.5">$30</div>
           <div className="mt-1 text-[10px] text-[#8c8778]">minimum</div>
         </div>
 
@@ -67,14 +67,14 @@ function S1() {
             <path d="M3 8H1V5h2M17 8h2V5h-2M3 8h14v5a7 7 0 0 1-14 0V8zM7 18h6M10 13v5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
           <div className="text-white font-black text-sm leading-tight">You&apos;re<br/>Winning!</div>
-          <div className="text-white/70 text-[10px] mt-1">at $100</div>
+          <div className="text-white/70 text-[10px] mt-1">at $30</div>
         </div>
       </div>
 
       {/* Callout */}
       <div className="bg-[#e0f5f5] border border-[#09a7ad]/20 rounded-xl px-3 py-2.5 text-center">
         <p className="text-[#0a7f84] text-xs font-semibold">
-          You didn&apos;t spend $300 — you won at $100.&nbsp; Your max stays completely secret.
+          You didn&apos;t spend $85 — you won at $30.&nbsp; Your max stays completely secret.
         </p>
       </div>
     </div>
@@ -89,7 +89,7 @@ function S2() {
       {/* Context bar */}
       <div className="flex items-center justify-between mb-1">
         <span className="text-[11px] font-bold text-[#09a7ad] flex items-center gap-1.5">
-          <Avatar initial="Y" color="#09a7ad" size={18} /> YOU — max $300
+          <Avatar initial="Y" color="#09a7ad" size={18} /> YOU — max $85
         </span>
         <span className="text-[11px] font-bold text-[#6b6659] flex items-center gap-1.5">
           BIDDER B <Avatar initial="B" color="#6b6659" size={18} />
@@ -101,31 +101,31 @@ function S2() {
       <div className="flex justify-end">
         <div className="bg-[#e8e4dc] rounded-2xl rounded-tr-sm px-4 py-2.5 max-w-[55%]">
           <div className="text-[10px] text-[#8c8778] mb-0.5">Bidder B bids</div>
-          <div className="text-lg font-black text-[#4a4640]">$150</div>
+          <div className="text-lg font-black text-[#4a4640]">$40</div>
         </div>
       </div>
-      {/* Auto-bid $175 → left */}
+      {/* Auto-bid $45 → left */}
       <div className="flex items-center gap-2.5">
         <div className="bg-[#09a7ad] rounded-2xl rounded-tl-sm px-4 py-2.5 max-w-[55%]">
           <div className="text-[10px] text-white/70 mb-0.5">Auto-bid for you ⚡</div>
-          <div className="text-lg font-black text-white">$175</div>
+          <div className="text-lg font-black text-white">$45</div>
         </div>
         <span className="text-xs font-bold text-[#09a7ad] whitespace-nowrap">✓ Winning</span>
       </div>
 
       {/* Round 2 */}
-      {/* B bids $250 → right */}
+      {/* B bids $55 → right */}
       <div className="flex justify-end">
         <div className="bg-[#e8e4dc] rounded-2xl rounded-tr-sm px-4 py-2.5 max-w-[55%]">
           <div className="text-[10px] text-[#8c8778] mb-0.5">Bidder B bids again</div>
-          <div className="text-lg font-black text-[#4a4640]">$250</div>
+          <div className="text-lg font-black text-[#4a4640]">$55</div>
         </div>
       </div>
-      {/* Auto-bid $275 → left */}
+      {/* Auto-bid $60 → left */}
       <div className="flex items-center gap-2.5">
         <div className="bg-[#09a7ad] rounded-2xl rounded-tl-sm px-4 py-2.5 max-w-[55%]">
           <div className="text-[10px] text-white/70 mb-0.5">Auto-bid for you ⚡</div>
-          <div className="text-lg font-black text-white">$275</div>
+          <div className="text-lg font-black text-white">$60</div>
         </div>
         <span className="text-xs font-bold text-[#09a7ad] whitespace-nowrap">✓ Still winning</span>
       </div>
@@ -133,7 +133,7 @@ function S2() {
       {/* Callout */}
       <div className="bg-[#e0f5f5] border border-[#09a7ad]/20 rounded-xl px-3 py-2.5 text-center mt-1">
         <p className="text-[#0a7f84] text-xs font-semibold">
-          Every counter-bid happens in seconds — you never have to watch the auction.&nbsp; $275 is still under your $300 max.
+          Every counter-bid happens in seconds — you never have to watch the auction.&nbsp; $60 is still under your $85 max.
         </p>
       </div>
     </div>
@@ -150,12 +150,12 @@ function S3() {
         <div className="bg-[#f0fafa] border-2 border-[#09a7ad] rounded-2xl p-3 text-center">
           <Avatar initial="Y" color="#09a7ad" size={36} />
           <div className="text-[10px] text-[#8c8778] uppercase tracking-wide mt-1.5">Your max bid</div>
-          <div className="text-3xl font-black text-[#09a7ad] leading-none mt-0.5">$300</div>
+          <div className="text-3xl font-black text-[#09a7ad] leading-none mt-0.5">$85</div>
         </div>
         <div className="bg-white border-2 border-[#d4cfc4] rounded-2xl p-3 text-center">
           <Avatar initial="B" color="#6b6659" size={36} />
           <div className="text-[10px] text-[#8c8778] uppercase tracking-wide mt-1.5">Bidder B max</div>
-          <div className="text-3xl font-black text-[#6b6659] leading-none mt-0.5">$200</div>
+          <div className="text-3xl font-black text-[#6b6659] leading-none mt-0.5">$60</div>
         </div>
       </div>
 
@@ -172,9 +172,9 @@ function S3() {
       {/* Result: YOU win */}
       <div className="bg-[#09a7ad] rounded-2xl p-4 text-center">
         <div className="text-white/70 text-xs font-bold uppercase tracking-wide mb-1">🏆 You win at</div>
-        <div className="text-4xl font-black text-white leading-none">$225</div>
+        <div className="text-4xl font-black text-white leading-none">$65</div>
         <div className="text-white/80 text-xs mt-2 leading-relaxed">
-          That&apos;s just $25 above their $200 max — <strong className="text-white">not your full $300</strong>
+          That&apos;s just $5 above their $60 max — <strong className="text-white">not your full $85</strong>
         </div>
       </div>
 
@@ -197,12 +197,12 @@ function S4() {
         <div className="bg-white border-2 border-[#d4cfc4] rounded-2xl p-3 text-center">
           <Avatar initial="Y" color="#09a7ad" size={36} />
           <div className="text-[10px] text-[#8c8778] uppercase tracking-wide mt-1.5">Your max bid</div>
-          <div className="text-3xl font-black text-[#4a4640] leading-none mt-0.5">$150</div>
+          <div className="text-3xl font-black text-[#4a4640] leading-none mt-0.5">$45</div>
         </div>
         <div className="bg-[#f5f1ea] border-2 border-[#4a4640] rounded-2xl p-3 text-center">
           <Avatar initial="B" color="#4a4640" size={36} />
           <div className="text-[10px] text-[#8c8778] uppercase tracking-wide mt-1.5">Bidder B max</div>
-          <div className="text-3xl font-black text-[#1a1916] leading-none mt-0.5">$300</div>
+          <div className="text-3xl font-black text-[#1a1916] leading-none mt-0.5">$85</div>
         </div>
       </div>
 
@@ -219,9 +219,9 @@ function S4() {
       {/* Result: THEY win */}
       <div className="bg-[#1a1916] rounded-2xl p-4 text-center">
         <div className="text-white/50 text-xs font-bold uppercase tracking-wide mb-1">Bidder B wins at</div>
-        <div className="text-4xl font-black text-white leading-none">$175</div>
+        <div className="text-4xl font-black text-white leading-none">$50</div>
         <div className="text-white/60 text-xs mt-2 leading-relaxed">
-          That&apos;s just $25 above your $150 max — <strong className="text-white/80">not their full $300</strong>
+          That&apos;s just $5 above your $45 max — <strong className="text-white/80">not their full $85</strong>
         </div>
       </div>
 
