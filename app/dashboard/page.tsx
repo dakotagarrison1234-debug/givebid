@@ -35,7 +35,13 @@ interface UnpaidWin extends BidBase {
   taxAmount?: number;
   totalDue?: number;
 }
-interface Profile { name: string | null; email: string | null; phone: string | null; }
+interface Profile {
+  name: string | null;
+  email: string | null;
+  phone: string | null;
+  preferredOrgId?: string | null;
+  preferredOrg?: { id: string; name: string; slug: string; logoUrl: string | null } | null;
+}
 interface DashboardData { profile: Profile | null; winning: WinningBid[]; losing: LosingBid[]; past: PastBid[]; unpaidWins: UnpaidWin[]; }
 
 interface LiveAuction {
@@ -594,58 +600,97 @@ function BidderDashboardInner() {
           )}
 
           {/* ── Current Auctions ── */}
-          {tab === "auctions" && (
-            <div className="max-w-3xl">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2 text-sm text-[#8c8778]">
-                  <span className="w-2 h-2 rounded-full bg-[#09a7ad] animate-pulse inline-block" />
-                  {loadingAuctions ? "Loading…" : `${liveAuctions.length} live auction${liveAuctions.length !== 1 ? "s" : ""}`}
-                </div>
-                <Link href="/auctions" className="text-xs text-[#09a7ad] hover:text-[#0bbcc2] font-medium transition-colors flex items-center gap-1">
-                  Full page <IcoArrow />
-                </Link>
-              </div>
+          {tab === "auctions" && (() => {
+            const preferredOrgId = data.profile?.preferredOrg?.id;
+            const preferredOrg = data.profile?.preferredOrg;
+            const preferredAuctions = preferredOrgId ? liveAuctions.filter(a => a.org.id === preferredOrgId) : [];
+            const otherAuctions = preferredOrgId ? liveAuctions.filter(a => a.org.id !== preferredOrgId) : liveAuctions;
 
-              {loadingAuctions ? (
-                <div className="space-y-3">
-                  {[1,2,3].map(i => (
-                    <div key={i} className="bg-white border border-[#e5e0d5] rounded-2xl p-5 animate-pulse">
-                      <div className="h-4 bg-[#f2efe8] rounded w-1/3 mb-3" />
-                      <div className="h-5 bg-[#f2efe8] rounded w-2/3 mb-3" />
-                      <div className="h-3 bg-[#f2efe8] rounded w-1/4" />
-                    </div>
-                  ))}
+            const AuctionCard = ({ a, highlighted }: { a: LiveAuction; highlighted?: boolean }) => (
+              <Link key={a.id} href={`/${a.org.slug}/${a.slug}`}
+                className={`flex items-center gap-4 bg-white rounded-2xl px-4 sm:px-6 py-4 transition-all group ${
+                  highlighted
+                    ? "border border-[#09a7ad]/30 hover:border-[#09a7ad]/60 hover:shadow-[0_0_25px_rgba(9,167,173,0.12)]"
+                    : "border border-[#e5e0d5] hover:border-[#09a7ad]/35 hover:shadow-[0_0_20px_rgba(9,167,173,0.05)]"
+                }`}>
+                <div className="flex-1 min-w-0">
+                  <div className="text-xs text-[#09a7ad] font-semibold mb-1 truncate">{a.org.name}</div>
+                  <div className="font-bold truncate group-hover:text-[#09a7ad] transition-colors">{a.title}</div>
+                  <div className="flex items-center gap-3 mt-1 text-xs text-[#8c8778]">
+                    <span>{a.activeItems} item{a.activeItems !== 1 ? "s" : ""}</span>
+                    {a.raised > 0 && <span className="text-[#09a7ad] font-semibold">${a.raised.toLocaleString()} raised</span>}
+                  </div>
                 </div>
-              ) : liveAuctions.length === 0 ? (
-                <div className="bg-white border border-[#e5e0d5] rounded-2xl p-12 text-center">
-                  <p className="text-[#8c8778] mb-2 text-sm font-semibold">No live auctions right now</p>
-                  <p className="text-[#8c8778] text-xs">Check back soon — new auctions are added regularly.</p>
+                <div className="text-right shrink-0">
+                  <span className="text-xs bg-[#09a7ad]/15 text-[#09a7ad] border border-[#09a7ad]/20 px-2 py-0.5 rounded-full font-semibold">Live</span>
+                  <div className="text-xs text-[#8c8778] mt-2">
+                    Ends {new Date(a.endAt).toLocaleDateString([], { month: "short", day: "numeric" })}
+                  </div>
                 </div>
-              ) : (
-                <div className="space-y-3">
-                  {liveAuctions.map((a) => (
-                    <Link key={a.id} href={`/${a.org.slug}/${a.slug}`}
-                      className="flex items-center gap-4 bg-white border border-[#e5e0d5] hover:border-[#09a7ad]/35 rounded-2xl px-4 sm:px-6 py-4 transition-all hover:shadow-[0_0_20px_rgba(9,167,173,0.05)] group">
-                      <div className="flex-1 min-w-0">
-                        <div className="text-xs text-[#09a7ad] font-semibold mb-1 truncate">{a.org.name}</div>
-                        <div className="font-bold truncate group-hover:text-[#09a7ad] transition-colors">{a.title}</div>
-                        <div className="flex items-center gap-3 mt-1 text-xs text-[#8c8778]">
-                          <span>{a.activeItems} item{a.activeItems !== 1 ? "s" : ""}</span>
-                          {a.raised > 0 && <span className="text-[#09a7ad] font-semibold">${a.raised.toLocaleString()} raised</span>}
+              </Link>
+            );
+
+            return (
+              <div className="max-w-3xl">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2 text-sm text-[#8c8778]">
+                    <span className="w-2 h-2 rounded-full bg-[#09a7ad] animate-pulse inline-block" />
+                    {loadingAuctions ? "Loading…" : `${liveAuctions.length} live auction${liveAuctions.length !== 1 ? "s" : ""}`}
+                  </div>
+                  <Link href="/auctions" className="text-xs text-[#09a7ad] hover:text-[#0bbcc2] font-medium transition-colors flex items-center gap-1">
+                    Full page <IcoArrow />
+                  </Link>
+                </div>
+
+                {loadingAuctions ? (
+                  <div className="space-y-3">
+                    {[1,2,3].map(i => (
+                      <div key={i} className="bg-white border border-[#e5e0d5] rounded-2xl p-5 animate-pulse">
+                        <div className="h-4 bg-[#f2efe8] rounded w-1/3 mb-3" />
+                        <div className="h-5 bg-[#f2efe8] rounded w-2/3 mb-3" />
+                        <div className="h-3 bg-[#f2efe8] rounded w-1/4" />
+                      </div>
+                    ))}
+                  </div>
+                ) : liveAuctions.length === 0 ? (
+                  <div className="bg-white border border-[#e5e0d5] rounded-2xl p-12 text-center">
+                    <p className="text-[#8c8778] mb-2 text-sm font-semibold">No live auctions right now</p>
+                    <p className="text-[#8c8778] text-xs">Check back soon — new auctions are added regularly.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    {/* Preferred org auctions — always at the top */}
+                    {preferredAuctions.length > 0 && preferredOrg && (
+                      <div>
+                        <div className="flex items-center gap-2 mb-3">
+                          <Link href={`/${preferredOrg.slug}`} className="text-xs font-bold text-[#09a7ad] uppercase tracking-wider hover:text-[#0bbcc2] transition-colors">
+                            {preferredOrg.name}
+                          </Link>
+                          <span className="text-[#e5e0d5]">·</span>
+                          <span className="text-xs text-[#8c8778]">Your organization</span>
+                        </div>
+                        <div className="space-y-3">
+                          {preferredAuctions.map(a => <AuctionCard key={a.id} a={a} highlighted />)}
                         </div>
                       </div>
-                      <div className="text-right shrink-0">
-                        <span className="text-xs bg-[#09a7ad]/15 text-[#09a7ad] border border-[#09a7ad]/20 px-2 py-0.5 rounded-full font-semibold">Live</span>
-                        <div className="text-xs text-[#8c8778] mt-2">
-                          Ends {new Date(a.endAt).toLocaleDateString([], { month: "short", day: "numeric" })}
+                    )}
+
+                    {/* All other live auctions */}
+                    {otherAuctions.length > 0 && (
+                      <div>
+                        {preferredAuctions.length > 0 && (
+                          <h3 className="text-xs font-bold text-[#8c8778] uppercase tracking-wider mb-3">Other Auctions</h3>
+                        )}
+                        <div className="space-y-3">
+                          {otherAuctions.map(a => <AuctionCard key={a.id} a={a} />)}
                         </div>
                       </div>
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
           {/* ── Active Bids ── */}
           {tab === "winning" && (

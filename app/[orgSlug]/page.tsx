@@ -6,6 +6,7 @@ import OrgLogo from "@/app/components/OrgLogo";
 import UserMenu from "@/app/components/UserMenu";
 import NotFoundCard from "@/app/components/NotFoundCard";
 import PusherRefresh from "@/app/components/PusherRefresh";
+import OrgFollowCTA from "@/app/components/OrgFollowCTA";
 
 interface Props {
   params: Promise<{ orgSlug: string }>;
@@ -63,28 +64,42 @@ export default async function OrgPage({ params }: Props) {
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[200px] bg-[#09a7ad]/5 rounded-full blur-[60px]" />
         </div>
-        <div className="relative max-w-4xl mx-auto flex items-center gap-5 sm:gap-7">
-          <OrgLogo name={org.name} logoUrl={org.logoUrl} size="lg" />
-          <div className="min-w-0">
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight truncate">{org.name}</h1>
-            <p className="text-[#6b6659] text-sm mt-1.5 line-clamp-2 leading-relaxed">
-              {org.description || "Supporting our community through fundraising auctions"}
-            </p>
-            <div className="flex flex-wrap gap-x-4 gap-y-1.5 mt-3 text-sm">
-              {liveAuctions.length > 0 && (
-                <span className="flex items-center gap-1.5 text-[#09a7ad] font-semibold">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#09a7ad] animate-pulse inline-block" />
-                  {liveAuctions.length} live auction{liveAuctions.length !== 1 ? "s" : ""}
-                </span>
-              )}
-              {totalRaised > 0 && <span className="text-[#8c8778]">${totalRaised.toLocaleString()} raised</span>}
-              {totalItems > 0 && <span className="text-[#8c8778]">{totalItems} items auctioned</span>}
+        <div className="relative max-w-4xl mx-auto">
+          <div className="flex items-center gap-5 sm:gap-7">
+            <OrgLogo name={org.name} logoUrl={org.logoUrl} size="lg" />
+            <div className="min-w-0 flex-1">
+              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight truncate">{org.name}</h1>
+              <p className="text-[#6b6659] text-sm mt-1.5 line-clamp-2 leading-relaxed">
+                {org.description || "Supporting our community through fundraising auctions"}
+              </p>
+              <div className="flex flex-wrap gap-x-4 gap-y-1.5 mt-3 text-sm">
+                {liveAuctions.length > 0 && (
+                  <span className="flex items-center gap-1.5 text-[#09a7ad] font-semibold">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#09a7ad] animate-pulse inline-block" />
+                    {liveAuctions.length} live auction{liveAuctions.length !== 1 ? "s" : ""}
+                  </span>
+                )}
+                {totalRaised > 0 && <span className="text-[#8c8778]">${totalRaised.toLocaleString()} raised</span>}
+                {totalItems > 0 && <span className="text-[#8c8778]">{totalItems} items auctioned</span>}
+              </div>
             </div>
+          </div>
+          {/* Powered by PurposeBid */}
+          <div className="mt-4 flex items-center gap-1.5">
+            <span className="text-xs text-[#8c8778]">Fundraising powered by</span>
+            <Link href="/" className="text-xs font-bold bg-gradient-to-r from-[#09a7ad] to-[#0bbcc2] bg-clip-text text-transparent hover:opacity-80 transition-opacity">
+              PurposeBid
+            </Link>
           </div>
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-10 space-y-10">
+      {/* Sign-up / follow CTA */}
+      <div className="py-4">
+        <OrgFollowCTA orgSlug={orgSlug} orgName={org.name} />
+      </div>
+
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 pb-10 space-y-10">
         {/* Live Auctions */}
         {liveAuctions.length > 0 && (
           <section>
@@ -162,6 +177,22 @@ export default async function OrgPage({ params }: Props) {
             </div>
           </section>
         )}
+
+        {/* Footer */}
+        <div className="border-t border-[#e5e0d5]/60 pt-6 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs text-[#8c8778]">
+          <span className="flex items-center gap-1">
+            Fundraising powered by
+            <Link href="/" className="ml-1 font-bold bg-gradient-to-r from-[#09a7ad] to-[#0bbcc2] bg-clip-text text-transparent">
+              PurposeBid
+            </Link>
+          </span>
+          <span>·</span>
+          <Link href="/sign-up" className="hover:text-[#09a7ad] transition-colors">Create free account</Link>
+          <span>·</span>
+          <Link href="/terms" className="hover:text-[#09a7ad] transition-colors">Terms</Link>
+          <span>·</span>
+          <Link href="/privacy" className="hover:text-[#09a7ad] transition-colors">Privacy</Link>
+        </div>
       </div>
     </main>
   );

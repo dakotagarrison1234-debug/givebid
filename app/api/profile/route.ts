@@ -8,12 +8,28 @@ export async function POST(request: NextRequest) {
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    const { phone, email, name } = await request.json();
+
+    const { phone, email, name, orgSlug } = await request.json();
+
+    // If orgSlug provided (came from an org landing page), attach it as preferred org
+    let preferredOrgId: string | undefined;
+    if (orgSlug) {
+      const org = await prisma.organization.findUnique({
+        where: { slug: orgSlug as string },
+        select: { id: true },
+      });
+      if (org) preferredOrgId = org.id;
+    }
+
+    const updateData: Record<string, string | undefined> = { phone, email, name };
+    if (preferredOrgId) updateData.preferredOrgId = preferredOrgId;
+
     const profile = await prisma.bidderProfile.upsert({
       where: { clerkUserId: userId },
-      update: { phone, email, name },
-      create: { clerkUserId: userId, phone, email, name },
+      update: updateData,
+      create: { clerkUserId: userId, phone, email, name, ...(preferredOrgId ? { preferredOrgId } : {}) },
     });
+
     return NextResponse.json({ success: true, profile });
   } catch (error) {
     console.error("Profile error:", error);
@@ -27,9 +43,16 @@ export async function GET() {
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
     const profile = await prisma.bidderProfile.findUnique({
       where: { clerkUserId: userId },
+      include: {
+        preferredOrg: {
+          select: { id: true, name: true, slug: true, logoUrl: true },
+        },
+      },
     });
+
     return NextResponse.json({ profile });
   } catch (error) {
     console.error("Profile error:", error);

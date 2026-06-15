@@ -36,6 +36,7 @@ model Organization {
   members                OrgMember[]
   invites                OrgInvite[]
   bidderCustomers        BidderStripeCustomer[]
+  bidderFollowers        BidderProfile[]
 }
 
 model OrgMember {
@@ -204,13 +205,15 @@ enum PaymentStatus {
   FAILED
 }
 model BidderProfile {
-  id          String   @id @default(cuid())
-  clerkUserId String   @unique
-  phone       String?
-  email       String?
-  name        String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id             String        @id @default(cuid())
+  clerkUserId    String        @unique
+  phone          String?
+  email          String?
+  name           String?
+  preferredOrgId String?
+  preferredOrg   Organization? @relation(fields: [preferredOrgId], references: [id])
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @default(now()) @updatedAt
 }
 
 model OrgApplication {

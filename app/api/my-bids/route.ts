@@ -9,7 +9,10 @@ export async function GET() {
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const [profile, allBids] = await Promise.all([
-    prisma.bidderProfile.findUnique({ where: { clerkUserId: userId } }),
+    prisma.bidderProfile.findUnique({
+      where: { clerkUserId: userId },
+      include: { preferredOrg: { select: { id: true, name: true, slug: true, logoUrl: true } } },
+    }),
     prisma.bid.findMany({
       where: { clerkUserId: userId },
       include: {
