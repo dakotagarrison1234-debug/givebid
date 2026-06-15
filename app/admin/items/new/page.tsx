@@ -25,6 +25,7 @@ function BarcodeScanner({ onFill }: { onFill: (r: BarcodeResult) => void }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const readerRef = useRef<any>(null);
+  const detectedRef = useRef(false);
 
   const stopCamera = () => {
     try { readerRef.current?.reset(); } catch { /* ignore */ }
@@ -36,6 +37,7 @@ function BarcodeScanner({ onFill }: { onFill: (r: BarcodeResult) => void }) {
     setError(null);
     setResult(null);
     setScanning(true);
+    detectedRef.current = false;
     try {
       const { BrowserMultiFormatReader } = await import("@zxing/browser");
       const codeReader = new BrowserMultiFormatReader();
@@ -50,13 +52,14 @@ function BarcodeScanner({ onFill }: { onFill: (r: BarcodeResult) => void }) {
       )?.deviceId ?? devices[devices.length - 1]?.deviceId ?? undefined;
 
       await codeReader.decodeFromVideoDevice(deviceId, videoRef.current!, (res, err) => {
-        if (res) {
+        // Guard: only act on the first detection
+        if (res && !detectedRef.current) {
+          detectedRef.current = true;
           const code = res.getText();
           stopCamera();
           setBarcode(code);
           doLookup(code);
         }
-        // ignore err — ZXing fires continuously even when no barcode in frame
         void err;
       });
     } catch {
