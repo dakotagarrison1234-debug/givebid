@@ -600,7 +600,10 @@ export default function ItemPage() {
                   {/* section header */}
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-1.5">
-                      <h3 className="font-bold text-sm text-[#1a1916]">Set a Max Bid</h3>
+                      <div>
+                        <h3 className="font-bold text-sm text-[#1a1916]">Set a Max Bid</h3>
+                        <p className="text-[10px] text-[#8c8778] leading-tight mt-0.5">We auto-bid for you up to your limit</p>
+                      </div>
                       <button
                         onClick={() => setShowMaxBidExplainer(true)}
                         aria-label="Learn how max bidding works"

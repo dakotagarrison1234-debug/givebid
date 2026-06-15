@@ -332,7 +332,6 @@ function BidderDashboardInner() {
     { id: "winning",   label: "Active Bids",       shortLabel: "Active",   count: winning.length, icon: <IcoUp /> },
     { id: "losing",    label: "Outbid",            shortLabel: "Outbid",   count: losing.length,  icon: <IcoDown /> },
     { id: "past",      label: "Bid History",       shortLabel: "History",  icon: <IcoClock /> },
-    { id: "profile",   label: "Account",           shortLabel: "Account",  icon: <IcoUser /> },
   ];
 
   return (
@@ -379,7 +378,7 @@ function BidderDashboardInner() {
             className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-[#8c8778] hover:text-[#1a1916] hover:bg-[#f2efe8]/50 text-sm transition-colors"
           >
             <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 20 20" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round"><rect x="3" y="3" width="14" height="14" rx="7"/><circle cx="10" cy="8" r="3"/><path d="M4.5 17c0-3 2.5-5 5.5-5s5.5 2 5.5 5"/></svg>
-            <span>Account Settings</span>
+            <span>Account</span>
           </Link>
           <Link
             href="/auctions"
