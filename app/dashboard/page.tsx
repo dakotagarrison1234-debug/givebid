@@ -7,7 +7,7 @@ import Pusher from "pusher-js";
 import UserMenu from "@/app/components/UserMenu";
 import CardSetupModal from "@/app/components/CardSetupModal";
 
-type Tab = "overview" | "winning" | "losing" | "past" | "auctions" | "profile";
+type Tab = "overview" | "winning" | "losing" | "auctions" | "profile";
 
 interface BidBase {
   itemId: string;
@@ -87,14 +87,6 @@ function IcoDown() {
   return (
     <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 20 20" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
       <path d="M10 5v10M15 10l-5 5-5-5" />
-    </svg>
-  );
-}
-function IcoClock() {
-  return (
-    <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 20 20" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round">
-      <circle cx="10" cy="10" r="8" />
-      <path d="M10 6v4l3 2.5" />
     </svg>
   );
 }
@@ -333,11 +325,10 @@ function BidderDashboardInner() {
   const pendingWins = unpaidWins.filter((w) => !w.paymentFailed);
 
   const navItems: { id: Tab; label: string; shortLabel: string; count?: number; icon: React.ReactNode }[] = [
-    { id: "overview",  label: "Overview",         shortLabel: "Home",     icon: <IcoGrid /> },
-    { id: "auctions",  label: "Live Auctions",    shortLabel: "Auctions", icon: <IcoGavel /> },
-    { id: "winning",   label: "Active Bids",       shortLabel: "Active",   count: winning.length, icon: <IcoUp /> },
-    { id: "losing",    label: "Outbid",            shortLabel: "Outbid",   count: losing.length,  icon: <IcoDown /> },
-    { id: "past",      label: "Bid History",       shortLabel: "History",  icon: <IcoClock /> },
+    { id: "overview",  label: "Overview",      shortLabel: "Home",     icon: <IcoGrid /> },
+    { id: "auctions",  label: "Live Auctions", shortLabel: "Auctions", icon: <IcoGavel /> },
+    { id: "winning",   label: "Active Bids",   shortLabel: "Active",   count: winning.length, icon: <IcoUp /> },
+    { id: "losing",    label: "Outbid",        shortLabel: "Outbid",   count: losing.length,  icon: <IcoDown /> },
   ];
 
   return (
@@ -463,7 +454,6 @@ function BidderDashboardInner() {
             {tab === "auctions"  && "Current Auctions"}
             {tab === "winning"   && "Active Bids"}
             {tab === "losing"    && "Outbid"}
-            {tab === "past"      && "Bid History"}
             {tab === "profile"   && "Account"}
           </h1>
         </header>
@@ -578,7 +568,40 @@ function BidderDashboardInner() {
                 </div>
               )}
 
-              {winning.length === 0 && losing.length === 0 && unpaidWins.length === 0 && (
+              {/* Recent Bids */}
+              {past.length > 0 && (
+                <div>
+                  <h2 className="font-bold text-[#4a4640] text-xs uppercase tracking-wider mb-3">Recent Bids</h2>
+                  <div className="space-y-2">
+                    {past.slice(0, 5).map((b, i) => (
+                      <div key={i}
+                        className={`flex items-center gap-3 bg-white border rounded-2xl px-4 py-3 ${b.outcome === "won" ? "border-[#09a7ad]/15" : "border-[#e5e0d5]/60"}`}>
+                        <Photo url={b.photo} title={b.itemTitle} />
+                        <div className="flex-1 min-w-0">
+                          <div className="font-semibold text-sm truncate">{b.itemTitle}</div>
+                          <div className="text-[#8c8778] text-xs truncate">{b.auctionTitle}</div>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <div className={`font-bold text-sm ${b.outcome === "won" ? "text-[#09a7ad]" : "text-[#8c8778]"}`}>
+                            ${b.myBid.toLocaleString()}
+                          </div>
+                          <div className={`text-xs mt-0.5 ${
+                            b.outcome === "won"
+                              ? b.pickedUp ? "text-[#8c8778]" : "text-emerald-600 font-medium"
+                              : "text-[#8c8778]"
+                          }`}>
+                            {b.outcome === "won"
+                              ? b.pickedUp ? "Picked up" : "Won"
+                              : b.outcome === "unsold" ? "Unsold" : "Lost"}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {winning.length === 0 && losing.length === 0 && unpaidWins.length === 0 && past.length === 0 && (
                 <div className="bg-white border border-[#e5e0d5] rounded-2xl p-12 text-center">
                   <div className="text-[#b0a99a] mb-4 flex justify-center">
                     <svg className="w-10 h-10" fill="none" viewBox="0 0 40 40" stroke="currentColor" strokeWidth={1.2} strokeLinecap="round" strokeLinejoin="round">
@@ -753,85 +776,6 @@ function BidderDashboardInner() {
             </div>
           )}
 
-          {/* ── Bid History ── */}
-          {tab === "past" && (
-            <div className="max-w-3xl">
-              {past.length === 0 && unpaidWins.length === 0 ? (
-                <div className="bg-white border border-[#e5e0d5] rounded-2xl p-12 text-center">
-                  <p className="text-[#8c8778] text-sm">No bid history yet.</p>
-                </div>
-              ) : (
-                <div className="space-y-2.5">
-                  {unpaidWins.map((b) => (
-                    <div key={b.itemId}
-                      className={`flex items-center gap-4 bg-white border rounded-2xl px-4 sm:px-6 py-4 ${b.paymentFailed ? "border-red-500/25" : "border-orange-500/25"}`}>
-                      <Photo url={b.photo} title={b.itemTitle} />
-                      <div className="flex-1 min-w-0">
-                        <div className="font-bold truncate">{b.itemTitle}</div>
-                        <div className="text-[#8c8778] text-xs sm:text-sm mt-0.5 truncate">{b.auctionTitle} · {b.orgName}</div>
-                        {b.paymentFailed && (
-                          <div className="text-xs text-red-600 mt-1">Card was declined. Update your card and retry.</div>
-                        )}
-                      </div>
-                      <div className="text-right shrink-0 flex flex-col items-end gap-1.5">
-                        <div className="text-[#09a7ad] font-extrabold">${(b.totalDue ?? b.amountOwed).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-                        {(b.feeAmount ?? 0) + (b.taxAmount ?? 0) > 0 && (
-                          <div className="text-[11px] text-[#8c8778] leading-tight">
-                            ${b.amountOwed.toLocaleString()} bid
-                            {b.feeAmount ? ` + $${b.feeAmount.toFixed(2)} fee` : ""}
-                            {b.taxAmount ? ` + $${b.taxAmount.toFixed(2)} tax` : ""}
-                          </div>
-                        )}
-                        {b.paymentFailed ? (
-                          <>
-                            <button onClick={() => retryPayment(b.itemId, b.orgStripeAccountId)} disabled={retryingItemId === b.itemId}
-                              className="text-xs bg-red-500 hover:bg-red-400 disabled:opacity-50 text-white font-semibold px-3 py-1.5 rounded-lg transition-colors">
-                              {retryingItemId === b.itemId ? "Retrying…" : "Retry Payment"}
-                            </button>
-                            {b.orgId && b.orgStripeAccountId && (
-                              <button onClick={() => setCardModal({ orgId: b.orgId!, stripeAccountId: b.orgStripeAccountId! })}
-                                className="text-xs text-[#6b6659] hover:text-[#1a1916] border border-[#d4cfc4] hover:border-[#b0a99a] px-3 py-1.5 rounded-lg transition-colors">
-                                Update Card
-                              </button>
-                            )}
-                          </>
-                        ) : (
-                          <div className="text-xs text-orange-400 font-semibold">Payment due</div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                  {past.map((b, i) => (
-                    <div key={i}
-                      className={`flex items-center gap-4 bg-white border rounded-2xl px-4 sm:px-6 py-4 ${b.outcome === "won" ? "border-[#09a7ad]/12" : "border-[#e5e0d5]/60"}`}>
-                      <Photo url={b.photo} title={b.itemTitle} />
-                      <div className="flex-1 min-w-0">
-                        <div className="font-bold truncate">{b.itemTitle}</div>
-                        <div className="text-[#8c8778] text-xs sm:text-sm mt-0.5 truncate">{b.auctionTitle} · {b.orgName}</div>
-                      </div>
-                      <div className="text-right shrink-0">
-                        <div className={`font-extrabold ${b.outcome === "won" ? "text-[#09a7ad]" : "text-[#8c8778]"}`}>
-                          ${b.myBid.toLocaleString()}
-                        </div>
-                        <div className={`text-xs mt-0.5 font-medium ${
-                          b.outcome === "won"
-                            ? b.pickedUp ? "text-[#8c8778]" : "text-emerald-600"
-                            : "text-[#8c8778]"
-                        }`}>
-                          {b.outcome === "won"
-                            ? b.pickedUp ? "Picked up" : b.paid ? "Paid — awaiting pickup" : "Won"
-                            : b.outcome === "unsold" ? "Went unsold" : `Lost · $${b.finalBid.toLocaleString()}`}
-                        </div>
-                        {b.outcome === "won" && b.paid && !b.pickedUp && b.storageLocation && (
-                          <div className="text-xs text-[#8c8778] mt-0.5">Pickup: {b.storageLocation}</div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
 
           {/* ── Account ── */}
           {tab === "profile" && (
