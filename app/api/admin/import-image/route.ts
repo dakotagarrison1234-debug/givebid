@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Missing url param" }, { status: 400 });
   }
 
-  // Only fetch from known safe domains (UPC lookup providers)
+  // Must be a valid HTTPS URL (no private IPs, no local network)
   let parsedUrl: URL;
   try {
     parsedUrl = new URL(url);
@@ -39,19 +39,14 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Invalid URL" }, { status: 400 });
   }
 
-  const allowedHosts = [
-    "images.upcitemdb.com",
-    "storage.googleapis.com",
-    "i5.walmartimages.com",
-    "i.ebayimg.com",
-    "images-na.ssl-images-amazon.com",
-    "m.media-amazon.com",
-    "target.scene7.com",
-    "assets.bringthepixel.com",
-  ];
-  const isAllowed = allowedHosts.some(h => parsedUrl.hostname === h || parsedUrl.hostname.endsWith("." + h));
-  if (!isAllowed) {
-    return NextResponse.json({ error: "Image host not allowed" }, { status: 400 });
+  if (parsedUrl.protocol !== "https:") {
+    return NextResponse.json({ error: "Only HTTPS URLs allowed" }, { status: 400 });
+  }
+
+  // Block private/local IP ranges
+  const blocked = /^(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(parsedUrl.hostname);
+  if (blocked) {
+    return NextResponse.json({ error: "Private URLs not allowed" }, { status: 400 });
   }
 
   // Fetch the external image

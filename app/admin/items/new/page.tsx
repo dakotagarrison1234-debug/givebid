@@ -261,10 +261,8 @@ function NewItemForm() {
       description: result.description || prev.description,
       category: result.category || prev.category,
     }));
-    // Import first image if provided
-    if (result.images[0]) {
-      importImageFromUrl(result.images[0]);
-    }
+    // Import all images (up to 3)
+    result.images.forEach(url => importImageFromUrl(url));
   };
 
   const importImageFromUrl = async (url: string) => {
