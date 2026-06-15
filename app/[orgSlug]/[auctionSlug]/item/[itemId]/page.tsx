@@ -541,7 +541,7 @@ export default function ItemPage() {
           </div>
 
           {/* ── Unified bidding card: Max Bid (primary) + manual bid (secondary) ── */}
-          <div className="bg-white border border-[#e5e0d5] rounded-2xl p-6 mb-6 shadow-[0_0_25px_rgba(9,167,173,0.04)]">
+          <div className="bg-white border border-[#e5e0d5] rounded-2xl p-4 sm:p-6 mb-6 shadow-[0_0_25px_rgba(9,167,173,0.04)]">
 
             {/* Current bid header */}
             <div className="flex items-center justify-between mb-4">
@@ -596,24 +596,20 @@ export default function ItemPage() {
                 {/* ═══════════════════════════════════════════════════════════
                     MAX BID — PRIMARY option
                 ═══════════════════════════════════════════════════════════ */}
-                <div className="bg-[#f0fafa] border border-[#09a7ad]/25 rounded-2xl p-4 mb-4">
+                <div className="bg-[#f0fafa] border border-[#09a7ad]/25 rounded-xl p-3 mb-4">
                   {/* section header */}
                   <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <svg className="w-4 h-4 text-[#09a7ad]" fill="none" viewBox="0 0 16 16" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round">
-                        <path d="M8 1v6l3 3" /><circle cx="8" cy="8" r="7" />
-                      </svg>
+                    <div className="flex items-center gap-1.5">
                       <h3 className="font-bold text-sm text-[#1a1916]">Set a Max Bid</h3>
-                      {/* "?" explainer bubble */}
                       <button
                         onClick={() => setShowMaxBidExplainer(true)}
                         aria-label="Learn how max bidding works"
-                        className="w-5 h-5 rounded-full bg-[#09a7ad]/20 text-[#09a7ad] text-xs font-bold flex items-center justify-center hover:bg-[#09a7ad]/35 transition-colors leading-none"
+                        className="w-5 h-5 rounded-full bg-[#09a7ad]/20 text-[#09a7ad] text-xs font-bold flex items-center justify-center hover:bg-[#09a7ad]/35 transition-colors leading-none shrink-0"
                       >
                         ?
                       </button>
                     </div>
-                    <span className="text-xs font-semibold text-[#09a7ad] bg-[#09a7ad]/10 px-2.5 py-0.5 rounded-full">
+                    <span className="text-[11px] font-semibold text-[#09a7ad] bg-[#09a7ad]/10 px-2 py-0.5 rounded-full shrink-0">
                       Recommended
                     </span>
                   </div>
@@ -660,13 +656,13 @@ export default function ItemPage() {
                           Your max bid was outbid. Set a new maximum to get back in the lead.
                         </div>
                       )}
-                      <p className="text-[#8c8778] text-xs mb-2.5">Quick picks:</p>
-                      <div className="flex gap-2 mb-3 flex-wrap">
+                      <p className="text-[#8c8778] text-xs mb-2">Quick picks:</p>
+                      <div className="flex gap-1.5 mb-3 flex-wrap">
                         {proxySuggestions.map(s => (
                           <button
                             key={s}
                             onClick={() => setProxyAmount(String(s))}
-                            className={`text-xs px-3 py-1.5 rounded-lg border transition-colors ${
+                            className={`text-xs px-2.5 py-1.5 rounded-lg border transition-colors ${
                               proxyAmount === String(s)
                                 ? "bg-[#09a7ad] border-[#09a7ad] text-white"
                                 : "bg-white border-[#d4cfc4] text-[#4a4640] hover:bg-[#f2efe8]"
@@ -676,7 +672,7 @@ export default function ItemPage() {
                           </button>
                         ))}
                       </div>
-                      <div className="flex gap-3">
+                      <div className="space-y-2">
                         <input
                           type="number"
                           value={proxyAmount}
@@ -685,12 +681,12 @@ export default function ItemPage() {
                           onChange={e => setProxyAmount(e.target.value)}
                           onKeyDown={e => e.key === "Enter" && !proxyPlacing && handleSetProxy()}
                           placeholder={`$${minProxy.toLocaleString()} or more`}
-                          className="flex-1 bg-white border border-[#d4cfc4] rounded-xl px-4 py-3 text-[#1a1916] placeholder-[#b0a99a] focus:outline-none focus:border-[#09a7ad]"
+                          className="w-full bg-white border border-[#d4cfc4] rounded-xl px-4 py-3 text-[#1a1916] placeholder-[#b0a99a] focus:outline-none focus:border-[#09a7ad]"
                         />
                         <button
                           onClick={handleSetProxy}
                           disabled={proxyPlacing}
-                          className="bg-[#09a7ad] hover:bg-[#0898a0] disabled:opacity-50 text-white font-bold px-6 py-3 rounded-xl transition-all hover:shadow-[0_0_20px_rgba(9,167,173,0.3)] shrink-0"
+                          className="w-full bg-[#09a7ad] hover:bg-[#0898a0] disabled:opacity-50 text-white font-bold py-3 rounded-xl transition-all hover:shadow-[0_0_20px_rgba(9,167,173,0.3)]"
                         >
                           {proxyPlacing ? "Setting…" : "Set Max Bid"}
                         </button>
