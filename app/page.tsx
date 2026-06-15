@@ -269,6 +269,21 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* Footer */}
+      <footer className="border-t border-[#e5e0d5] bg-white px-6 py-6">
+        <div className="max-w-5xl mx-auto flex flex-wrap items-center justify-between gap-4 text-sm text-[#8c8778]">
+          <div className="flex items-center gap-1.5">
+            <span>© {new Date().getFullYear()}</span>
+            <a href="https://for-purpose.life" target="_blank" rel="noopener noreferrer" className="text-[#09a7ad] hover:underline font-medium">For Purpose Life</a>
+          </div>
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+            <Link href="/terms" className="hover:text-[#1a1916] transition-colors">Terms of Service</Link>
+            <Link href="/privacy" className="hover:text-[#1a1916] transition-colors">Privacy Policy</Link>
+            <a href="mailto:Ryan@for-purpose.com" className="hover:text-[#1a1916] transition-colors">Ryan@for-purpose.com</a>
+          </div>
+        </div>
+      </footer>
     </main>
   );
 }
