@@ -546,7 +546,7 @@ export default function ItemPage() {
             {/* Current bid header */}
             <div className="flex items-center justify-between mb-4">
               <div>
-                <div className="text-[#8c8778] text-sm">Current Bid</div>
+                <div className="text-[#8c8778] text-sm">{item.currentBid > 0 ? "Current Bid" : "Starting Bid"}</div>
                 <div className="text-[#09a7ad] font-bold text-3xl sm:text-4xl">${currentBid.toLocaleString()}</div>
                 {showWinning && (
                   <div className="mt-1.5">
@@ -728,7 +728,7 @@ export default function ItemPage() {
                     MANUAL BID — secondary option
                 ═══════════════════════════════════════════════════════════ */}
                 <div>
-                  <div className="text-[#8c8778] text-xs mb-3">Minimum next bid: ${minBid.toLocaleString()}</div>
+                  <div className="text-[#8c8778] text-xs mb-3">{item.currentBid > 0 ? `Minimum next bid: $${minBid.toLocaleString()}` : `Be the first bidder — start at $${minBid.toLocaleString()}`}</div>
                   {message && (
                     <div className={`text-sm mb-3 px-3 py-2 rounded-lg ${
                       message.type === "success" ? "bg-[#09a7ad]/20 text-[#09a7ad]" : "bg-red-500/20 text-red-600"

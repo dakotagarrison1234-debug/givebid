@@ -1,7 +1,7 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import Pusher from "pusher-js";
 import UserMenu from "@/app/components/UserMenu";
@@ -138,10 +138,12 @@ function formatEnd(endAt: string) {
   return new Date(endAt).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
 }
 
-export default function BidderDashboard() {
+function BidderDashboardInner() {
   const { user, isSignedIn, isLoaded } = useUser();
   const router = useRouter();
-  const [tab, setTab] = useState<Tab>("overview");
+  const searchParams = useSearchParams();
+  const initialTab = (searchParams.get("tab") as Tab) || "overview";
+  const [tab, setTab] = useState<Tab>(initialTab);
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [editName, setEditName] = useState("");
@@ -325,12 +327,12 @@ export default function BidderDashboard() {
   const pendingWins = unpaidWins.filter((w) => !w.paymentFailed);
 
   const navItems: { id: Tab; label: string; shortLabel: string; count?: number; icon: React.ReactNode }[] = [
-    { id: "overview",  label: "Overview",           shortLabel: "Home",     icon: <IcoGrid /> },
-    { id: "auctions",  label: "Current Auctions",   shortLabel: "Auctions", icon: <IcoGavel /> },
-    { id: "winning",   label: "Active Bids",         shortLabel: "Active",   count: winning.length, icon: <IcoUp /> },
-    { id: "losing",    label: "Outbid",              shortLabel: "Outbid",   count: losing.length,  icon: <IcoDown /> },
-    { id: "past",      label: "Bid History",         shortLabel: "History",  icon: <IcoClock /> },
-    { id: "profile",   label: "Profile & Settings",  shortLabel: "Profile",  icon: <IcoUser /> },
+    { id: "overview",  label: "Overview",         shortLabel: "Home",     icon: <IcoGrid /> },
+    { id: "auctions",  label: "Live Auctions",    shortLabel: "Auctions", icon: <IcoGavel /> },
+    { id: "winning",   label: "Active Bids",       shortLabel: "Active",   count: winning.length, icon: <IcoUp /> },
+    { id: "losing",    label: "Outbid",            shortLabel: "Outbid",   count: losing.length,  icon: <IcoDown /> },
+    { id: "past",      label: "Bid History",       shortLabel: "History",  icon: <IcoClock /> },
+    { id: "profile",   label: "Account",           shortLabel: "Account",  icon: <IcoUser /> },
   ];
 
   return (
@@ -342,7 +344,7 @@ export default function BidderDashboard() {
           <Link href="/" className="text-xl font-extrabold tracking-tight bg-gradient-to-r from-[#09a7ad] to-[#0bbcc2] bg-clip-text text-transparent">
             PurposeBid
           </Link>
-          <p className="text-[#8c8778] text-xs mt-0.5">Bidder Dashboard</p>
+          <p className="text-[#8c8778] text-xs mt-0.5">My Bids</p>
         </div>
         <nav className="flex-1 px-3 py-3 space-y-0.5">
           {navItems.map((item) => (
@@ -373,18 +375,25 @@ export default function BidderDashboard() {
         </nav>
         <div className="px-3 pb-4 border-t border-[#e5e0d5]/60 pt-3 space-y-0.5">
           <Link
+            href="/account"
+            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-[#8c8778] hover:text-[#1a1916] hover:bg-[#f2efe8]/50 text-sm transition-colors"
+          >
+            <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 20 20" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round"><rect x="3" y="3" width="14" height="14" rx="7"/><circle cx="10" cy="8" r="3"/><path d="M4.5 17c0-3 2.5-5 5.5-5s5.5 2 5.5 5"/></svg>
+            <span>Account Settings</span>
+          </Link>
+          <Link
             href="/auctions"
             className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-[#8c8778] hover:text-[#1a1916] hover:bg-[#f2efe8]/50 text-sm transition-colors"
           >
             <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 20 20" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round"><circle cx="10" cy="10" r="8"/><path d="M10 6v4l2.5 2.5"/></svg>
-            <span>Live Auctions Page</span>
+            <span>Browse Auctions</span>
           </Link>
           <Link
             href="/search"
             className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-[#8c8778] hover:text-[#1a1916] hover:bg-[#f2efe8]/50 text-sm transition-colors"
           >
             <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 20 20" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round"><circle cx="9" cy="9" r="6"/><path d="m17 17-3.5-3.5"/></svg>
-            <span>Search</span>
+            <span>Search Items</span>
           </Link>
         </div>
         <div className="px-3 py-4 border-t border-[#e5e0d5]/60 flex items-center gap-3">
@@ -450,7 +459,7 @@ export default function BidderDashboard() {
             {tab === "winning"   && "Active Bids"}
             {tab === "losing"    && "Outbid"}
             {tab === "past"      && "Bid History"}
-            {tab === "profile"   && "Profile & Settings"}
+            {tab === "profile"   && "Account"}
           </h1>
         </header>
 
@@ -780,9 +789,20 @@ export default function BidderDashboard() {
             </div>
           )}
 
-          {/* ── Profile & Settings ── */}
+          {/* ── Account ── */}
           {tab === "profile" && (
             <div className="max-w-lg">
+              {/* Link to dedicated account page */}
+              <Link
+                href="/account"
+                className="flex items-center justify-between bg-[#09a7ad]/8 border border-[#09a7ad]/20 rounded-2xl px-4 py-3 mb-5 hover:bg-[#09a7ad]/12 transition-colors group"
+              >
+                <div>
+                  <div className="text-sm font-semibold text-[#09a7ad]">Account Settings</div>
+                  <div className="text-xs text-[#6b6659] mt-0.5">Profile, payment cards & more</div>
+                </div>
+                <svg className="w-4 h-4 text-[#09a7ad] group-hover:translate-x-0.5 transition-transform" fill="none" viewBox="0 0 16 16" stroke="currentColor" strokeWidth={2} strokeLinecap="round"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+              </Link>
               <div className="flex items-center gap-4 mb-6 pb-6 border-b border-[#e5e0d5]/60">
                 <UserMenu />
                 <div>
@@ -917,5 +937,17 @@ export default function BidderDashboard() {
       </nav>
 
     </div>
+  );
+}
+
+export default function BidderDashboard() {
+  return (
+    <Suspense fallback={
+      <main className="min-h-screen bg-[#faf8f4] flex items-center justify-center">
+        <div className="w-8 h-8 rounded-full border-2 border-[#09a7ad]/30 border-t-[#09a7ad] animate-spin" />
+      </main>
+    }>
+      <BidderDashboardInner />
+    </Suspense>
   );
 }
