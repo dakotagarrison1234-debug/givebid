@@ -491,15 +491,15 @@ export default function ItemPage() {
 
         {/* Right: bidding */}
         <div>
-          <div className="flex items-center gap-2 mb-3">
+          <div className="flex items-center gap-2 mb-3 flex-wrap">
             {item.category && (
-              <span className="text-xs text-[#8c8778] bg-[#f2efe8] px-2 py-1 rounded">{item.category}</span>
+              <span className="text-xs text-[#09a7ad] bg-[#09a7ad]/10 border border-[#09a7ad]/20 px-2.5 py-1 rounded-full font-medium">{item.category}</span>
             )}
-            <span className="text-xs text-[#8c8778] bg-[#f2efe8] px-2 py-1 rounded capitalize">
+            <span className="text-xs text-[#6b6659] bg-[#f2efe8] border border-[#e5e0d5] px-2.5 py-1 rounded-full capitalize font-medium">
               {item.condition.replace("_", " ").toLowerCase()}
             </span>
             {item.taxDeductible && (
-              <span className="text-xs text-[#09a7ad] bg-[#09a7ad]/10 px-2 py-1 rounded">Tax Deductible</span>
+              <span className="text-xs text-[#09a7ad] bg-[#09a7ad]/10 border border-[#09a7ad]/20 px-2.5 py-1 rounded-full font-medium">Tax Deductible</span>
             )}
           </div>
 
@@ -511,7 +511,7 @@ export default function ItemPage() {
             <div className={`rounded-2xl px-4 py-3 mb-6 flex items-center justify-between border transition-all ${
               biddingEnded
                 ? "bg-white border-[#e5e0d5]"
-                : "bg-white border-[#e5e0d5] shadow-[0_0_20px_rgba(9,167,173,0.04)]"
+                : "bg-[#f0fafa] border-[#09a7ad]/25"
             }`}>
               <span className="text-[#8c8778] text-sm font-medium">
                 {biddingEnded ? "Bidding ended" : "Time remaining"}
@@ -525,17 +525,17 @@ export default function ItemPage() {
           )}
 
           {/* Donor / retail value */}
-          <div className="grid grid-cols-2 gap-4 mb-6">
+          <div className="grid grid-cols-2 gap-3 mb-6">
             {item.retailValue && (
-              <div className="bg-white rounded-xl p-4">
-                <div className="text-[#8c8778] text-sm mb-1">Retail Value</div>
-                <div className="text-[#1a1916] font-bold text-xl">${item.retailValue.toLocaleString()}</div>
+              <div className="bg-[#e8f8f8] border border-[#09a7ad]/25 rounded-xl p-4">
+                <div className="text-[#09a7ad] text-xs font-semibold uppercase tracking-wide mb-1">Retail Value</div>
+                <div className="text-[#0a7f84] font-extrabold text-xl">${item.retailValue.toLocaleString()}</div>
               </div>
             )}
             {item.donorName && (
-              <div className="bg-white rounded-xl p-4">
-                <div className="text-[#8c8778] text-sm mb-1">Donated by</div>
-                <div className="text-[#1a1916] font-bold">{item.donorName}</div>
+              <div className="bg-[#f0fafa] border border-[#09a7ad]/20 rounded-xl p-4">
+                <div className="text-[#09a7ad] text-xs font-semibold uppercase tracking-wide mb-1">Donated by</div>
+                <div className="text-[#1a1916] font-bold text-sm leading-snug">{item.donorName}</div>
               </div>
             )}
           </div>
