@@ -1,7 +1,7 @@
 export const dynamic = "force-dynamic";
 export const maxDuration = 300; // allow serial Stripe charges to finish (Vercel Pro)
 import { NextRequest, NextResponse } from "next/server";
-import { openScheduledAuctions, closeExpiredItems } from "@/lib/closeAuction";
+import { openScheduledAuctions, closeExpiredItems, notifyAuctionEndingSoon } from "@/lib/closeAuction";
 
 export async function GET(request: NextRequest) {
   const authHeader = request.headers.get("authorization");
@@ -12,6 +12,7 @@ export async function GET(request: NextRequest) {
   let openedAuctions = 0;
   let closedItems = 0;
   let closedAuctions = 0;
+  let notifiedAuctions = 0;
 
   try {
     // Open auctions whose startAt has passed and activate their items
@@ -22,6 +23,14 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    // Notify active bidders when an auction is closing within the next hour
+    ({ notifiedAuctions } = await notifyAuctionEndingSoon());
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Internal error";
+    console.error("[cron] notifyAuctionEndingSoon failed:", msg, err);
+  }
+
+  try {
     // Close items/auctions whose endAt has passed
     ({ closedItems, closedAuctions } = await closeExpiredItems());
   } catch (err) {
@@ -29,6 +38,6 @@ export async function GET(request: NextRequest) {
     console.error("[cron] closeExpiredItems failed:", msg, err);
   }
 
-  console.log(`[cron] Opened ${openedAuctions} auction(s), closed ${closedItems} item(s), ${closedAuctions} auction(s)`);
-  return NextResponse.json({ openedAuctions, closedItems, closedAuctions });
+  console.log(`[cron] Opened ${openedAuctions} auction(s), notified ${notifiedAuctions} ending soon, closed ${closedItems} item(s), ${closedAuctions} auction(s)`);
+  return NextResponse.json({ openedAuctions, notifiedAuctions, closedItems, closedAuctions });
 }

@@ -300,6 +300,136 @@ async function notifyWinners(winnerMap: Map<string, WinnerEntry>): Promise<void>
 }
 
 /**
+ * Fires GHL_AUCTION_STARTED_WEBHOOK once per org follower (bidder with preferredOrgId = org.id).
+ * Each call includes the bidder's contact info so GHL can route the email to them.
+ */
+export async function notifyAuctionStartedToFollowers(
+  auction: { title: string; slug: string },
+  org: { id: string; name: string; slug: string }
+): Promise<void> {
+  if (!process.env.GHL_AUCTION_STARTED_WEBHOOK) return;
+
+  const followers = await prisma.bidderProfile.findMany({
+    where: { preferredOrgId: org.id },
+    select: { clerkUserId: true, email: true, phone: true, name: true },
+  });
+  if (followers.length === 0) return;
+
+  const auctionUrl = `${process.env.NEXT_PUBLIC_APP_URL}/${org.slug}/${auction.slug}`;
+
+  for (const follower of followers) {
+    const email = follower.email ?? "";
+    const phone = follower.phone ?? "";
+    const name = follower.name ?? "Bidder";
+    fetch(process.env.GHL_AUCTION_STARTED_WEBHOOK!, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email,
+        phone,
+        name,
+        firstName: name.split(" ")[0] || name,
+        lastName: name.split(" ").slice(1).join(" ") || "",
+        event: "auction_started",
+        bidderEmail: email,
+        bidderPhone: phone,
+        bidderName: name,
+        auctionName: auction.title,
+        auctionUrl,
+        orgName: org.name,
+      }),
+    }).catch((err) => console.error("GHL auction-started webhook failed:", err));
+  }
+}
+
+/**
+ * Finds OPEN auctions closing within the next 60 minutes that haven't sent an
+ * "ending soon" notification yet. Fires GHL_AUCTION_ENDING_WEBHOOK once per
+ * active bidder, then stamps endingSoonNotifiedAt so it never fires again.
+ */
+export async function notifyAuctionEndingSoon(): Promise<{ notifiedAuctions: number }> {
+  if (!process.env.GHL_AUCTION_ENDING_WEBHOOK) return { notifiedAuctions: 0 };
+
+  const now = new Date();
+  const inOneHour = new Date(now.getTime() + 60 * 60 * 1000);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const soonAuctions = await (prisma.auction as any).findMany({
+    where: {
+      status: "OPEN",
+      endAt: { gte: now, lte: inOneHour },
+      endingSoonNotifiedAt: null,
+    },
+    include: { organization: { select: { id: true, name: true, slug: true } } },
+  }) as Array<{
+    id: string; title: string; slug: string; endAt: Date;
+    organization: { id: string; name: string; slug: string };
+  }>;
+
+  let notifiedAuctions = 0;
+
+  for (const auction of soonAuctions) {
+    // Find all unique bidders currently winning items in this auction
+    const activeBids = await prisma.bid.findMany({
+      where: {
+        item: { auctionId: auction.id, status: "ACTIVE" },
+        status: "ACTIVE",
+      },
+      select: { clerkUserId: true },
+      distinct: ["clerkUserId"],
+    });
+
+    if (activeBids.length > 0) {
+      const bidderIds = activeBids.map((b) => b.clerkUserId);
+      const profiles = await prisma.bidderProfile.findMany({
+        where: { clerkUserId: { in: bidderIds } },
+        select: { clerkUserId: true, email: true, phone: true, name: true },
+      });
+      const profileMap = new Map(profiles.map((p) => [p.clerkUserId, p]));
+
+      const auctionUrl = `${process.env.NEXT_PUBLIC_APP_URL}/${auction.organization.slug}/${auction.slug}`;
+
+      for (const { clerkUserId } of activeBids) {
+        const profile = profileMap.get(clerkUserId);
+        const email = profile?.email ?? "";
+        const phone = profile?.phone ?? "";
+        const name = profile?.name ?? "Bidder";
+        fetch(process.env.GHL_AUCTION_ENDING_WEBHOOK!, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email,
+            phone,
+            name,
+            firstName: name.split(" ")[0] || name,
+            lastName: name.split(" ").slice(1).join(" ") || "",
+            event: "auction_ending_soon",
+            bidderEmail: email,
+            bidderPhone: phone,
+            bidderName: name,
+            auctionName: auction.title,
+            auctionUrl,
+            orgName: auction.organization.name,
+            endsAt: auction.endAt.toISOString(),
+          }),
+        }).catch((err) => console.error("GHL auction-ending-soon webhook failed:", err));
+      }
+    }
+
+    // Stamp so this auction never triggers again even if no active bidders
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (prisma.auction as any).update({
+      where: { id: auction.id },
+      data: { endingSoonNotifiedAt: now },
+    });
+
+    notifiedAuctions++;
+  }
+
+  return { notifiedAuctions };
+}
+
+/**
  * Find DRAFT auctions whose startAt has passed and open them,
  * activating all their DRAFT items in the same pass.
  */
@@ -328,19 +458,10 @@ export async function openScheduledAuctions(): Promise<{ openedAuctions: number 
       prisma.item.updateMany({ where: { auctionId: auction.id, status: "DRAFT" }, data: { status: "ACTIVE" } }),
     ]);
 
-    if (process.env.GHL_AUCTION_STARTED_WEBHOOK) {
-      const auctionUrl = `${process.env.NEXT_PUBLIC_APP_URL}/${auction.organization.slug}/${auction.slug}`;
-      fetch(process.env.GHL_AUCTION_STARTED_WEBHOOK, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          event: "auction_started",
-          auctionName: auction.title,
-          auctionUrl,
-          orgName: auction.organization.name,
-        }),
-      }).catch((e) => console.error("GHL auction-started (cron) webhook failed:", e));
-    }
+    notifyAuctionStartedToFollowers(
+      { title: auction.title, slug: auction.slug },
+      { id: auction.organization.id, name: auction.organization.name, slug: auction.organization.slug }
+    ).catch((e) => console.error("GHL auction-started (cron) failed:", e));
   }
 
   // Also activate any DRAFT items that are already inside an OPEN auction

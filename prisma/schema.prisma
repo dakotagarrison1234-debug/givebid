@@ -55,18 +55,19 @@ enum OrgRole {
   ADMIN
   STAFF
 }model Auction {
-  id             String        @id @default(cuid())
-  organizationId String
-  title          String
-  description    String?
-  startAt        DateTime
-  endAt          DateTime
-  status         AuctionStatus @default(DRAFT)
-  slug           String
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  items          Item[]
+  id                   String        @id @default(cuid())
+  organizationId       String
+  title                String
+  description          String?
+  startAt              DateTime
+  endAt                DateTime
+  status               AuctionStatus @default(DRAFT)
+  slug                 String
+  endingSoonNotifiedAt DateTime?
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+  organization         Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  items                Item[]
 
   @@unique([organizationId, slug])
 }
