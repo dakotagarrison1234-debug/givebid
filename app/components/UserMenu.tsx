@@ -41,6 +41,9 @@ function IcoBolt() {
 function IcoSignOut() {
   return <svg width="16" height="16" fill="none" viewBox="0 0 16 16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M10 3h3a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1h-3M6 11l4-3-4-3M2 8h8"/></svg>;
 }
+function IcoHelp() {
+  return <svg width="16" height="16" fill="none" viewBox="0 0 16 16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="8" cy="8" r="6"/><path d="M6 6a2 2 0 0 1 3.46 1C9.46 8.5 8 9 8 10"/><circle cx="8" cy="12" r=".5" fill="currentColor"/></svg>;
+}
 
 // ── Section label ──────────────────────────────────────────────────────────────
 function SectionLabel({ children }: { children: React.ReactNode }) {
@@ -234,6 +237,7 @@ export default function UserMenu() {
           <SectionLabel>Account</SectionLabel>
           <NavLink href="/account" iconEl={<IcoUser />} label="Profile" sublabel="Name, email, phone" onClick={close} />
           <NavLink href="/account" iconEl={<IcoCard />} label="Payment Method" sublabel="Cards on file per organization" onClick={close} />
+          <NavLink href="/help" iconEl={<IcoHelp />} label="Info & Help" sublabel="Bidding tips, increments, FAQ" onClick={close} />
 
           {me?.orgId ? (
             <>
