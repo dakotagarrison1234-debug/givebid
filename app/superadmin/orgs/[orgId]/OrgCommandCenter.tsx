@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
@@ -21,6 +21,25 @@ interface Org {
   items: Item[];
 }
 
+interface ProxyBidRow {
+  id: string;
+  clerkUserId: string;
+  bidderName: string | null;
+  bidderEmail: string | null;
+  bidderPhone: string | null;
+  maxAmount: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  item: {
+    id: string;
+    title: string;
+    currentBid: number;
+    status: string;
+    auctionTitle: string | null;
+  };
+}
+
 const AUCTION_STATUSES = ["DRAFT", "OPEN", "CLOSING", "CLOSED", "SETTLED"];
 const ITEM_STATUSES = ["DRAFT", "ACTIVE", "SOLD", "UNSOLD", "PENDING_PICKUP", "PICKED_UP"];
 const ROLES: OrgRole[] = ["OWNER", "ADMIN", "STAFF"];
@@ -28,7 +47,7 @@ const ROLES: OrgRole[] = ["OWNER", "ADMIN", "STAFF"];
 export default function OrgCommandCenter({ org: initial }: { org: Org }) {
   const router = useRouter();
   const [org, setOrg] = useState(initial);
-  const [tab, setTab] = useState<"overview" | "auctions" | "items" | "members">("overview");
+  const [tab, setTab] = useState<"overview" | "auctions" | "items" | "members" | "maxbids">("overview");
 
   // Overview edit state
   const [editName, setEditName] = useState(org.name);
@@ -147,11 +166,26 @@ export default function OrgCommandCenter({ org: initial }: { org: Org }) {
     }
   };
 
+  // ── Max Bids state ────────────────────────────────────────────────────────
+  const [proxyBids, setProxyBids] = useState<ProxyBidRow[] | null>(null);
+  const [proxyLoading, setProxyLoading] = useState(false);
+
+  useEffect(() => {
+    if (tab !== "maxbids" || proxyBids !== null) return;
+    setProxyLoading(true);
+    fetch(`${base}/proxy-bids`)
+      .then((r) => r.json())
+      .then((d) => setProxyBids(d.proxyBids ?? []))
+      .catch(() => setProxyBids([]))
+      .finally(() => setProxyLoading(false));
+  }, [tab, proxyBids, base]);
+
   const tabs = [
     { id: "overview", label: "Overview" },
     { id: "auctions", label: `Auctions (${org.auctions.length})` },
     { id: "items", label: `Items (${org.items.length})` },
     { id: "members", label: `Members (${org.members.length})` },
+    { id: "maxbids", label: "Max Bids 🔒" },
   ] as const;
 
   const statusColor = (s: string) => {
@@ -377,6 +411,94 @@ export default function OrgCommandCenter({ org: initial }: { org: Org }) {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* ── Max Bids (super admin only) ── */}
+        {tab === "maxbids" && (
+          <div className="max-w-4xl">
+            <div className="flex items-center gap-2 mb-4">
+              <span className="bg-orange-500/10 border border-orange-400/30 text-orange-600 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
+                🔒 Super Admin Only — Not visible to org staff
+              </span>
+            </div>
+
+            {proxyLoading && (
+              <p className="text-[#8c8778] py-8 text-center text-sm">Loading max bids...</p>
+            )}
+
+            {!proxyLoading && proxyBids?.length === 0 && (
+              <p className="text-[#8c8778] py-8 text-center text-sm">No max bids placed on this org&apos;s items yet.</p>
+            )}
+
+            {!proxyLoading && proxyBids && proxyBids.length > 0 && (() => {
+              const active = proxyBids.filter((p) => p.isActive);
+              const inactive = proxyBids.filter((p) => !p.isActive);
+              return (
+                <div className="space-y-6">
+                  {/* Summary */}
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="bg-white border border-[#e5e0d5] rounded-xl p-4 text-center">
+                      <div className="text-2xl font-bold text-[#09a7ad]">{proxyBids.length}</div>
+                      <div className="text-xs text-[#8c8778] mt-0.5">Total Max Bids</div>
+                    </div>
+                    <div className="bg-white border border-[#e5e0d5] rounded-xl p-4 text-center">
+                      <div className="text-2xl font-bold text-green-600">{active.length}</div>
+                      <div className="text-xs text-[#8c8778] mt-0.5">Active</div>
+                    </div>
+                    <div className="bg-white border border-[#e5e0d5] rounded-xl p-4 text-center">
+                      <div className="text-2xl font-bold text-[#6b6659]">{inactive.length}</div>
+                      <div className="text-xs text-[#8c8778] mt-0.5">Inactive / Won</div>
+                    </div>
+                  </div>
+
+                  {/* Table */}
+                  <div className="bg-white border border-[#e5e0d5] rounded-xl overflow-hidden">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="bg-[#f2efe8] border-b border-[#e5e0d5]">
+                          <th className="text-left px-5 py-3 text-xs font-bold uppercase tracking-wider text-[#8c8778]">Bidder</th>
+                          <th className="text-left px-5 py-3 text-xs font-bold uppercase tracking-wider text-[#8c8778]">Item</th>
+                          <th className="text-right px-5 py-3 text-xs font-bold uppercase tracking-wider text-[#8c8778]">Current Bid</th>
+                          <th className="text-right px-5 py-3 text-xs font-bold uppercase tracking-wider text-orange-600">Max Bid</th>
+                          <th className="text-center px-5 py-3 text-xs font-bold uppercase tracking-wider text-[#8c8778]">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-[#e5e0d5]">
+                        {proxyBids.map((pb) => (
+                          <tr key={pb.id} className={`hover:bg-[#faf9f6] transition-colors ${!pb.isActive ? "opacity-50" : ""}`}>
+                            <td className="px-5 py-3.5">
+                              <div className="font-medium text-[#1a1916]">{pb.bidderName ?? "—"}</div>
+                              <div className="text-xs text-[#8c8778]">{pb.bidderEmail ?? pb.clerkUserId}</div>
+                              {pb.bidderPhone && <div className="text-xs text-[#8c8778]">{pb.bidderPhone}</div>}
+                            </td>
+                            <td className="px-5 py-3.5">
+                              <div className="font-medium text-[#1a1916] max-w-[200px] truncate">{pb.item.title}</div>
+                              {pb.item.auctionTitle && (
+                                <div className="text-xs text-[#8c8778]">{pb.item.auctionTitle}</div>
+                              )}
+                            </td>
+                            <td className="px-5 py-3.5 text-right font-mono text-[#4a4640]">
+                              ${pb.item.currentBid.toLocaleString()}
+                            </td>
+                            <td className="px-5 py-3.5 text-right">
+                              <span className="font-bold font-mono text-orange-600 bg-orange-50 border border-orange-200 px-2.5 py-1 rounded-lg">
+                                ${pb.maxAmount.toLocaleString()}
+                              </span>
+                            </td>
+                            <td className="px-5 py-3.5 text-center">
+                              <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${pb.isActive ? "bg-[#09a7ad]/20 text-[#09a7ad]" : "bg-[#e8e4dc] text-[#6b6659]"}`}>
+                                {pb.isActive ? "Active" : "Inactive"}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         )}
 
