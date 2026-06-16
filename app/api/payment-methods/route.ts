@@ -25,7 +25,7 @@ export async function GET() {
     },
   });
 
-  const results = await Promise.all(
+  const settled = await Promise.allSettled(
     records.map(async (r) => {
       const base = {
         orgId: r.organizationId,
@@ -55,6 +55,10 @@ export async function GET() {
       return base;
     })
   );
+
+  const results = settled
+    .filter((r): r is PromiseFulfilledResult<typeof r extends PromiseFulfilledResult<infer T> ? T : never> => r.status === "fulfilled")
+    .map((r) => r.value);
 
   return NextResponse.json({ paymentMethods: results });
 }

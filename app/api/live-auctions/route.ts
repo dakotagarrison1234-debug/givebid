@@ -12,7 +12,7 @@ export async function GET() {
       where: { status: "OPEN" },
       include: {
         organization: { select: { id: true, name: true, slug: true, logoUrl: true } },
-        items: { select: { currentBid: true, status: true } },
+        _count: { select: { items: { where: { status: "ACTIVE" } } } },
       },
       orderBy: { endAt: "asc" },
     });
@@ -25,8 +25,7 @@ export async function GET() {
         endAt: a.endAt.toISOString(),
         description: a.description,
         org: a.organization,
-        activeItems: a.items.filter((i) => i.status === "ACTIVE").length,
-        raised: a.items.reduce((s, i) => s + Number(i.currentBid), 0),
+        activeItems: a._count.items,
       })),
     });
   } catch (error) {

@@ -58,6 +58,10 @@ export async function POST(request: NextRequest) {
 
     const { email, role } = await request.json();
     if (!email) return NextResponse.json({ error: "Email is required" }, { status: 400 });
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email.trim())) {
+      return NextResponse.json({ error: "Invalid email address" }, { status: 400 });
+    }
 
     const validRole = role === "ADMIN" ? "ADMIN" : "STAFF";
 

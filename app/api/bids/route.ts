@@ -1,21 +1,10 @@
 import { auth } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import Pusher from "pusher";
 import { getNextValidBid } from "@/lib/bidIncrements";
 import { resolveProxiesAfterBid } from "@/lib/proxyBidResolver";
-import { triggerAuctionUpdated } from "@/lib/pusherServer";
-
-const pusher = new Pusher({
-  appId: process.env.PUSHER_APP_ID!,
-  key: process.env.NEXT_PUBLIC_PUSHER_KEY!,
-  secret: process.env.PUSHER_SECRET!,
-  cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER!,
-  useTLS: true,
-});
-
-const POPCORN_WINDOW_MS = 150_000; // 2 min 30 sec
-const POPCORN_EXTENSION_MS = 150_000;
+import { getPusherServer, triggerAuctionUpdated } from "@/lib/pusherServer";
+import { POPCORN_WINDOW_MS, POPCORN_EXTENSION_MS } from "@/lib/constants";
 
 export async function POST(request: NextRequest) {
   try {
@@ -129,7 +118,7 @@ export async function POST(request: NextRequest) {
     // If a proxy fired, the Pusher event is already sent by resolveProxiesAfterBid.
     // Only broadcast the manual bid event if no proxy fired (otherwise the proxy event supersedes it).
     if (!proxyResult.proxyFired) {
-      await pusher.trigger(`item-${itemId}`, "new-bid", {
+      await getPusherServer().trigger(`item-${itemId}`, "new-bid", {
         amount,
         bidId: bid.id,
         userId: userId.substring(0, 8),

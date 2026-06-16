@@ -14,7 +14,6 @@ export async function PATCH(request: NextRequest, { params }: Props) {
     data: {
       ...(body.title && { title: body.title }),
       ...(body.status && { status: body.status }),
-      ...(body.currentBid !== undefined && { currentBid: parseFloat(body.currentBid) }),
       ...(body.startingBid !== undefined && { startingBid: parseFloat(body.startingBid) }),
       ...(body.auctionId !== undefined && { auctionId: body.auctionId || null }),
     },

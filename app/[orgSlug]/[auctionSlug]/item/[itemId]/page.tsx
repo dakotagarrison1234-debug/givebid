@@ -202,6 +202,7 @@ export default function ItemPage() {
     return () => {
       channel.unbind_all();
       pusher.unsubscribe(`item-${itemId}`);
+      pusher.disconnect();
     };
   }, [itemId, refreshProxyStatus]);
 

@@ -17,18 +17,8 @@
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { getIncrement, getNextValidBid } from "@/lib/bidIncrements";
-import Pusher from "pusher";
-
-const pusher = new Pusher({
-  appId: process.env.PUSHER_APP_ID!,
-  key: process.env.NEXT_PUBLIC_PUSHER_KEY!,
-  secret: process.env.PUSHER_SECRET!,
-  cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER!,
-  useTLS: true,
-});
-
-const POPCORN_WINDOW_MS = 150_000; // 2 min 30 sec
-const POPCORN_EXTENSION_MS = 150_000;
+import { getPusherServer } from "@/lib/pusherServer";
+import { POPCORN_WINDOW_MS, POPCORN_EXTENSION_MS } from "@/lib/constants";
 
 type ItemContext = {
   id: string;
@@ -112,7 +102,7 @@ async function placeProxyBid(
   });
 
   // Pusher: broadcast the auto-bid
-  await pusher.trigger(`item-${item.id}`, "new-bid", {
+  await getPusherServer().trigger(`item-${item.id}`, "new-bid", {
     amount,
     bidId: newBid.id,
     userId: proxy.clerkUserId.substring(0, 8),
@@ -346,5 +336,5 @@ export async function broadcastProxyUpdate(
   itemId: string,
   hasActiveProxy: boolean
 ): Promise<void> {
-  await pusher.trigger(`item-${itemId}`, "proxy-update", { hasActiveProxy });
+  await getPusherServer().trigger(`item-${itemId}`, "proxy-update", { hasActiveProxy });
 }

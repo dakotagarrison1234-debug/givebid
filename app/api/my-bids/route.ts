@@ -24,6 +24,7 @@ export async function GET() {
         },
       },
       orderBy: { placedAt: "desc" },
+      take: 200,
     }),
   ]);
 

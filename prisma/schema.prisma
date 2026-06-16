@@ -70,6 +70,8 @@ enum OrgRole {
   items                Item[]
 
   @@unique([organizationId, slug])
+  @@index([status])
+  @@index([organizationId, status])
 }
 
 enum AuctionStatus {
@@ -105,6 +107,9 @@ enum AuctionStatus {
   bids            Bid[]
   payments        Payment[]
   proxyBids       ProxyBid[]
+
+  @@index([status, itemEndAt])
+  @@index([auctionId, status])
 }
 
 enum Condition {
@@ -142,7 +147,7 @@ model Bid {
   placedAt    DateTime  @default(now())
   item        Item      @relation(fields: [itemId], references: [id])
 
-  @@index([itemId, status])
+  @@index([itemId, status, amount])
   @@index([clerkUserId])
 }
 
@@ -259,12 +264,3 @@ model OrgInvite {
   @@index([token])
 }
 
-model PaymentBatch {
-  id          String   @id @default(cuid())
-  clerkUserId String
-  itemIds     String   // JSON array of item IDs
-  bidIds      String   // JSON array of bid IDs
-  createdAt   DateTime @default(now())
-
-  @@index([clerkUserId])
-}

@@ -41,19 +41,26 @@ export async function POST(request: NextRequest) {
     }
 
     // Accept invite
-    await prisma.$transaction([
-      prisma.orgMember.create({
-        data: {
-          clerkUserId: userId,
-          organizationId: invite.organizationId,
-          role: invite.role,
-        },
-      }),
-      prisma.orgInvite.update({
-        where: { token },
-        data: { accepted: true, clerkUserId: userId },
-      }),
-    ]);
+    try {
+      await prisma.$transaction([
+        prisma.orgMember.create({
+          data: {
+            clerkUserId: userId,
+            organizationId: invite.organizationId,
+            role: invite.role,
+          },
+        }),
+        prisma.orgInvite.update({
+          where: { token },
+          data: { accepted: true, clerkUserId: userId },
+        }),
+      ]);
+    } catch (e: unknown) {
+      if ((e as { code?: string }).code === "P2002") {
+        return NextResponse.json({ success: true, message: "Already a member" });
+      }
+      throw e;
+    }
 
     return NextResponse.json({ success: true, orgSlug: invite.organization.slug });
   } catch (err) {

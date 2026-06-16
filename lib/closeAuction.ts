@@ -37,7 +37,12 @@ type OrgForCharging = {
 async function closeItem(
   item: ItemWithBidsAndOrg
 ): Promise<{ clerkUserId: string; amount: number } | null> {
-  const winningBid = item.bids[0];
+  // C3: Re-read the top bid fresh from DB to avoid stale pre-fetched value
+  const freshTopBid = await prisma.bid.findFirst({
+    where: { itemId: item.id, status: "ACTIVE" },
+    orderBy: { amount: "desc" },
+  });
+  const winningBid = freshTopBid;
 
   // Reserve price enforcement: if the top bid is below the reserve, the item
   // does NOT sell. Mark UNSOLD, cancel the standing bid, deactivate proxies.
@@ -111,11 +116,9 @@ async function chargeWinners(
       },
     });
 
-    // Idempotency guard — skip if any Payment already exists for these items
-    const existingPayment = await prisma.payment.findFirst({
-      where: { itemId: { in: itemIds } },
-    });
-    if (existingPayment) {
+    // H7: Idempotency guard — skip if all items already have a payment for this user
+    const paymentCount = await prisma.payment.count({ where: { itemId: { in: itemIds }, clerkUserId } });
+    if (paymentCount >= itemIds.length) {
       console.log(`Auto-charge: payment already exists for items ${itemIds.join(",")} — skipping`);
       continue;
     }
@@ -353,18 +356,14 @@ export async function notifyAuctionEndingSoon(): Promise<{ notifiedAuctions: num
   const now = new Date();
   const inOneHour = new Date(now.getTime() + 60 * 60 * 1000);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const soonAuctions = await (prisma.auction as any).findMany({
+  const soonAuctions = await prisma.auction.findMany({
     where: {
       status: "OPEN",
       endAt: { gte: now, lte: inOneHour },
       endingSoonNotifiedAt: null,
     },
     include: { organization: { select: { id: true, name: true, slug: true } } },
-  }) as Array<{
-    id: string; title: string; slug: string; endAt: Date;
-    organization: { id: string; name: string; slug: string };
-  }>;
+  });
 
   let notifiedAuctions = 0;
 
@@ -417,8 +416,7 @@ export async function notifyAuctionEndingSoon(): Promise<{ notifiedAuctions: num
     }
 
     // Stamp so this auction never triggers again even if no active bidders
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (prisma.auction as any).update({
+    await prisma.auction.update({
       where: { id: auction.id },
       data: { endingSoonNotifiedAt: now },
     });
@@ -489,31 +487,26 @@ export async function openScheduledAuctions(): Promise<{ openedAuctions: number 
 export async function closeExpiredItems(): Promise<{ closedItems: number; closedAuctions: number }> {
   const now = new Date();
 
-  const itemsWithOwnExpiry = await prisma.item.findMany({
+  // M4: Merge two item queries into one with OR condition
+  const expiredItems = await prisma.item.findMany({
     where: {
       status: "ACTIVE",
-      itemEndAt: { lte: now },
-      auction: { status: { in: ["OPEN", "CLOSING"] } },
+      OR: [
+        {
+          itemEndAt: { lte: now },
+          auction: { status: { in: ["OPEN", "CLOSING"] } },
+        },
+        {
+          itemEndAt: null,
+          auction: { status: { in: ["OPEN", "CLOSING"] }, endAt: { lte: now } },
+        },
+      ],
     },
     include: {
       bids: { where: { status: "ACTIVE" }, orderBy: { amount: "desc" }, take: 1 },
       auction: { include: { organization: true } },
     },
   });
-
-  const itemsWithAuctionExpiry = await prisma.item.findMany({
-    where: {
-      status: "ACTIVE",
-      itemEndAt: null,
-      auction: { status: { in: ["OPEN", "CLOSING"] }, endAt: { lte: now } },
-    },
-    include: {
-      bids: { where: { status: "ACTIVE" }, orderBy: { amount: "desc" }, take: 1 },
-      auction: { include: { organization: true } },
-    },
-  });
-
-  const expiredItems = [...itemsWithOwnExpiry, ...itemsWithAuctionExpiry];
 
   for (const item of expiredItems) {
     await closeItem(item as ItemWithBidsAndOrg);
@@ -574,7 +567,12 @@ export async function closeExpiredItems(): Promise<{ closedItems: number; closed
     });
     if (!auction || (auction.status !== "OPEN" && auction.status !== "CLOSING")) continue;
 
-    await prisma.auction.update({ where: { id: auctionId }, data: { status: "CLOSED" } });
+    // C1: Atomic close — prevent cron+manual double-close
+    const closed = await prisma.auction.updateMany({
+      where: { id: auctionId, status: { in: ["OPEN", "CLOSING"] } },
+      data: { status: "CLOSED" },
+    });
+    if (closed.count === 0) continue; // already closed by another process
     closedAuctions++;
 
     // Build winner map from WON bids
@@ -638,6 +636,18 @@ export async function closeAuction(auctionId: string): Promise<{ winnersCount: n
 
   if (!auction) throw new Error(`Auction ${auctionId} not found`);
 
+  // C1/H2/H5: Guard against double-close
+  if (auction.status === "CLOSED" || auction.status === "SETTLED") {
+    throw new Error("Auction is already closed");
+  }
+
+  // Atomically claim the auction before processing items
+  const claimed = await prisma.auction.updateMany({
+    where: { id: auctionId, status: { in: ["OPEN", "CLOSING"] } },
+    data: { status: "CLOSED" },
+  });
+  if (claimed.count === 0) throw new Error("Auction already closed by another process");
+
   const winnerMap = new Map<string, WinnerEntry>();
 
   for (const item of auction.items) {
@@ -659,8 +669,6 @@ export async function closeAuction(auctionId: string): Promise<{ winnersCount: n
     }
   }
 
-  // Mark CLOSED first so the cron can't pick it up simultaneously and double-charge
-  await prisma.auction.update({ where: { id: auctionId }, data: { status: "CLOSED" } });
   // Auto-charge winners BEFORE sending GHL notifications
   await chargeWinners(winnerMap, auction.organization, auctionId);
   await notifyWinners(winnerMap);

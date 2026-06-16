@@ -51,7 +51,6 @@ interface LiveAuction {
   endAt: string;
   org: { id: string; name: string; slug: string; logoUrl: string | null };
   activeItems: number;
-  raised: number;
 }
 
 interface PaymentMethod {
@@ -641,7 +640,6 @@ function BidderDashboardInner() {
                   <div className="font-bold truncate group-hover:text-[#09a7ad] transition-colors">{a.title}</div>
                   <div className="flex items-center gap-3 mt-1 text-xs text-[#8c8778]">
                     <span>{a.activeItems} item{a.activeItems !== 1 ? "s" : ""}</span>
-                    {a.raised > 0 && <span className="text-[#09a7ad] font-semibold">${a.raised.toLocaleString()} raised</span>}
                   </div>
                 </div>
                 <div className="text-right shrink-0">

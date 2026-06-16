@@ -41,17 +41,11 @@ export async function PATCH(request: NextRequest, { params }: Props) {
 
     const { name, description, isActive } = body;
 
-    let slug: string | undefined;
-    if (name) {
-      const raw = name.trim().toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
-      const existing = await prisma.organization.findFirst({ where: { slug: raw, NOT: { id: orgId } } });
-      slug = existing ? `${raw}-${Date.now()}` : raw;
-    }
-
     const org = await prisma.organization.update({
       where: { id: orgId },
       data: {
-        ...(name && { name: name.trim(), slug }),
+        // M12: slug is immutable after creation — never recompute from name
+        ...(name && { name: name.trim() }),
         ...(description !== undefined && { description }),
         ...(isActive !== undefined && { isActive }),
       },
