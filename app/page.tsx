@@ -278,6 +278,7 @@ export default async function HomePage() {
             <a href="https://for-purpose.life" target="_blank" rel="noopener noreferrer" className="text-[#09a7ad] hover:underline font-medium">For Purpose Life</a>
           </div>
           <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+            <Link href="/help" className="hover:text-[#1a1916] transition-colors">Help & Info</Link>
             <Link href="/terms" className="hover:text-[#1a1916] transition-colors">Terms of Service</Link>
             <Link href="/privacy" className="hover:text-[#1a1916] transition-colors">Privacy Policy</Link>
             <a href="mailto:Ryan@for-purpose.com" className="hover:text-[#1a1916] transition-colors">Ryan@for-purpose.com</a>

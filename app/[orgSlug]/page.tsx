@@ -189,6 +189,8 @@ export default async function OrgPage({ params }: Props) {
           <span>·</span>
           <Link href="/sign-up" className="hover:text-[#09a7ad] transition-colors">Create free account</Link>
           <span>·</span>
+          <Link href="/help" className="hover:text-[#09a7ad] transition-colors">Help & Info</Link>
+          <span>·</span>
           <Link href="/terms" className="hover:text-[#09a7ad] transition-colors">Terms</Link>
           <span>·</span>
           <Link href="/privacy" className="hover:text-[#09a7ad] transition-colors">Privacy</Link>

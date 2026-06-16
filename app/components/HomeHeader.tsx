@@ -52,6 +52,14 @@ export default function HomeHeader() {
               <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
             </svg>
           </button>
+          <Link href="/help"
+            className="hidden sm:flex items-center gap-1.5 text-[#6b6659] hover:text-[#1a1916] text-sm px-3 py-1.5 rounded-xl hover:bg-[#f2efe8] transition-colors whitespace-nowrap"
+            aria-label="Help">
+            <svg className="w-[15px] h-[15px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><circle cx="12" cy="17" r=".5" fill="currentColor"/>
+            </svg>
+            Help
+          </Link>
           <UserMenu />
         </div>
       )}
