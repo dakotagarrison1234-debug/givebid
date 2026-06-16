@@ -12,6 +12,7 @@ export async function GET(_req: NextRequest, { params }: Props) {
   const proxyBids = await prisma.proxyBid.findMany({
     where: {
       item: { organizationId: orgId },
+      isActive: true,
     },
     include: {
       item: {
