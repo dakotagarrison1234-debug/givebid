@@ -34,10 +34,14 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: `Amazon lookup failed (${res.status})`, detail: errText }, { status: 502 });
     }
 
-    const data = await res.json();
-    console.log("OpenWebNinja response keys:", Object.keys(data));
+    const raw = await res.json();
+    console.log("OpenWebNinja top-level keys:", Object.keys(raw));
 
-    if (!data || !data.asin) {
+    // Their response may wrap product fields under a "data" key
+    const data = raw?.data ?? raw;
+
+    if (!data || (!data.asin && !data.product_title)) {
+      console.log("OpenWebNinja full response:", JSON.stringify(raw).slice(0, 500));
       return NextResponse.json({ found: false, message: "No Amazon product found for that ASIN." });
     }
 
