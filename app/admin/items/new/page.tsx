@@ -68,14 +68,24 @@ function BarcodeScanner({ onFill }: { onFill: (r: BarcodeResult) => void }) {
     }
   };
 
+  const isAsin = (code: string) => /^[A-Z0-9]{10}$/i.test(code.trim());
+
   const doLookup = async (code: string) => {
-    const clean = code.replace(/\D/g, "");
-    if (!clean || clean.length < 6) { setError("Enter a valid barcode (6+ digits)."); return; }
+    const trimmed = code.trim().toUpperCase();
     setLoading(true);
     setError(null);
     setResult(null);
     try {
-      const res = await fetch(`/api/admin/barcode-lookup?upc=${clean}`);
+      let res: Response;
+      if (isAsin(trimmed)) {
+        // Amazon ASIN lookup
+        res = await fetch(`/api/admin/asin-lookup?asin=${trimmed}`);
+      } else {
+        // Standard barcode / UPC
+        const clean = code.replace(/\D/g, "");
+        if (!clean || clean.length < 6) { setError("Enter a valid barcode (6+ digits) or Amazon ASIN."); setLoading(false); return; }
+        res = await fetch(`/api/admin/barcode-lookup?upc=${clean}`);
+      }
       const data = await res.json();
       if (!res.ok || !data.found) {
         setError(data.message || data.error || "No product found. Fill in manually.");
@@ -111,7 +121,7 @@ function BarcodeScanner({ onFill }: { onFill: (r: BarcodeResult) => void }) {
         <span className="font-bold text-[#1a1916] text-sm">Barcode Auto-Fill</span>
         <span className="text-[10px] text-[#09a7ad] bg-[#09a7ad]/10 border border-[#09a7ad]/20 px-2 py-0.5 rounded-full font-semibold uppercase tracking-wide ml-1">New</span>
       </div>
-      <p className="text-xs text-[#6b6659] mb-3">Scan or type a barcode to auto-fill title, description, category, and retail value.</p>
+      <p className="text-xs text-[#6b6659] mb-3">Scan a barcode or type an Amazon ASIN to auto-fill title, description, category, and photos.</p>
 
       {/* Input row */}
       <div className="flex gap-2">
@@ -135,9 +145,8 @@ function BarcodeScanner({ onFill }: { onFill: (r: BarcodeResult) => void }) {
           value={barcode}
           onChange={e => setBarcode(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Type or scan barcode number…"
+          placeholder="Barcode or Amazon ASIN (e.g. B08N5WRWNW)…"
           className="flex-1 bg-white border border-[#d4cfc4] rounded-lg px-4 py-2.5 text-[#1a1916] placeholder-[#b0a99a] focus:outline-none focus:border-[#09a7ad] text-sm"
-          inputMode="numeric"
         />
         <button
           type="button"
