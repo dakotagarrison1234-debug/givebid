@@ -16,12 +16,24 @@ interface BarcodeResult {
   images: string[];
 }
 
+interface SearchHit {
+  asin: string;
+  title: string;
+  image: string;
+  price: string;
+  brand: string;
+}
+
 function BarcodeScanner({ onFill }: { onFill: (r: BarcodeResult) => void }) {
   const [barcode, setBarcode] = useState("");
   const [scanning, setScanning] = useState(false);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<BarcodeResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchResults, setSearchResults] = useState<SearchHit[]>([]);
   const videoRef = useRef<HTMLVideoElement>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const readerRef = useRef<any>(null);
@@ -88,12 +100,51 @@ function BarcodeScanner({ onFill }: { onFill: (r: BarcodeResult) => void }) {
       }
       const data = await res.json();
       if (!res.ok || !data.found) {
-        setError(data.message || data.error || "No product found. Fill in manually.");
+        // Offer Amazon text search as fallback
+        setShowSearch(true);
+        setError(null);
       } else {
         setResult(data.product);
       }
-    } catch { setError("Lookup failed. Fill in manually."); }
+    } catch { setShowSearch(true); setError(null); }
     finally { setLoading(false); }
+  };
+
+  const doSearch = async (q: string) => {
+    if (!q.trim() || q.trim().length < 2) return;
+    setSearchLoading(true);
+    setSearchResults([]);
+    try {
+      const res = await fetch(`/api/admin/amazon-search?q=${encodeURIComponent(q.trim())}`);
+      const data = await res.json();
+      setSearchResults(data.results ?? []);
+    } catch { setSearchResults([]); }
+    finally { setSearchLoading(false); }
+  };
+
+  const pickSearchResult = async (hit: SearchHit) => {
+    if (!hit.asin) {
+      // Use whatever data the search gave us directly
+      onFill({ title: hit.title, description: "", brand: hit.brand, category: "", retailValue: null, images: hit.image ? [hit.image] : [] });
+      setShowSearch(false); setSearchResults([]); setSearchQuery(""); setBarcode("");
+      return;
+    }
+    setSearchLoading(true);
+    try {
+      const res = await fetch(`/api/admin/asin-lookup?asin=${hit.asin}`);
+      const data = await res.json();
+      if (data.found) {
+        setResult(data.product);
+        setShowSearch(false); setSearchResults([]); setSearchQuery("");
+      } else {
+        // Use search result directly
+        onFill({ title: hit.title, description: "", brand: hit.brand, category: "", retailValue: null, images: hit.image ? [hit.image] : [] });
+        setShowSearch(false); setSearchResults([]); setSearchQuery(""); setBarcode("");
+      }
+    } catch {
+      onFill({ title: hit.title, description: "", brand: hit.brand, category: "", retailValue: null, images: hit.image ? [hit.image] : [] });
+      setShowSearch(false); setSearchResults([]); setSearchQuery(""); setBarcode("");
+    } finally { setSearchLoading(false); }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -121,7 +172,7 @@ function BarcodeScanner({ onFill }: { onFill: (r: BarcodeResult) => void }) {
         <span className="font-bold text-[#1a1916] text-sm">Barcode Auto-Fill</span>
         <span className="text-[10px] text-[#09a7ad] bg-[#09a7ad]/10 border border-[#09a7ad]/20 px-2 py-0.5 rounded-full font-semibold uppercase tracking-wide ml-1">New</span>
       </div>
-      <p className="text-xs text-[#6b6659] mb-3">Scan a barcode or type an Amazon ASIN to auto-fill title, description, category, and photos.</p>
+      <p className="text-xs text-[#6b6659] mb-3">Scan any barcode, UPC, ASIN, or FNSKU — or search Amazon by name.</p>
 
       {/* Input row */}
       <div className="flex gap-2">
@@ -145,7 +196,7 @@ function BarcodeScanner({ onFill }: { onFill: (r: BarcodeResult) => void }) {
           value={barcode}
           onChange={e => setBarcode(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Barcode or Amazon ASIN (e.g. B08N5WRWNW)…"
+          placeholder="UPC, ASIN, or FNSKU…"
           className="flex-1 bg-white border border-[#d4cfc4] rounded-lg px-4 py-2.5 text-[#1a1916] placeholder-[#b0a99a] focus:outline-none focus:border-[#09a7ad] text-sm"
         />
         <button
@@ -172,6 +223,66 @@ function BarcodeScanner({ onFill }: { onFill: (r: BarcodeResult) => void }) {
       {/* Error */}
       {error && !loading && (
         <p className="mt-2.5 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">{error}</p>
+      )}
+
+      {/* Amazon text search fallback (shown when barcode/FNSKU scan fails) */}
+      {showSearch && !result && (
+        <div className="mt-3 bg-white border border-[#09a7ad]/25 rounded-xl p-4">
+          <div className="text-xs font-semibold text-[#09a7ad] mb-1">Search Amazon by name</div>
+          <p className="text-xs text-[#6b6659] mb-2.5">Code not found automatically — type a few words from the product name.</p>
+          <div className="flex gap-2 mb-2">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              onKeyDown={e => { if (e.key === "Enter") doSearch(searchQuery); }}
+              placeholder="e.g. Apple AirPods Pro 2nd Gen…"
+              className="flex-1 bg-[#f9f7f4] border border-[#d4cfc4] rounded-lg px-3 py-2 text-sm text-[#1a1916] placeholder-[#b0a99a] focus:outline-none focus:border-[#09a7ad]"
+              autoFocus
+            />
+            <button
+              type="button"
+              onClick={() => doSearch(searchQuery)}
+              disabled={searchLoading || searchQuery.trim().length < 2}
+              className="bg-[#09a7ad] hover:bg-[#0898a0] disabled:opacity-40 text-white px-4 py-2 rounded-lg text-sm font-semibold shrink-0 transition-colors"
+            >
+              {searchLoading ? "…" : "Search"}
+            </button>
+          </div>
+
+          {searchResults.length > 0 && (
+            <div className="space-y-1.5 max-h-64 overflow-y-auto">
+              {searchResults.map((hit, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => pickSearchResult(hit)}
+                  className="w-full flex items-center gap-3 p-2.5 rounded-lg border border-[#e5e0d5] hover:border-[#09a7ad]/40 hover:bg-[#f0fafa] transition-colors text-left"
+                >
+                  {hit.image && (
+                    <img src={hit.image} alt="" className="w-10 h-10 object-contain rounded shrink-0 bg-[#f2efe8]" />
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <div className="text-xs font-semibold text-[#1a1916] line-clamp-2 leading-snug">{hit.title}</div>
+                    {hit.price && <div className="text-xs text-[#09a7ad] font-bold mt-0.5">{hit.price}</div>}
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {!searchLoading && searchResults.length === 0 && searchQuery.trim().length >= 2 && (
+            <p className="text-xs text-[#8c8778] text-center py-2">No results — try different keywords</p>
+          )}
+
+          <button
+            type="button"
+            onClick={() => { setShowSearch(false); setSearchResults([]); setSearchQuery(""); }}
+            className="mt-2 text-xs text-[#8c8778] hover:text-[#4a4640] underline"
+          >
+            Fill in manually instead
+          </button>
+        </div>
       )}
 
       {/* Result preview */}
