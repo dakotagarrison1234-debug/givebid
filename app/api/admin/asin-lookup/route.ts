@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Invalid ASIN" }, { status: 400 });
   }
 
-  const apiKey = process.env.OPENWEBNINJA_API_KEY;
+  const apiKey = process.env.OPENWEBNINJA_API_KEY?.trim();
   if (!apiKey) {
     return NextResponse.json({ error: "OPENWEBNINJA_API_KEY not configured" }, { status: 500 });
   }
@@ -23,16 +23,19 @@ export async function GET(req: NextRequest) {
     const res = await fetch(
       `https://api.openwebninja.com/realtime-amazon-data/product-details?asin=${asin}&country=US`,
       {
-        headers: { "x-api-key": apiKey },
-        next: { revalidate: 86400 }, // cache 24h — same ASIN won't change
+        headers: { "X-API-Key": apiKey },
+        cache: "no-store", // avoid Next.js data cache mangling auth headers
       }
     );
 
     if (!res.ok) {
-      return NextResponse.json({ error: "Amazon lookup failed" }, { status: 502 });
+      const errText = await res.text().catch(() => "");
+      console.error("OpenWebNinja error:", res.status, errText);
+      return NextResponse.json({ error: `Amazon lookup failed (${res.status})`, detail: errText }, { status: 502 });
     }
 
     const data = await res.json();
+    console.log("OpenWebNinja response keys:", Object.keys(data));
 
     if (!data || !data.asin) {
       return NextResponse.json({ found: false, message: "No Amazon product found for that ASIN." });
