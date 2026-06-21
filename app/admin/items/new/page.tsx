@@ -34,6 +34,7 @@ function BarcodeScanner({ onFill }: { onFill: (r: BarcodeResult) => void }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchResults, setSearchResults] = useState<SearchHit[]>([]);
+  const [selectedImages, setSelectedImages] = useState<string[]>([]);
   const videoRef = useRef<HTMLVideoElement>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const readerRef = useRef<any>(null);
@@ -105,6 +106,7 @@ function BarcodeScanner({ onFill }: { onFill: (r: BarcodeResult) => void }) {
         setError(null);
       } else {
         setResult(data.product);
+        setSelectedImages(data.product.images ?? []);
       }
     } catch { setShowSearch(true); setError(null); }
     finally { setLoading(false); }
@@ -135,6 +137,7 @@ function BarcodeScanner({ onFill }: { onFill: (r: BarcodeResult) => void }) {
       const data = await res.json();
       if (data.found) {
         setResult(data.product);
+        setSelectedImages(data.product.images ?? []);
         setShowSearch(false); setSearchResults([]); setSearchQuery("");
       } else {
         // Use search result directly
@@ -155,10 +158,15 @@ function BarcodeScanner({ onFill }: { onFill: (r: BarcodeResult) => void }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => () => stopCamera(), []);
 
-  const applyResult = (imgOverride?: string) => {
+  const removeImage = (img: string) => {
+    setSelectedImages(prev => prev.filter(i => i !== img));
+  };
+
+  const applyResult = () => {
     if (!result) return;
-    onFill({ ...result, images: imgOverride ? [imgOverride] : result.images });
+    onFill({ ...result, images: selectedImages });
     setResult(null);
+    setSelectedImages([]);
     setBarcode("");
   };
 
@@ -299,23 +307,30 @@ function BarcodeScanner({ onFill }: { onFill: (r: BarcodeResult) => void }) {
             </div>
           </div>
 
-          {/* Image picker */}
-          {result.images.length > 0 && (
+          {/* Image picker — tap X to remove */}
+          {selectedImages.length > 0 && (
             <div className="mb-3">
-              <div className="text-xs text-[#8c8778] mb-1.5 font-medium">Pick a photo (optional)</div>
+              <div className="text-xs text-[#8c8778] mb-1.5 font-medium">
+                Photos ({selectedImages.length}) — tap <span className="text-red-400">✕</span> to remove
+              </div>
               <div className="flex gap-2 overflow-x-auto pb-1">
-                {result.images.map((img, i) => (
-                  <button
-                    key={i}
-                    type="button"
-                    onClick={() => applyResult(img)}
-                    className="w-16 h-16 shrink-0 rounded-lg overflow-hidden border-2 border-transparent hover:border-[#09a7ad] transition-colors bg-[#f2efe8]"
-                  >
-                    <img src={img} alt="" className="w-full h-full object-contain" />
-                  </button>
+                {selectedImages.map((img, i) => (
+                  <div key={i} className="relative shrink-0">
+                    <img src={img} alt="" className="w-16 h-16 object-contain rounded-lg border border-[#e5e0d5] bg-[#f2efe8]" />
+                    <button
+                      type="button"
+                      onClick={() => removeImage(img)}
+                      className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-[10px] font-bold leading-none shadow-sm transition-colors"
+                    >
+                      ✕
+                    </button>
+                  </div>
                 ))}
               </div>
             </div>
+          )}
+          {result.images.length > 0 && selectedImages.length === 0 && (
+            <p className="text-xs text-amber-600 mb-2">All photos removed — form will have no photos.</p>
           )}
 
           <div className="flex gap-2">
@@ -328,7 +343,7 @@ function BarcodeScanner({ onFill }: { onFill: (r: BarcodeResult) => void }) {
             </button>
             <button
               type="button"
-              onClick={() => { setResult(null); setBarcode(""); }}
+              onClick={() => { setResult(null); setSelectedImages([]); setBarcode(""); }}
               className="text-[#8c8778] hover:text-[#4a4640] text-sm px-3 py-2 border border-[#d4cfc4] rounded-lg transition-colors"
             >
               Dismiss
