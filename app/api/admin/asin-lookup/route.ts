@@ -19,7 +19,7 @@ async function fnsku2asin(fnsku: string, f2aKey: string): Promise<string | null>
   const post = () =>
     fetch("https://ato.fnskutoasin.com/api/v1/ScanTask/AddOrGet", {
       method: "POST",
-      headers: { "Content-Type": "application/json", "Api-Key": f2aKey },
+      headers: { "Content-Type": "application/json", "Api-Key": f2aKey, "Accept-Language": "en-US" },
       body: JSON.stringify({ BarCode: fnsku }),
       cache: "no-store",
     });
