@@ -25,29 +25,36 @@ export async function GET(req: NextRequest) {
       { headers: { "X-API-Key": apiKey }, cache: "no-store" }
     );
 
+    const text = await res.text();
+    console.log("Amazon search status:", res.status);
+    console.log("Amazon search raw (first 1000):", text.slice(0, 1000));
+
     if (!res.ok) {
-      const errText = await res.text().catch(() => "");
-      console.error("Amazon search error:", res.status, errText);
       return NextResponse.json({ results: [] });
     }
 
-    const raw = await res.json();
-    console.log("Amazon search raw keys:", Object.keys(raw));
+    let raw: Record<string, unknown>;
+    try { raw = JSON.parse(text); } catch { return NextResponse.json({ results: [] }); }
 
-    // OpenWeb Ninja search returns products array — try common shapes
+    // Try every possible nesting the API might use
     const items: Record<string, unknown>[] =
-      Array.isArray(raw) ? raw :
-      Array.isArray(raw?.data) ? raw.data :
-      Array.isArray(raw?.products) ? raw.products :
-      Array.isArray(raw?.search_results) ? raw.search_results :
+      Array.isArray(raw?.data?.products) ? (raw.data as Record<string, unknown[]>).products as Record<string, unknown>[] :
+      Array.isArray(raw?.data?.search_results) ? (raw.data as Record<string, unknown[]>).search_results as Record<string, unknown>[] :
+      Array.isArray(raw?.data) ? raw.data as Record<string, unknown>[] :
+      Array.isArray(raw?.products) ? raw.products as Record<string, unknown>[] :
+      Array.isArray(raw?.search_results) ? raw.search_results as Record<string, unknown>[] :
+      Array.isArray(raw?.results) ? raw.results as Record<string, unknown>[] :
+      Array.isArray(raw) ? raw as Record<string, unknown>[] :
       [];
 
+    console.log("Amazon search items found:", items.length);
+
     const results = items.slice(0, 8).map((p) => ({
-      asin: p.asin ?? p.product_asin ?? "",
-      title: p.product_title ?? p.title ?? "",
-      image: p.product_photo ?? p.thumbnail ?? p.image ?? "",
-      price: p.product_price ?? p.price ?? "",
-      brand: (p.product_details as Record<string,string>)?.Brand ?? p.brand ?? "",
+      asin: (p.asin ?? p.product_asin ?? "") as string,
+      title: (p.product_title ?? p.title ?? "") as string,
+      image: (p.product_photo ?? p.thumbnail ?? p.image ?? p.product_image ?? "") as string,
+      price: (p.product_price ?? p.price ?? "") as string,
+      brand: ((p.product_details as Record<string, string>)?.Brand ?? p.brand ?? "") as string,
     })).filter(r => r.title);
 
     return NextResponse.json({ results });
