@@ -37,14 +37,16 @@ export async function GET(req: NextRequest) {
     try { raw = JSON.parse(text); } catch { return NextResponse.json({ results: [] }); }
 
     // Try every possible nesting the API might use
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const r = raw as any;
     const items: Record<string, unknown>[] =
-      Array.isArray(raw?.data?.products) ? (raw.data as Record<string, unknown[]>).products as Record<string, unknown>[] :
-      Array.isArray(raw?.data?.search_results) ? (raw.data as Record<string, unknown[]>).search_results as Record<string, unknown>[] :
-      Array.isArray(raw?.data) ? raw.data as Record<string, unknown>[] :
-      Array.isArray(raw?.products) ? raw.products as Record<string, unknown>[] :
-      Array.isArray(raw?.search_results) ? raw.search_results as Record<string, unknown>[] :
-      Array.isArray(raw?.results) ? raw.results as Record<string, unknown>[] :
-      Array.isArray(raw) ? raw as Record<string, unknown>[] :
+      Array.isArray(r?.data?.products) ? r.data.products :
+      Array.isArray(r?.data?.search_results) ? r.data.search_results :
+      Array.isArray(r?.data) ? r.data :
+      Array.isArray(r?.products) ? r.products :
+      Array.isArray(r?.search_results) ? r.search_results :
+      Array.isArray(r?.results) ? r.results :
+      Array.isArray(r) ? r :
       [];
 
     console.log("Amazon search items found:", items.length);
