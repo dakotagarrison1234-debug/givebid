@@ -2,15 +2,56 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 
-const OPTS = { headers: { "X-API-Key": "" }, cache: "no-store" as const };
+// ── helpers ───────────────────────────────────────────────────────────────────
 
-function buildOpts(apiKey: string) {
+function isFnsku(code: string) {
+  // FNSKUs almost always start with X followed by two digits (X00, X01, etc.)
+  return /^X\d{2}/i.test(code);
+}
+
+function buildNinjaOpts(apiKey: string) {
   return { headers: { "X-API-Key": apiKey }, cache: "no-store" as const };
 }
 
-function extractProduct(raw: Record<string, unknown>) {
-  // Their response may wrap product fields under a "data" key
-  const data = (raw?.data ?? raw) as Record<string, unknown>;
+// ── F2A: FNSKU → ASIN ────────────────────────────────────────────────────────
+
+async function fnsku2asin(fnsku: string, f2aKey: string): Promise<string | null> {
+  const post = () =>
+    fetch("https://ato.fnskutoasin.com/api/v1/ScanTask/AddOrGet", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Api-Key": f2aKey },
+      body: JSON.stringify({ barCode: fnsku }),
+      cache: "no-store",
+    });
+
+  // Poll up to 6 times (taskState 0 = Pending, 1 = Finished, 2 = Failed)
+  for (let attempt = 0; attempt < 6; attempt++) {
+    if (attempt > 0) await new Promise(r => setTimeout(r, 1200));
+
+    const res = await post();
+    if (!res.ok) {
+      console.error("F2A error:", res.status, await res.text().catch(() => ""));
+      return null;
+    }
+
+    const json = await res.json();
+    console.log("F2A attempt", attempt, "state:", json?.data?.taskState, "asin:", json?.data?.asin);
+
+    const task = json?.data;
+    if (!task) return null;
+    if (task.taskState === 1 && task.asin) return task.asin as string; // Finished
+    if (task.taskState === 2) return null; // Failed
+    // taskState 0 = Pending → loop
+  }
+
+  return null;
+}
+
+// ── OpenWeb Ninja: ASIN → product ────────────────────────────────────────────
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function extractProduct(raw: any) {
+  const data = raw?.data ?? raw;
   if (!data || (!data.asin && !data.product_title)) return null;
 
   const images: string[] = [];
@@ -20,7 +61,7 @@ function extractProduct(raw: Record<string, unknown>) {
     if (images.length >= 5) break;
   }
 
-  const rawCat = ((data.category_path as {name:string}[])?.[0]?.name ?? "").toLowerCase();
+  const rawCat = ((data.category_path as { name: string }[])?.[0]?.name ?? "").toLowerCase();
   let category = "";
   if (rawCat.includes("electronic") || rawCat.includes("computer") || rawCat.includes("phone") || rawCat.includes("audio") || rawCat.includes("camera") || rawCat.includes("video game")) category = "Electronics";
   else if (rawCat.includes("sport") || rawCat.includes("outdoor") || rawCat.includes("fitness")) category = "Sports";
@@ -46,6 +87,21 @@ function extractProduct(raw: Record<string, unknown>) {
   };
 }
 
+async function asinToProduct(asin: string, ninjaKey: string) {
+  const res = await fetch(
+    `https://api.openwebninja.com/realtime-amazon-data/product-details?asin=${asin}&country=US`,
+    buildNinjaOpts(ninjaKey)
+  );
+  if (!res.ok) {
+    console.error("OpenWebNinja product-details error:", res.status);
+    return null;
+  }
+  const raw = await res.json();
+  return extractProduct(raw);
+}
+
+// ── Route ─────────────────────────────────────────────────────────────────────
+
 export async function GET(req: NextRequest) {
   const { userId } = await auth();
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -58,81 +114,39 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Invalid code" }, { status: 400 });
   }
 
-  const apiKey = process.env.OPENWEBNINJA_API_KEY?.trim();
-  if (!apiKey) {
-    return NextResponse.json({ error: "OPENWEBNINJA_API_KEY not configured" }, { status: 500 });
-  }
+  const ninjaKey = process.env.OPENWEBNINJA_API_KEY?.trim();
+  if (!ninjaKey) return NextResponse.json({ error: "OPENWEBNINJA_API_KEY not configured" }, { status: 500 });
 
-  const opts = buildOpts(apiKey);
+  const f2aKey = process.env.F2A_API_KEY?.trim();
 
   try {
-    // ── Step 1: try direct ASIN product-details lookup ─────────────────────
-    const res1 = await fetch(
-      `https://api.openwebninja.com/realtime-amazon-data/product-details?asin=${code}&country=US`,
-      opts
-    );
-
-    if (res1.ok) {
-      const raw1 = await res1.json();
-      const product = extractProduct(raw1);
-      if (product) {
-        return NextResponse.json({ found: true, source: "amazon", product });
+    if (isFnsku(code)) {
+      // ── FNSKU path ──────────────────────────────────────────────────────────
+      if (!f2aKey) {
+        return NextResponse.json({ error: "F2A_API_KEY not configured" }, { status: 500 });
       }
-    }
 
-    // ── Step 2: FNSKU / unknown code — fall back to search ─────────────────
-    // FNSKUs (X00...) and other codes that aren't real ASINs won't resolve
-    // via product-details, but Amazon search can still find the product.
-    const searchRes = await fetch(
-      `https://api.openwebninja.com/realtime-amazon-data/search?query=${encodeURIComponent(code)}&country=US&page=1`,
-      opts
-    );
-
-    if (!searchRes.ok) {
-      const errText = await searchRes.text().catch(() => "");
-      console.error("OpenWebNinja search error:", searchRes.status, errText);
-      return NextResponse.json({ found: false, message: "No product found for that code." });
-    }
-
-    const searchRaw = await searchRes.json();
-    // Search response: { data: [ { asin, product_title, ... }, ... ] }
-    const searchData = (searchRaw?.data ?? searchRaw) as Record<string, unknown>;
-    const results = Array.isArray(searchData)
-      ? searchData
-      : Array.isArray((searchData as Record<string, unknown>)?.products)
-        ? (searchData as Record<string, unknown[]>).products
-        : [];
-
-    const first = results[0] as Record<string, unknown> | undefined;
-    if (!first) {
-      return NextResponse.json({ found: false, message: "No product found for that code." });
-    }
-
-    // We have a search hit — fetch full details using its real ASIN
-    const realAsin = first.asin as string;
-    if (realAsin) {
-      const res2 = await fetch(
-        `https://api.openwebninja.com/realtime-amazon-data/product-details?asin=${realAsin}&country=US`,
-        opts
-      );
-      if (res2.ok) {
-        const raw2 = await res2.json();
-        const product = extractProduct(raw2);
-        if (product) {
-          return NextResponse.json({ found: true, source: "amazon", product });
-        }
+      const asin = await fnsku2asin(code, f2aKey);
+      if (!asin) {
+        return NextResponse.json({ found: false, message: "FNSKU not found in F2A database." });
       }
-    }
 
-    // Fall back to whatever the search result itself contains
-    const product = extractProduct(first);
-    if (product) {
+      const product = await asinToProduct(asin, ninjaKey);
+      if (!product) {
+        return NextResponse.json({ found: false, message: "FNSKU resolved but product details unavailable." });
+      }
+
+      return NextResponse.json({ found: true, source: "fnsku", resolvedAsin: asin, product });
+    } else {
+      // ── Direct ASIN path ────────────────────────────────────────────────────
+      const product = await asinToProduct(code, ninjaKey);
+      if (!product) {
+        return NextResponse.json({ found: false, message: "No Amazon product found for that ASIN." });
+      }
       return NextResponse.json({ found: true, source: "amazon", product });
     }
-
-    return NextResponse.json({ found: false, message: "No product found for that code." });
   } catch (e) {
-    console.error("ASIN lookup exception:", e);
+    console.error("asin-lookup exception:", e);
     return NextResponse.json({ error: "Lookup failed" }, { status: 500 });
   }
 }
